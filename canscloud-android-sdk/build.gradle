@@ -1,14 +1,34 @@
 plugins {
-    id 'com.android.application'
+    id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
+    id 'kotlin-android'
+    id 'maven-publish'
 }
+
+def crashlyticsEnabled = new File(projectDir.absolutePath +'/google-services.json').exists() && new File(LinphoneSdkBuildDir + '/libs/').exists() && new File(LinphoneSdkBuildDir + '/libs-debug/').exists()
+
+configurations {
+    customImplementation.extendsFrom implementation
+}
+task linphoneSdkSource() {
+    doLast {
+        configurations.customImplementation.getIncoming().each {
+            it.getResolutionResult().allComponents.each {
+                if (it.id.getDisplayName().contains("linphone-sdk-android")) {
+                    println 'Linphone SDK used is ' + it.moduleVersion.version + ' from ' + it.properties["repositoryName"]
+                }
+            }
+        }
+    }
+}
+
+project.tasks['preBuild'].dependsOn 'linphoneSdkSource'
 
 android {
     namespace 'cc.cans.canscloud.sdk'
     compileSdk 33
 
     defaultConfig {
-        applicationId "cc.cans.canscloud.sdk"
         minSdk 24
         targetSdk 33
         versionCode 1
@@ -22,6 +42,30 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+
+        releaseWithCrashlytics {
+            initWith release
+
+            resValue "bool", "crashlytics_enabled", crashlyticsEnabled.toString()
+
+            if (crashlyticsEnabled) {
+                firebaseCrashlytics {
+                    nativeSymbolUploadEnabled true
+                    unstrippedNativeLibsDir file(LinphoneSdkBuildDir + '/libs-debug/').toString()
+                }
+            }
+        }
+
+        debug {
+            jniDebuggable true
+
+            if (crashlyticsEnabled) {
+                firebaseCrashlytics {
+                    nativeSymbolUploadEnabled true
+                    unstrippedNativeLibsDir file(LinphoneSdkBuildDir + '/libs-debug/').toString()
+                }
+            }
+        }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -32,6 +76,13 @@ android {
     }
     buildFeatures {
         viewBinding true
+    }
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
+        }
     }
 }
 
@@ -44,6 +95,25 @@ dependencies {
     implementation 'androidx.navigation:navigation-fragment-ktx:2.6.0'
     implementation 'androidx.navigation:navigation-ui-ktx:2.6.0'
     testImplementation 'junit:junit:4.13.2'
+
+    api  'org.linphone:linphone-sdk-android:5.1+'
+    implementation "androidx.security:security-crypto-ktx:1.1.0-alpha03"
+
+
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId = 'cc.cans-communication'
+            artifactId = 'canscloud-android-sdk'
+            version = '0.1.0'
+
+            afterEvaluate {
+                from components.release
+            }
+        }
+    }
 }

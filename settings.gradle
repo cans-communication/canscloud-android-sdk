@@ -1,8 +1,17 @@
 pluginManagement {
     repositories {
+        gradlePluginPortal()
         google()
         mavenCentral()
-        gradlePluginPortal()
+
+        maven { url 'https://jitpack.io' }
+
+        maven {
+            url "https://linphone.org/maven_repository"
+        }
+    }
+    plugins {
+        id "io.github.gradle-nexus.publish-plugin" version "1.0.0"
     }
 }
 dependencyResolutionManagement {
@@ -10,8 +19,31 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+
+        maven { url 'https://jitpack.io' }
+
+        maven {
+            name "local linphone-sdk maven repository"
+            url file(LinphoneSdkBuildDir + '/maven_repository/')
+            content {
+                includeGroup "org.linphone"
+            }
+        }
+
+        maven {
+            name "linphone.org maven repository"
+            url "https://linphone.org/maven_repository"
+            content {
+                includeGroup "org.linphone"
+            }
+        }
+
+        maven {
+            url "https://linphone.org/maven_repository"
+        }
     }
 }
+
 rootProject.name = "CansCloudAndroidSDK"
 include ':app'
 include ':canscloud-android-sdk'
