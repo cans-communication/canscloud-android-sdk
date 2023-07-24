@@ -15,7 +15,7 @@ import org.linphone.core.TransportType
 import org.linphone.core.tools.Log
 import java.util.Locale
 
-class CansCenter {
+class Cans {
     companion object {
         private lateinit var core: Core
         private var proxyConfigToCheck: ProxyConfig? = null
@@ -24,14 +24,14 @@ class CansCenter {
         var packageManager : PackageManager? = null
         var packageName : String = ""
 
-        fun config(context: Context, packageManager: PackageManager, packageName: String) {
+        fun config(context: Context, packageManager: PackageManager, packageName: String, companyKey: String) {
             CansCloudApplication.ensureCoreExists(context)
             Companion.packageManager = packageManager
             Companion.packageName = packageName
+            print("companyKey: $companyKey")
 //            val factory = Factory.instance()
 //            factory.setDebugMode(true, "Hello Linphone")
 //            core = factory.createCore(null, null, context)
-
         }
 
         /*fun login(activity: Activity) {
