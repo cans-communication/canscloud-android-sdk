@@ -8,7 +8,7 @@
     android:fitsSystemWindows="true"
     android:gravity="center"
     android:orientation="vertical"
-    tools:context=".MainActivity">
+    tools:context="cc.cans.canscloud.demoappinsdk.MainActivity">
 
     <TextView
         android:id="@+id/register"

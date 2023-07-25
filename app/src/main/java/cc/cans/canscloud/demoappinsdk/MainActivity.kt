@@ -1,10 +1,10 @@
-package cc.cans.canscloud.sdk
+package cc.cans.canscloud.demoappinsdk
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
-import androidx.navigation.ui.AppBarConfiguration
-import cc.cans.canscloud.sdk.databinding.ActivityMainBinding
+import cc.cans.canscloud.sdk.Cans
+import cc.cans.canscloud.demoappinsdk.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
