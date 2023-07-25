@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import cc.cans.canscloud.sdk.CansCloudApplication.Companion.coreContextCansBase
 import cc.cans.canscloud.sdk.CansCloudApplication.Companion.corePreferences
+import com.google.gson.Gson
 import org.linphone.core.AccountCreator
 import org.linphone.core.Core
 import org.linphone.core.CoreListenerStub
@@ -13,9 +14,19 @@ import org.linphone.core.ProxyConfig
 import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import org.linphone.core.tools.Log
+import java.io.IOException
+import java.io.InputStream
 import java.util.Locale
 
-class CansCenter {
+data class UserService(
+    val username: String,
+    val password: String,
+    val domain: String,
+    val port: String,
+    val transport: String
+)
+
+class Cans {
     companion object {
         private lateinit var core: Core
         private var proxyConfigToCheck: ProxyConfig? = null
@@ -24,14 +35,39 @@ class CansCenter {
         var packageManager : PackageManager? = null
         var packageName : String = ""
 
-        fun config(context: Context, packageManager: PackageManager, packageName: String) {
-            CansCloudApplication.ensureCoreExists(context)
+        fun config(
+            activity: Activity,
+            packageManager: PackageManager,
+            packageName: String,
+            companyKey: String,
+            callback: () -> Unit
+        ) {
+            CansCloudApplication.ensureCoreExists(activity.applicationContext)
             Companion.packageManager = packageManager
             Companion.packageName = packageName
+
+            if (username().isEmpty()) {
+                register(activity)
+            }
+            callback()
+
 //            val factory = Factory.instance()
 //            factory.setDebugMode(true, "Hello Linphone")
 //            core = factory.createCore(null, null, context)
+        }
 
+        private fun loadJSONFromAsset(context: Context, fileName: String): String? {
+            return try {
+                val inputStream: InputStream = context.assets.open(fileName)
+                val size: Int = inputStream.available()
+                val buffer = ByteArray(size)
+                inputStream.read(buffer)
+                inputStream.close()
+                String(buffer, Charsets.UTF_8)
+            } catch (e: IOException) {
+                e.printStackTrace()
+                null
+            }
         }
 
         /*fun login(activity: Activity) {
@@ -68,60 +104,67 @@ class CansCenter {
             }
         }*/
 
-        fun register(activity: Activity) {
+        private fun register(activity: Activity) {
+            val fileName = "json/get_user.json"
+            val jsonString = loadJSONFromAsset(context = activity.applicationContext, fileName)
 
-            var accountCreator = getAccountCreator(true)
-            coreContextCansBase.core.addListener(coreListener)
+            jsonString?.let {
+                val gson = Gson()
+                val user = gson.fromJson(it, UserService::class.java)
 
-            var username = "50104"
-            var password = "p50104CNS"
-            var domain = "test.cans.cc:8446"
+                val domain = "${user.domain}:${user.port}"
 
-            accountCreator.username = username
-            accountCreator.password = password
-            accountCreator.domain = domain
-            accountCreator.displayName = ""
-            accountCreator.transport = TransportType.Tcp
+                val accountCreator = getAccountCreator(true)
+                coreContextCansBase.core.addListener(coreListener)
 
-            val proxyConfig: ProxyConfig? = accountCreator.createProxyConfig()
-            proxyConfigToCheck = proxyConfig
+                accountCreator.username = user.username
+                accountCreator.password = user.password
+                accountCreator.domain = domain
+                accountCreator.displayName = ""
 
-            if (proxyConfig == null) {
-                Log.e("[Assistant] [Generic Login] Account creator couldn't create proxy config")
-                coreContextCansBase.core.removeListener(coreListener)
-                //  onErrorEvent.value = Event("Error: Failed to create account object")
-                //waitForServerAnswer.value = false
-                return
-            }
+                if (user.transport.lowercase() == "tcp") {
+                    accountCreator.transport = TransportType.Tcp
+                } else {
+                    accountCreator.transport = TransportType.Udp
+                }
 
-            Log.i("[Assistant] [Generic Login] Proxy config created")
-            // The following is required to keep the app alive
-            // and be able to receive calls while in background
-            if (domain.orEmpty() != corePreferences.defaultDomain) {
-                Log.i(
-                    "[Assistant] [Generic Login] Background mode with foreground service automatically enabled"
-                )
-                //corePreferences.keepServiceAlive = true
-                coreContextCansBase.notificationsManager.startForeground()
-            }
+                val proxyConfig: ProxyConfig? = accountCreator.createProxyConfig()
+                proxyConfigToCheck = proxyConfig
 
-            if (packageManager?.checkPermission(Manifest.permission.RECORD_AUDIO, packageName) != PackageManager.PERMISSION_GRANTED) {
-                activity.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 0)
-                return
+                if (proxyConfig == null) {
+                    Log.e("[Assistant] [Generic Login] Account creator couldn't create proxy config")
+                    coreContextCansBase.core.removeListener(coreListener)
+                    //  onErrorEvent.value = Event("Error: Failed to create account object")
+                    //waitForServerAnswer.value = false
+                    return
+                }
+
+                Log.i("[Assistant] [Generic Login] Proxy config created")
+                // The following is required to keep the app alive
+                // and be able to receive calls while in background
+                if (domain != corePreferences.defaultDomain) {
+                    Log.i(
+                        "[Assistant] [Generic Login] Background mode with foreground service automatically enabled"
+                    )
+                    //corePreferences.keepServiceAlive = true
+                    coreContextCansBase.notificationsManager.startForeground()
+                }
+
+                if (packageManager?.checkPermission(Manifest.permission.RECORD_AUDIO, packageName) != PackageManager.PERMISSION_GRANTED) {
+                    activity.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 0)
+                    return
+                }
             }
         }
 
         fun username(): String {
-            val defaultAccount =
-                coreContextCansBase.core.defaultAccount?.params?.identityAddress?.username.toString()
-            val domain =
-                coreContextCansBase.core.defaultAccount?.params?.identityAddress?.domain.toString()
-
-            return "$defaultAccount $domain"
+            coreContextCansBase.core.defaultAccount?.params?.identityAddress?.let {
+                return "${it.username}@${it.domain}:${it.port}"
+            }
+            return ""
         }
 
         private fun getAccountCreator(genericAccountCreator: Boolean = false): AccountCreator {
-
             coreContextCansBase.core.loadConfigFromXml(corePreferences.linphoneDefaultValuesPath)
             accountCreator =
                 coreContextCansBase.core.createAccountCreator(corePreferences.xmlRpcServerUrl)
