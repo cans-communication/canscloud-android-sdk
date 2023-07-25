@@ -26,12 +26,12 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
 
-        CansCenter.config(this, packageManager, packageName)
-        CansCenter.register(this)
-        binding.register.text = CansCenter.username()
+        Cans.config(this, packageManager, packageName, "robinhood")
+        Cans.register(this)
+        binding.register.text = Cans.username()
 
         binding.buttonCall.setOnClickListener {
-            CansCenter.startCall("0838927729")
+            Cans.startCall("0838927729")
         }
     }
 }
