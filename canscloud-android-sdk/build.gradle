@@ -96,7 +96,7 @@ dependencies {
     implementation 'androidx.navigation:navigation-ui-ktx:2.6.0'
     testImplementation 'junit:junit:4.13.2'
 
-    api  'org.linphone:linphone-sdk-android:5.1+'
+    implementation  'org.linphone:linphone-sdk-android:5.1+'
     implementation "androidx.security:security-crypto-ktx:1.1.0-alpha03"
 
 
@@ -107,9 +107,9 @@ dependencies {
 publishing {
     publications {
         release(MavenPublication) {
-            groupId = 'cc.cans-communication'
+            groupId = 'com.github.cans-communication'
             artifactId = 'canscloud-android-sdk'
-            version = '0.1.0'
+            version = '0.1.2'
 
             afterEvaluate {
                 from components.release
