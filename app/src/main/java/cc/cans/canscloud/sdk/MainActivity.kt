@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity() {
         binding.register.text = Cans.username()
 
         binding.buttonCall.setOnClickListener {
-            Cans.startCall("0838927729")
+            Cans.startCall("0957414609")
         }
     }
 }
