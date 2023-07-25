@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/FirstFragment"
-        android:name="cc.cans.canscloud.sdk.FirstFragment"
+        android:name="cc.cans.canscloud.demoappinsdk.FirstFragment"
         android:label="@string/first_fragment_label"
         tools:layout="@layout/fragment_first">
 
@@ -17,7 +17,7 @@
     </fragment>
     <fragment
         android:id="@+id/SecondFragment"
-        android:name="cc.cans.canscloud.sdk.SecondFragment"
+        android:name="cc.cans.canscloud.demoappinsdk.SecondFragment"
         android:label="@string/second_fragment_label"
         tools:layout="@layout/fragment_second">
 
