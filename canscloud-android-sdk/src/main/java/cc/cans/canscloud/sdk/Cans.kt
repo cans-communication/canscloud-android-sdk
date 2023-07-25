@@ -35,11 +35,22 @@ class Cans {
         var packageManager : PackageManager? = null
         var packageName : String = ""
 
-        fun config(context: Context, packageManager: PackageManager, packageName: String, companyKey: String) {
-            CansCloudApplication.ensureCoreExists(context)
+        fun config(
+            activity: Activity,
+            packageManager: PackageManager,
+            packageName: String,
+            companyKey: String,
+            callback: () -> Unit
+        ) {
+            CansCloudApplication.ensureCoreExists(activity.applicationContext)
             Companion.packageManager = packageManager
             Companion.packageName = packageName
-            print("companyKey: $companyKey")
+
+            if (username().isEmpty()) {
+                register(activity)
+            }
+            callback()
+
 //            val factory = Factory.instance()
 //            factory.setDebugMode(true, "Hello Linphone")
 //            core = factory.createCore(null, null, context)
@@ -93,8 +104,8 @@ class Cans {
             }
         }*/
 
-        fun register(activity: Activity) {
-            val fileName = "config.json"
+        private fun register(activity: Activity) {
+            val fileName = "json/get_user.json"
             val jsonString = loadJSONFromAsset(context = activity.applicationContext, fileName)
 
             jsonString?.let {
@@ -103,7 +114,7 @@ class Cans {
 
                 val domain = "${user.domain}:${user.port}"
 
-                var accountCreator = getAccountCreator(true)
+                val accountCreator = getAccountCreator(true)
                 coreContextCansBase.core.addListener(coreListener)
 
                 accountCreator.username = user.username
@@ -147,16 +158,13 @@ class Cans {
         }
 
         fun username(): String {
-            val defaultAccount =
-                coreContextCansBase.core.defaultAccount?.params?.identityAddress?.username.toString()
-            val domain =
-                coreContextCansBase.core.defaultAccount?.params?.identityAddress?.domain.toString()
-
-            return "$defaultAccount $domain"
+            coreContextCansBase.core.defaultAccount?.params?.identityAddress?.let {
+                return "${it.username}@${it.domain}:${it.port}"
+            }
+            return ""
         }
 
         private fun getAccountCreator(genericAccountCreator: Boolean = false): AccountCreator {
-
             coreContextCansBase.core.loadConfigFromXml(corePreferences.linphoneDefaultValuesPath)
             accountCreator =
                 coreContextCansBase.core.createAccountCreator(corePreferences.xmlRpcServerUrl)
