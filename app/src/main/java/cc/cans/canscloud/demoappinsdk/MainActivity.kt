@@ -1,10 +1,13 @@
 package cc.cans.canscloud.demoappinsdk
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
+import androidx.navigation.fragment.findNavController
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityMainBinding
+import cc.cans.canscloud.sdk.call.CansCallActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -22,7 +25,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.buttonCall.setOnClickListener {
-            Cans.startCall("0957414609")
+            val intent = Intent(this, CansCallActivity::class.java)
+            intent.putExtra("phoneNumber", "50103")
+            startActivity(intent)
         }
     }
 }
