@@ -189,7 +189,7 @@ class Cans {
         fun startCall(addressToCall: String) {
 
             android.util.Log.d("MainActivity : ", "startCall")
-            //coreContextCansBase.outgoingCall()
+            //coreContext.outgoingCall()
             val addressToCall = addressToCall
             if (addressToCall.isNotEmpty()) {
                 coreContext.startCall(addressToCall)

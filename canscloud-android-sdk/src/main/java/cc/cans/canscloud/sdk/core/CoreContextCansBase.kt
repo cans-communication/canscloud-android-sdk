@@ -57,7 +57,7 @@ import kotlin.concurrent.schedule
 import cc.cans.canscloud.sdk.R
 
 
-class CoreContextCansBase (val context: Context, coreConfig: Config) {
+class CoreContext (val context: Context, coreConfig: Config) {
 
     var stopped = false
     val core: Core

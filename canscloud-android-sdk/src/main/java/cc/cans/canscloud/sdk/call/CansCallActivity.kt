@@ -23,6 +23,7 @@ class CansCallActivity : ComponentActivity() {
 
         binding.buttonHangUp.setOnClickListener {
 //            findNavController().popBackStack()
+            Cans.terminateCall()
             finish()
         }
     }
