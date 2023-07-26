@@ -1,40 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-
-    <application android:name=".CansCloudApplication">
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.CansCloudAndroidSDK">
         <activity
-            android:name=".call.CansCallActivity"
-            android:exported="false"
-            android:label="@string/title_activity_cans_call"
-            android:theme="@style/Theme.CansCloudAndroidSDK" />
-
-        <service
-            android:name=".telecom.TelecomConnectionService"
+            android:name=".MainActivity"
             android:exported="true"
-            android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE">
+            android:label="@string/app_name"
+            android:theme="@style/Theme.CansCloudAndroidSDK">
             <intent-filter>
-                <action android:name="android.telecom.ConnectionService" />
-            </intent-filter>
-        </service>
+                <action android:name="android.intent.action.MAIN" />
 
-        <receiver
-            android:name=".core.CorePushReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="org.linphone.core.action.PUSH_RECEIVED" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </receiver>
-        <receiver
-            android:name=".core.BootReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-            </intent-filter>
-        </receiver>
+        </activity>
     </application>
-
 </manifest>

@@ -7,7 +7,6 @@ buildscript {
         }
         maven {
             url "https://www.jitpack.io"
-            credentials { username authToken }
         }
         maven {
             name "linphone.org maven repository"
