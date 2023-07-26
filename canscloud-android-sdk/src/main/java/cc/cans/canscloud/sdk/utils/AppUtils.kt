@@ -22,7 +22,7 @@ package cc.cans.canscloud.sdk.utils
 import android.content.Context
 import android.text.format.Formatter.formatShortFileSize
 import android.util.TypedValue
-import cc.cans.canscloud.sdk.CansCloudApplication.Companion.coreContextCansBase
+import cc.cans.canscloud.sdk.CansCloudApplication.Companion.coreContext
 import java.util.*
 
 /**
@@ -31,19 +31,19 @@ import java.util.*
 class AppUtils {
     companion object {
         fun getString(id: Int): String {
-            return coreContextCansBase.context.getString(id)
+            return coreContext.context.getString(id)
         }
 
         fun getStringWithPlural(id: Int, count: Int): String {
-            return coreContextCansBase.context.resources.getQuantityString(id, count, count)
+            return coreContext.context.resources.getQuantityString(id, count, count)
         }
 
         fun getStringWithPlural(id: Int, count: Int, value: String): String {
-            return coreContextCansBase.context.resources.getQuantityString(id, count, value)
+            return coreContext.context.resources.getQuantityString(id, count, value)
         }
 
         fun getDimension(id: Int): Float {
-            return coreContextCansBase.context.resources.getDimension(id)
+            return coreContext.context.resources.getDimension(id)
         }
 
         fun getInitials(displayName: String, limit: Int = 2): String {
@@ -84,7 +84,7 @@ class AppUtils {
             return TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
                 pixels,
-                coreContextCansBase.context.resources.displayMetrics
+                coreContext.context.resources.displayMetrics
             )
         }
 
@@ -93,7 +93,7 @@ class AppUtils {
         }
 
         fun bytesToDisplayableSize(bytes: Long): String {
-            return formatShortFileSize(coreContextCansBase.context, bytes)
+            return formatShortFileSize(coreContext.context, bytes)
         }
 
 //        fun shareUploadedLogsUrl(activity: Activity, info: String) {

@@ -33,10 +33,10 @@ class CansCloudApplication : Application(), LifecycleObserver {
         @SuppressLint("StaticFieldLeak")
         lateinit var corePreferences: CorePreferences
         @SuppressLint("StaticFieldLeak")
-        lateinit var coreContextCansBase: CoreContextCansBase
+        lateinit var coreContext: CoreContextCansBase
 
         fun ensureCoreExists(context: Context, pushReceived: Boolean = false) {
-            if (Companion::coreContextCansBase.isInitialized && !coreContextCansBase.stopped) {
+            if (Companion::coreContext.isInitialized && !coreContext.stopped) {
                 Log.d("[Application] Skipping Core creation (push received? $pushReceived)")
                 return
             }
@@ -62,8 +62,8 @@ class CansCloudApplication : Application(), LifecycleObserver {
             }
 
             Log.i("[Application] Core context created ${if (pushReceived) "from push" else ""}")
-            coreContextCansBase = CoreContextCansBase(context, config)
-            coreContextCansBase.start()
+            coreContext = CoreContextCansBase(context, config)
+            coreContext.start()
         }
     }
 

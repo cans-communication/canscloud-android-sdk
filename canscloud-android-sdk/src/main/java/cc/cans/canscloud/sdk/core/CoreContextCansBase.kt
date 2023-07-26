@@ -30,7 +30,7 @@ import android.util.Base64
 import android.util.Pair
 import android.view.*
 import androidx.lifecycle.MutableLiveData
-import cc.cans.canscloud.sdk.CansCloudApplication.Companion.coreContextCansBase
+import cc.cans.canscloud.sdk.CansCloudApplication.Companion.coreContext
 import cc.cans.canscloud.sdk.CansCloudApplication.Companion.corePreferences
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.compatibility.PhoneStateInterface
@@ -535,7 +535,7 @@ class CoreContextCansBase (val context: Context, coreConfig: Config) {
 
     fun handleClick(key: Char) {
 //        LinphoneApplication.coreContext.core.playDtmf(key, 1)
-        coreContextCansBase.core.currentCall?.sendDtmf(key)
+        coreContext.core.currentCall?.sendDtmf(key)
     }
 
     fun outgoingCall() {
