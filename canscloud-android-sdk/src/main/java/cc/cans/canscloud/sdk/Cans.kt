@@ -1,5 +1,6 @@
 package cc.cans.canscloud.sdk
 
+import UserService
 import android.Manifest
 import android.app.Activity
 import android.content.Context
@@ -17,14 +18,6 @@ import org.linphone.core.tools.Log
 import java.io.IOException
 import java.io.InputStream
 import java.util.Locale
-
-data class UserService(
-    val username: String,
-    val password: String,
-    val domain: String,
-    val port: String,
-    val transport: String
-)
 
 class Cans {
     companion object {
