@@ -4,12 +4,17 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
-    <application
-        android:name=".CansCloudApplication">
+    <application android:name=".CansCloudApplication">
+        <activity
+            android:name=".call.CansCallActivity"
+            android:exported="false"
+            android:label="@string/title_activity_cans_call"
+            android:theme="@style/Theme.CansCloudAndroidSDK" />
+
         <service
             android:name=".telecom.TelecomConnectionService"
-            android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE"
-            android:exported="true">
+            android:exported="true"
+            android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE">
             <intent-filter>
                 <action android:name="android.telecom.ConnectionService" />
             </intent-filter>
@@ -22,7 +27,6 @@
                 <action android:name="org.linphone.core.action.PUSH_RECEIVED" />
             </intent-filter>
         </receiver>
-
         <receiver
             android:name=".core.BootReceiver"
             android:exported="true">
@@ -31,7 +35,6 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
-
     </application>
 
 </manifest>
