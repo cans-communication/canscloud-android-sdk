@@ -4,7 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
-import cc.cans.canscloud.sdk.CansCloudApplication.Companion.coreContextCansBase
+import cc.cans.canscloud.sdk.CansCloudApplication.Companion.coreContext
 import cc.cans.canscloud.sdk.CansCloudApplication.Companion.corePreferences
 import com.google.gson.Gson
 import org.linphone.core.AccountCreator
@@ -115,7 +115,7 @@ class Cans {
                 val domain = "${user.domain}:${user.port}"
 
                 val accountCreator = getAccountCreator(true)
-                coreContextCansBase.core.addListener(coreListener)
+                coreContext.core.addListener(coreListener)
 
                 accountCreator.username = user.username
                 accountCreator.password = user.password
@@ -133,7 +133,7 @@ class Cans {
 
                 if (proxyConfig == null) {
                     Log.e("[Assistant] [Generic Login] Account creator couldn't create proxy config")
-                    coreContextCansBase.core.removeListener(coreListener)
+                    coreContext.core.removeListener(coreListener)
                     //  onErrorEvent.value = Event("Error: Failed to create account object")
                     //waitForServerAnswer.value = false
                     return
@@ -147,7 +147,7 @@ class Cans {
                         "[Assistant] [Generic Login] Background mode with foreground service automatically enabled"
                     )
                     //corePreferences.keepServiceAlive = true
-                    coreContextCansBase.notificationsManager.startForeground()
+                    coreContext.notificationsManager.startForeground()
                 }
 
                 if (packageManager?.checkPermission(Manifest.permission.RECORD_AUDIO, packageName) != PackageManager.PERMISSION_GRANTED) {
@@ -158,16 +158,16 @@ class Cans {
         }
 
         fun username(): String {
-            coreContextCansBase.core.defaultAccount?.params?.identityAddress?.let {
+            coreContext.core.defaultAccount?.params?.identityAddress?.let {
                 return "${it.username}@${it.domain}:${it.port}"
             }
             return ""
         }
 
         private fun getAccountCreator(genericAccountCreator: Boolean = false): AccountCreator {
-            coreContextCansBase.core.loadConfigFromXml(corePreferences.linphoneDefaultValuesPath)
+            coreContext.core.loadConfigFromXml(corePreferences.linphoneDefaultValuesPath)
             accountCreator =
-                coreContextCansBase.core.createAccountCreator(corePreferences.xmlRpcServerUrl)
+                coreContext.core.createAccountCreator(corePreferences.xmlRpcServerUrl)
             accountCreator.language = Locale.getDefault().language
 
             if (genericAccountCreator != useGenericSipAccount) {
@@ -176,10 +176,10 @@ class Cans {
 
                 if (genericAccountCreator) {
                     Log.i("[Assistant] Loading default values")
-                    coreContextCansBase.core.loadConfigFromXml(corePreferences.defaultValuesPath)
+                    coreContext.core.loadConfigFromXml(corePreferences.defaultValuesPath)
                 } else {
                     Log.i("[Assistant] Loading linphone default values")
-                    coreContextCansBase.core.loadConfigFromXml(corePreferences.linphoneDefaultValuesPath)
+                    coreContext.core.loadConfigFromXml(corePreferences.linphoneDefaultValuesPath)
                 }
                 useGenericSipAccount = genericAccountCreator
             }
@@ -188,7 +188,7 @@ class Cans {
 
 
         fun getCountCalls(): Int {
-            val call = coreContextCansBase.core.callsNb
+            val call = coreContext.core.callsNb
             Log.i("[Application] getCountCalls : $call")
             return call
         }
@@ -199,7 +199,7 @@ class Cans {
             //coreContextCansBase.outgoingCall()
             val addressToCall = addressToCall
             if (addressToCall.isNotEmpty()) {
-                coreContextCansBase.startCall(addressToCall)
+                coreContext.startCall(addressToCall)
                 //   eraseAll()
             } else {
                 //setLastOutgoingCallAddress()
@@ -219,7 +219,7 @@ class Cans {
         }
 
         private fun setLastOutgoingCallAddress() {
-            val callLog = coreContextCansBase.core.lastOutgoingCallLog
+            val callLog = coreContext.core.lastOutgoingCallLog
             if (callLog != null) {
                 //  enteredUri.value = LinphoneUtils.getDisplayableAddress(callLog.remoteAddress).substringBefore("@").substringAfter("sip:")
             }

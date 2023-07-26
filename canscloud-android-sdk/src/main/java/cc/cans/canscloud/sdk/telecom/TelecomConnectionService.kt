@@ -23,7 +23,7 @@ import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
 import android.telecom.*
-import cc.cans.canscloud.sdk.CansCloudApplication.Companion.coreContextCansBase
+import cc.cans.canscloud.sdk.CansCloudApplication.Companion.coreContext
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import org.linphone.core.Call
 import org.linphone.core.Core
@@ -72,12 +72,12 @@ class TelecomConnectionService : ConnectionService() {
         super.onCreate()
 
         Log.i("[Telecom Connection Service] onCreate()")
-        coreContextCansBase.core.addListener(listener)
+        coreContext.core.addListener(listener)
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
         Log.i("[Telecom Connection Service] onUnbind()")
-        coreContextCansBase.core.removeListener(listener)
+        coreContext.core.removeListener(listener)
 
         return super.onUnbind(intent)
     }
@@ -86,7 +86,7 @@ class TelecomConnectionService : ConnectionService() {
         connectionManagerPhoneAccount: PhoneAccountHandle,
         request: ConnectionRequest
     ): Connection {
-        if (coreContextCansBase.core.callsNb == 0) {
+        if (coreContext.core.callsNb == 0) {
             Log.w("[Telecom Connection Service] No call in Core, aborting outgoing connection!")
             return Connection.createCanceledConnection()
         }
@@ -100,7 +100,7 @@ class TelecomConnectionService : ConnectionService() {
             var callId = extras.getString("Call-ID")
             val displayName = extras.getString("DisplayName")
             if (callId == null) {
-                callId = coreContextCansBase.core.currentCall?.callLog?.callId ?: ""
+                callId = coreContext.core.currentCall?.callLog?.callId ?: ""
             }
             Log.i("[Telecom Connection Service] Outgoing connection is for call [$callId] with display name [$displayName]")
 
@@ -135,7 +135,7 @@ class TelecomConnectionService : ConnectionService() {
         connectionManagerPhoneAccount: PhoneAccountHandle,
         request: ConnectionRequest
     ): Connection {
-        if (coreContextCansBase.core.callsNb == 0) {
+        if (coreContext.core.callsNb == 0) {
             Log.w("[Telecom Connection Service] No call in Core, aborting incoming connection!")
             return Connection.createCanceledConnection()
         }
@@ -150,7 +150,7 @@ class TelecomConnectionService : ConnectionService() {
             var callId = incomingExtras?.getString("Call-ID")
             val displayName = incomingExtras?.getString("DisplayName")
             if (callId == null) {
-                callId = coreContextCansBase.core.currentCall?.callLog?.callId ?: ""
+                callId = coreContext.core.currentCall?.callLog?.callId ?: ""
             }
             Log.i("[Telecom Connection Service] Incoming connection is for call [$callId] with display name [$displayName]")
 

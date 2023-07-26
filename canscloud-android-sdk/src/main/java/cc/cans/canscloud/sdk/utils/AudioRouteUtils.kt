@@ -20,7 +20,7 @@
 package cc.cans.canscloud.sdk.utils
 
 import android.telecom.CallAudioState
-import cc.cans.canscloud.sdk.CansCloudApplication.Companion.coreContextCansBase
+import cc.cans.canscloud.sdk.CansCloudApplication.Companion.coreContext
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import org.linphone.core.AudioDevice
 import org.linphone.core.Call
@@ -45,18 +45,18 @@ class AudioRouteUtils {
             }
             val typesNames = stringBuilder.toString()
 
-            if (coreContextCansBase.core.callsNb == 0) {
+            if (coreContext.core.callsNb == 0) {
                 Log.e("[Audio Route Helper] No call found, aborting [$typesNames] audio route change")
                 return
             }
-            val currentCall = call ?: coreContextCansBase.core.currentCall ?: coreContextCansBase.core.calls[0]
-            val conference = coreContextCansBase.core.conference
+            val currentCall = call ?: coreContext.core.currentCall ?: coreContext.core.calls[0]
+            val conference = coreContext.core.conference
             val capability = if (output)
                 AudioDevice.Capabilities.CapabilityPlay
             else
                 AudioDevice.Capabilities.CapabilityRecord
 
-            for (audioDevice in coreContextCansBase.core.audioDevices) {
+            for (audioDevice in coreContext.core.audioDevices) {
                 if (types.contains(audioDevice.type) && audioDevice.hasCapability(capability)) {
                     if (conference != null && conference.isIn) {
                         Log.i("[Audio Route Helper] Found [${audioDevice.type}] ${if (output) "playback" else "recorder"} audio device [${audioDevice.deviceName}], routing conference audio to it")
@@ -96,7 +96,7 @@ class AudioRouteUtils {
             types: List<AudioDevice.Type>,
             skipTelecom: Boolean = false
         ) {
-            val currentCall = call ?: coreContextCansBase.core.currentCall ?: coreContextCansBase.core.calls.firstOrNull()
+            val currentCall = call ?: coreContext.core.currentCall ?: coreContext.core.calls.firstOrNull()
             if (currentCall != null && !skipTelecom && TelecomHelper.exists()) {
                 Log.i("[Audio Route Helper] Call provided & Telecom Helper exists, trying to dispatch audio route change through Telecom API")
                 val connection = TelecomHelper.get().findConnectionForCallId(currentCall.callLog.callId.orEmpty())
@@ -144,12 +144,12 @@ class AudioRouteUtils {
         }
 
         fun isSpeakerAudioRouteCurrentlyUsed(call: Call? = null): Boolean {
-            if (coreContextCansBase.core.callsNb == 0) {
+            if (coreContext.core.callsNb == 0) {
                 Log.w("[Audio Route Helper] No call found, so speaker audio route isn't used")
                 return false
             }
-            val currentCall = call ?: coreContextCansBase.core.currentCall ?: coreContextCansBase.core.calls[0]
-            val conference = coreContextCansBase.core.conference
+            val currentCall = call ?: coreContext.core.currentCall ?: coreContext.core.calls[0]
+            val conference = coreContext.core.conference
 
             val audioDevice = if (conference != null && conference.isIn) conference.outputAudioDevice else currentCall.outputAudioDevice
             Log.i("[Audio Route Helper] Playback audio device currently in use is [${audioDevice?.deviceName}] with type (${audioDevice?.type})")
@@ -157,12 +157,12 @@ class AudioRouteUtils {
         }
 
         fun isBluetoothAudioRouteCurrentlyUsed(call: Call? = null): Boolean {
-            if (coreContextCansBase.core.callsNb == 0) {
+            if (coreContext.core.callsNb == 0) {
                 Log.w("[Audio Route Helper] No call found, so bluetooth audio route isn't used")
                 return false
             }
-            val currentCall = call ?: coreContextCansBase.core.currentCall ?: coreContextCansBase.core.calls[0]
-            val conference = coreContextCansBase.core.conference
+            val currentCall = call ?: coreContext.core.currentCall ?: coreContext.core.calls[0]
+            val conference = coreContext.core.conference
 
             val audioDevice = if (conference != null && conference.isIn) conference.outputAudioDevice else currentCall.outputAudioDevice
             Log.i("[Audio Route Helper] Playback audio device currently in use is [${audioDevice?.deviceName}] with type (${audioDevice?.type})")
@@ -170,7 +170,7 @@ class AudioRouteUtils {
         }
 
         fun isBluetoothAudioRouteAvailable(): Boolean {
-            for (audioDevice in coreContextCansBase.core.audioDevices) {
+            for (audioDevice in coreContext.core.audioDevices) {
                 if (audioDevice.type == AudioDevice.Type.Bluetooth &&
                     audioDevice.hasCapability(AudioDevice.Capabilities.CapabilityPlay)
                 ) {
@@ -182,7 +182,7 @@ class AudioRouteUtils {
         }
 
         private fun isBluetoothAudioRecorderAvailable(): Boolean {
-            for (audioDevice in coreContextCansBase.core.audioDevices) {
+            for (audioDevice in coreContext.core.audioDevices) {
                 if (audioDevice.type == AudioDevice.Type.Bluetooth &&
                     audioDevice.hasCapability(AudioDevice.Capabilities.CapabilityRecord)
                 ) {
@@ -194,7 +194,7 @@ class AudioRouteUtils {
         }
 
         fun isHeadsetAudioRouteAvailable(): Boolean {
-            for (audioDevice in coreContextCansBase.core.audioDevices) {
+            for (audioDevice in coreContext.core.audioDevices) {
                 if ((audioDevice.type == AudioDevice.Type.Headset || audioDevice.type == AudioDevice.Type.Headphones) &&
                     audioDevice.hasCapability(AudioDevice.Capabilities.CapabilityPlay)
                 ) {
@@ -206,7 +206,7 @@ class AudioRouteUtils {
         }
 
         private fun isHeadsetAudioRecorderAvailable(): Boolean {
-            for (audioDevice in coreContextCansBase.core.audioDevices) {
+            for (audioDevice in coreContext.core.audioDevices) {
                 if ((audioDevice.type == AudioDevice.Type.Headset || audioDevice.type == AudioDevice.Type.Headphones) &&
                     audioDevice.hasCapability(AudioDevice.Capabilities.CapabilityRecord)
                 ) {

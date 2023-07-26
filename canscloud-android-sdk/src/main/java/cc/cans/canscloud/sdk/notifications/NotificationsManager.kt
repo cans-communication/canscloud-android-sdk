@@ -23,7 +23,7 @@ import android.app.Notification
 import android.app.NotificationManager
 import android.content.Context
 import androidx.core.app.NotificationManagerCompat
-import cc.cans.canscloud.sdk.CansCloudApplication.Companion.coreContextCansBase
+import cc.cans.canscloud.sdk.CansCloudApplication.Companion.coreContext
 import cc.cans.canscloud.sdk.CansCloudApplication.Companion.corePreferences
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.*
@@ -217,7 +217,7 @@ class NotificationsManager(private val context: Context) {
     }
 
     fun onCoreReady() {
-        coreContextCansBase.core.addListener(listener)
+        coreContext.core.addListener(listener)
     }
 
     fun destroy() {
@@ -239,7 +239,7 @@ class NotificationsManager(private val context: Context) {
             }
         }
 
-        coreContextCansBase.core.removeListener(listener)
+        coreContext.core.removeListener(listener)
     }
 
     private fun notify(id: Int, notification: Notification, tag: String? = null) {
@@ -293,9 +293,9 @@ class NotificationsManager(private val context: Context) {
                     Log.i("[Notifications Manager] There is already a foreground service notification, no need to use the call notification to keep Service alive")
                 }
             }
-            coreContextCansBase.core.callsNb > 0 -> {
+            coreContext.core.callsNb > 0 -> {
                 // When this method will be called, we won't have any notification yet
-                val call = coreContextCansBase.core.currentCall ?: coreContextCansBase.core.calls[0]
+                val call = coreContext.core.currentCall ?: coreContext.core.calls[0]
                 when (call.state) {
                     Call.State.IncomingReceived, Call.State.IncomingEarlyMedia -> {
                         Log.i("[Notifications Manager] Waiting for call to be in state Connected before creating service notification")

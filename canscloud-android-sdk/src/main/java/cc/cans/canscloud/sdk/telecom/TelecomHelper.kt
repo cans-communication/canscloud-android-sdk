@@ -30,7 +30,7 @@ import android.telecom.PhoneAccount
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
 import android.telecom.TelecomManager.*
-import cc.cans.canscloud.sdk.CansCloudApplication.Companion.coreContextCansBase
+import cc.cans.canscloud.sdk.CansCloudApplication.Companion.coreContext
 import cc.cans.canscloud.sdk.R
 import cc.cans.canscloud.sdk.utils.SingletonHolder
 import java.lang.Exception
@@ -71,12 +71,12 @@ class TelecomHelper private constructor(context: Context) {
     }
 
     init {
-        coreContextCansBase.core.addListener(listener)
+        coreContext.core.addListener(listener)
         Log.i("[Telecom Helper] Created")
     }
 
     fun destroy() {
-        coreContextCansBase.core.removeListener(listener)
+        coreContext.core.removeListener(listener)
         Log.i("[Telecom Helper] Destroyed")
     }
 
@@ -163,8 +163,8 @@ class TelecomHelper private constructor(context: Context) {
         )
         // Take care that identity may be parsed, otherwise Android OS may crash during startup
         // and user will have to do a factory reset...
-        val identity = coreContextCansBase.core.defaultAccount?.params?.identityAddress?.asStringUriOnly()
-            ?: coreContextCansBase.core.createPrimaryContactParsed()?.asStringUriOnly()
+        val identity = coreContext.core.defaultAccount?.params?.identityAddress?.asStringUriOnly()
+            ?: coreContext.core.createPrimaryContactParsed()?.asStringUriOnly()
             ?: "sip:linphone.android@sip.linphone.org"
 
         val address = Uri.parse(identity)
