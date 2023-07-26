@@ -21,7 +21,7 @@
         </activity>
 
         <activity
-            android:name=".call.CansCallActivity"
+            android:name="cc.cans.canscloud.sdk.call.CansCallActivity"
             android:launchMode="singleTask" />
 
     </application>
