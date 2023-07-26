@@ -20,7 +20,7 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
--keep public class cc.cans.canscloud.sdk.Cans
-#-keepclasseswithmembernames class * {
-#    native <methods>;
-#}
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
