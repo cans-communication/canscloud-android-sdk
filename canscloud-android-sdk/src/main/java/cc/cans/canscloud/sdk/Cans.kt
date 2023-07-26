@@ -201,10 +201,10 @@ class Cans {
 
 
         fun terminateCall() {
-            if (core.callsNb == 0) return
+            if (coreContext.core.callsNb == 0) return
 
             // If the call state isn't paused, we can get it using core.currentCall
-            val call = if (core.currentCall != null) core.currentCall else core.calls[0]
+            val call = if (coreContext.core.currentCall != null) coreContext.core.currentCall else coreContext.core.calls[0]
             call ?: return
 
             // Terminating a call is quite simple
