@@ -66,13 +66,4 @@ class CansCloudApplication : Application(), LifecycleObserver {
             coreContext.start()
         }
     }
-
-
-    override fun onCreate() {
-        super.onCreate()
-        val appName = getString(R.string.app_name)
-        android.util.Log.i("[$appName]", "Application is being created")
-        ensureCoreExists(applicationContext)
-        Log.i("[Application] Created")
-    }
 }
