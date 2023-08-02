@@ -211,6 +211,11 @@ class Cans {
             call.terminate()
         }
 
+        fun durationTime() : Int? {
+            val durationTime = coreContext.core.currentCall?.duration
+            return durationTime
+        }
+
         private fun setLastOutgoingCallAddress() {
             val callLog = coreContext.core.lastOutgoingCallLog
             if (callLog != null) {
