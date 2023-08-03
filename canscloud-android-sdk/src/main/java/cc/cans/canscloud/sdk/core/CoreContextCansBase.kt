@@ -55,9 +55,22 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 import kotlin.concurrent.schedule
 import cc.cans.canscloud.sdk.R
+import cc.cans.canscloud.sdk.callback.ContextCallback
+import cc.cans.canscloud.sdk.core.CoreContext.CallbackListeners.listeners
 
 
 class CoreContext (val context: Context, coreConfig: Config) {
+
+    object CallbackListeners {
+        val listeners = ArrayList<ContextCallback>()
+        fun registerListener(listener: ContextCallback) {
+            listeners.add(listener)
+        }
+
+        fun unRegisterListener(listener: ContextCallback) {
+            listeners.remove(listener)
+        }
+    }
 
     var stopped = false
     val core: Core
@@ -184,6 +197,7 @@ class CoreContext (val context: Context, coreConfig: Config) {
                     Log.i("[Context] We were asked to start the call recording automatically")
                     call.startRecording()
                 }
+                listeners.forEach { it.onConnectedCall() }
                 onCallStarted()
             } else if (state == Call.State.StreamsRunning) {
                 // Do not automatically route audio to bluetooth after first call

@@ -7,6 +7,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import cc.cans.canscloud.sdk.CansCloudApplication.Companion.coreContext
 import cc.cans.canscloud.sdk.CansCloudApplication.Companion.corePreferences
+import cc.cans.canscloud.sdk.callback.ContextCallback
+import cc.cans.canscloud.sdk.core.CoreContext
 import com.google.gson.Gson
 import org.linphone.core.AccountCreator
 import org.linphone.core.Core
@@ -243,6 +245,10 @@ class Cans {
                     }
                 }
             }
+        }
+
+        fun registerListenerCall(listener: ContextCallback){
+            CoreContext.CallbackListeners.registerListener(listener)
         }
     }
 }
