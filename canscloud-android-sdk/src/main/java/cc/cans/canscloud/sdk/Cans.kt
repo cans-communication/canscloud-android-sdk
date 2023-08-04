@@ -5,6 +5,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
+import android.widget.RadioGroup
 import cc.cans.canscloud.sdk.callback.ContextCallback
 import cc.cans.canscloud.sdk.core.CorePreferences
 import com.google.gson.Gson
@@ -171,16 +172,15 @@ class Cans {
             jsonString?.let {
                 val gson = Gson()
                 val user = gson.fromJson(it, UserService::class.java)
-                var account = core.defaultAccount?.params?.identityAddress
-                if (username().isEmpty() || (user.username != account?.username) || (user.domain != account.domain) || (user.port != account.port.toString())) {
-                    var username = user.username
-                    var password = user.password
-                    var domain = "${user.domain}:${user.port}"
-                    var transportType = TransportType.Tcp
-                    if (user.transport.lowercase() == "tcp") {
-                        transportType = TransportType.Tcp
+                val account = core.defaultAccount?.params
+                if (username().isEmpty() || (user.username != account?.identityAddress?.username) || (user.domain != account.identityAddress?.domain) || (user.port != account.identityAddress?.port.toString() || (user.transport.lowercase() != account.transport?.name?.lowercase()))) {
+                    val username = user.username
+                    val password = user.password
+                    val domain = "${user.domain}:${user.port}"
+                    var transportType = if (user.transport.lowercase() == "tcp") {
+                        TransportType.Tcp
                     } else {
-                        transportType = TransportType.Udp
+                        TransportType.Udp
                     }
 
                     val authInfo = Factory.instance()
