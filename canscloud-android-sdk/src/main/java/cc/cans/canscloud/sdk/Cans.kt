@@ -6,6 +6,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import cc.cans.canscloud.sdk.callback.ContextCallback
+import cc.cans.canscloud.sdk.core.CorePreferences
 import com.google.gson.Gson
 import org.linphone.core.AccountCreator
 import org.linphone.core.Address
@@ -13,6 +14,7 @@ import org.linphone.core.Call
 import org.linphone.core.Core
 import org.linphone.core.CoreListenerStub
 import org.linphone.core.Factory
+import org.linphone.core.LogLevel
 import org.linphone.core.MediaEncryption
 import org.linphone.core.ProxyConfig
 import org.linphone.core.R
@@ -28,6 +30,8 @@ class Cans {
 
     companion object {
         lateinit var core: Core
+        lateinit var corePreferences: CorePreferences
+
         private var proxyConfigToCheck: ProxyConfig? = null
         private lateinit var accountCreator: AccountCreator
         private var useGenericSipAccount: Boolean = false
@@ -133,9 +137,16 @@ class Cans {
             val factory = Factory.instance()
             core = factory.createCore(null, null, activity)
 
-            if (username().isEmpty()) {
-                register(activity)
-            }
+            corePreferences = CorePreferences(activity)
+            corePreferences.copyAssetsFromPackage()
+
+            val config = Factory.instance().createConfigWithFactory(corePreferences.configPath, corePreferences.factoryConfigPath)
+            corePreferences.config = config
+            core = Factory.instance().createCoreWithConfig(config, activity)
+            core.start()
+
+            println("register1: ${core.defaultAccount?.params?.identityAddress?.username}")
+            register(activity)
             callback()
         }
 
@@ -160,47 +171,50 @@ class Cans {
             jsonString?.let {
                 val gson = Gson()
                 val user = gson.fromJson(it, UserService::class.java)
-                var username = user.username
-                var password = user.password
-                var domain = "${user.domain}:${user.port}"
-                var transportType : TransportType
-                if (user.transport.lowercase() == "tcp") {
-                    transportType = TransportType.Tcp
-                } else {
-                    transportType = TransportType.Udp
-                }
+                var account = core.defaultAccount?.params?.identityAddress
+                if (username().isEmpty() || (user.username != account?.username) || (user.domain != account.domain) || (user.port != account.port.toString())) {
+                    var username = user.username
+                    var password = user.password
+                    var domain = "${user.domain}:${user.port}"
+                    var transportType = TransportType.Tcp
+                    if (user.transport.lowercase() == "tcp") {
+                        transportType = TransportType.Tcp
+                    } else {
+                        transportType = TransportType.Udp
+                    }
 
-                val authInfo = Factory.instance()
-                    .createAuthInfo(username, null, password, null, null, domain, null)
+                    val authInfo = Factory.instance()
+                        .createAuthInfo(username, null, password, null, null, domain, null)
 
-                val params = core.createAccountParams()
-                val identity = Factory.instance().createAddress("sip:$username@$domain")
-                params.identityAddress = identity
+                    val params = core.createAccountParams()
+                    val identity = Factory.instance().createAddress("sip:$username@$domain")
+                    params.identityAddress = identity
 
-                val address = Factory.instance().createAddress("sip:$domain")
-                address?.transport = transportType
-                params.serverAddress = address
-                params.isRegisterEnabled = true
-                val account = core.createAccount(params)
+                    val address = Factory.instance().createAddress("sip:$domain")
+                    address?.transport = transportType
+                    params.serverAddress = address
+                    params.isRegisterEnabled = true
+                    val account = core.createAccount(params)
 
-                core.addAuthInfo(authInfo)
-                core.addAccount(account)
+                    core.addAuthInfo(authInfo)
+                    core.addAccount(account)
 
-                // Asks the CaptureTextureView to resize to match the captured video's size ratio
-                //core.config.setBool("video", "auto_resize_preview_to_keep_ratio", true)
+                    // Asks the CaptureTextureView to resize to match the captured video's size ratio
+                    //core.config.setBool("video", "auto_resize_preview_to_keep_ratio", true)
 
-                core.defaultAccount = account
-                core.addListener(coreListener)
-                core.start()
+                    core.defaultAccount = account
+                    core.addListener(coreListener)
+                    core.start()
 
-                // We will need the RECORD_AUDIO permission for video call
-                if (packageManager?.checkPermission(
-                        Manifest.permission.RECORD_AUDIO,
-                        packageName
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
-                    activity.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 0)
-                    return
+                    // We will need the RECORD_AUDIO permission for video call
+                    if (packageManager?.checkPermission(
+                            Manifest.permission.RECORD_AUDIO,
+                            packageName
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        activity.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 0)
+                        return
+                    }
                 }
             }
         }
