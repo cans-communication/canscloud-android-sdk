@@ -5,11 +5,6 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
-import android.widget.Button
-import android.widget.EditText
-import android.widget.TextView
-import cc.cans.canscloud.sdk.Cans.CallbackListeners.listeners
-import cc.cans.canscloud.sdk.CansCloudApplication.Companion.corePreferences
 import cc.cans.canscloud.sdk.callback.ContextCallback
 import com.google.gson.Gson
 import org.linphone.core.AccountCreator
@@ -30,16 +25,6 @@ import java.util.ArrayList
 import java.util.Locale
 
 class Cans {
-    object CallbackListeners {
-        val listeners = ArrayList<ContextCallback>()
-        fun registerListener(listener: ContextCallback) {
-            listeners.add(listener)
-        }
-
-        fun unRegisterListener(listener: ContextCallback) {
-            listeners.remove(listener)
-        }
-    }
 
     companion object {
         lateinit var core: Core
@@ -48,6 +33,7 @@ class Cans {
         private var useGenericSipAccount: Boolean = false
         var packageManager : PackageManager? = null
         var packageName : String = ""
+        val listeners = ArrayList<ContextCallback>()
 
         private val coreListener = object : CoreListenerStub() {
             override fun onRegistrationStateChanged(
@@ -122,6 +108,18 @@ class Cans {
             }
         }
 
+        fun registerListenerCall(listener: ContextCallback){
+            registerListener(listener)
+        }
+
+        private fun registerListener(listener: ContextCallback) {
+            listeners.add(listener)
+        }
+
+        private fun unRegisterListener(listener: ContextCallback) {
+            listeners.remove(listener)
+        }
+
         fun config(
             activity: Activity,
             packageManager: PackageManager,
@@ -139,10 +137,6 @@ class Cans {
                 register(activity)
             }
             callback()
-        }
-
-        fun registerListenerCall(listener: ContextCallback){
-            CallbackListeners.registerListener(listener)
         }
 
         private fun loadJSONFromAsset(context: Context, fileName: String): String? {

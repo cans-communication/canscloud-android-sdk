@@ -32,7 +32,7 @@ class MainActivity : AppCompatActivity() {
         Cans.config(this, packageManager, packageName, "robinhood") {
             binding.register.text = Cans.username()
         }
-        
+
         binding.buttonCall.setOnClickListener {
             val intent = Intent(this, CansCallActivity::class.java)
             intent.putExtra("phoneNumber", binding.editTextPhoneNumber.text.toString())
