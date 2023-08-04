@@ -49,228 +49,6 @@ class Cans {
         var packageManager : PackageManager? = null
         var packageName : String = ""
 
-        fun config(
-            activity: Activity,
-            packageManager: PackageManager,
-            packageName: String,
-            companyKey: String,
-            callback: () -> Unit
-        ) {
-            //CansCloudApplication.ensureCoreExists(activity.applicationContext)
-            Companion.packageManager = packageManager
-            Companion.packageName = packageName
-
-            val factory = Factory.instance()
-            core = factory.createCore(null, null, activity)
-
-            if (username().isEmpty()) {
-                register(activity)
-            }
-            callback()
-
-//            val factory = Factory.instance()
-//            factory.setDebugMode(true, "Hello Linphone")
-//            core = factory.createCore(null, null, context)
-        }
-
-        private fun loadJSONFromAsset(context: Context, fileName: String): String? {
-            return try {
-                val inputStream: InputStream = context.assets.open(fileName)
-                val size: Int = inputStream.available()
-                val buffer = ByteArray(size)
-                inputStream.read(buffer)
-                inputStream.close()
-                String(buffer, Charsets.UTF_8)
-            } catch (e: IOException) {
-                e.printStackTrace()
-                null
-            }
-        }
-
-        private fun register(activity: Activity) {
-            val fileName = "json/get_user.json"
-            val jsonString = loadJSONFromAsset(context = activity.applicationContext, fileName)
-
-            jsonString?.let {
-                val gson = Gson()
-                val user = gson.fromJson(it, UserService::class.java)
-                var username = user.username
-                var password = user.password
-                var domain = "${user.domain}:${user.port}"
-                var transportType : TransportType
-                if (user.transport.lowercase() == "tcp") {
-                    transportType = TransportType.Tcp
-                } else {
-                    transportType = TransportType.Udp
-                }
-
-                val authInfo = Factory.instance()
-                    .createAuthInfo(username, null, password, null, null, domain, null)
-
-                val params = core.createAccountParams()
-                val identity = Factory.instance().createAddress("sip:$username@$domain")
-                params.identityAddress = identity
-
-                val address = Factory.instance().createAddress("sip:$domain")
-                address?.transport = transportType
-                params.serverAddress = address
-                params.isRegisterEnabled = true
-                val account = core.createAccount(params)
-
-                core.addAuthInfo(authInfo)
-                core.addAccount(account)
-
-                // Asks the CaptureTextureView to resize to match the captured video's size ratio
-                //core.config.setBool("video", "auto_resize_preview_to_keep_ratio", true)
-
-                core.defaultAccount = account
-                core.addListener(coreListener)
-                core.start()
-
-                // We will need the RECORD_AUDIO permission for video call
-                if (packageManager?.checkPermission(
-                        Manifest.permission.RECORD_AUDIO,
-                        packageName
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
-                    activity.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 0)
-                    return
-                }
-            }
-        }
-
-//        private fun register(activity: Activity) {
-//            val fileName = "json/get_user.json"
-//            val jsonString = loadJSONFromAsset(context = activity.applicationContext, fileName)
-//
-//            jsonString?.let {
-//                val gson = Gson()
-//                val user = gson.fromJson(it, UserService::class.java)
-//
-//                val domain = "${user.domain}:${user.port}"
-//
-//                val accountCreator = getAccountCreator(true)
-//                core.addListener(coreListener)
-//
-//                accountCreator.username = user.username
-//                accountCreator.password = user.password
-//                accountCreator.domain = domain
-//                accountCreator.displayName = ""
-//
-//                if (user.transport.lowercase() == "tcp") {
-//                    accountCreator.transport = TransportType.Tcp
-//                } else {
-//                    accountCreator.transport = TransportType.Udp
-//                }
-//
-//                val proxyConfig: ProxyConfig? = accountCreator.createProxyConfig()
-//                proxyConfigToCheck = proxyConfig
-//
-//                if (proxyConfig == null) {
-//                    Log.e("[Assistant] [Generic Login] Account creator couldn't create proxy config")
-//                    core.removeListener(coreListener)
-//                    //  onErrorEvent.value = Event("Error: Failed to create account object")
-//                    //waitForServerAnswer.value = false
-//                    return
-//                }
-//
-//                Log.i("[Assistant] [Generic Login] Proxy config created")
-//                // The following is required to keep the app alive
-//                // and be able to receive calls while in background
-//                if (domain != corePreferences.defaultDomain) {
-//                    Log.i(
-//                        "[Assistant] [Generic Login] Background mode with foreground service automatically enabled"
-//                    )
-//                    //corePreferences.keepServiceAlive = true
-//                    //coreContext.notificationsManager.startForeground()
-//                }
-//
-//                if (packageManager?.checkPermission(Manifest.permission.RECORD_AUDIO, packageName) != PackageManager.PERMISSION_GRANTED) {
-//                    activity.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 0)
-//                    return
-//                }
-//            }
-//        }
-
-        fun username(): String {
-            core.defaultAccount?.params?.identityAddress?.let {
-                return "${it.username}@${it.domain}:${it.port}"
-            }
-            return ""
-        }
-
-        private fun getAccountCreator(genericAccountCreator: Boolean = false): AccountCreator {
-            core.loadConfigFromXml(corePreferences.linphoneDefaultValuesPath)
-            accountCreator = core.createAccountCreator(corePreferences.xmlRpcServerUrl)
-            accountCreator.language = Locale.getDefault().language
-
-            if (genericAccountCreator != useGenericSipAccount) {
-                accountCreator.reset()
-                accountCreator.language = Locale.getDefault().language
-
-                if (genericAccountCreator) {
-                    Log.i("[Assistant] Loading default values")
-                    core.loadConfigFromXml(corePreferences.defaultValuesPath)
-                } else {
-                    Log.i("[Assistant] Loading linphone default values")
-                    core.loadConfigFromXml(corePreferences.linphoneDefaultValuesPath)
-                }
-                useGenericSipAccount = genericAccountCreator
-            }
-            return accountCreator
-        }
-
-
-        fun getCountCalls(): Int {
-            val call = core.callsNb
-            Log.i("[Application] getCountCalls : $call")
-            return call
-        }
-
-        fun startCall(addressToCall: String) {
-            val remoteAddress: Address? = core.interpretUrl(addressToCall)
-            remoteAddress ?: return // If address parsing fails, we can't continue with outgoing call process
-
-            // We also need a CallParams object
-            // Create call params expects a Call object for incoming calls, but for outgoing we must use null safely
-            val params = core.createCallParams(null)
-            params ?: return // Same for params
-
-            // We can now configure it
-            // Here we ask for no encryption but we could ask for ZRTP/SRTP/DTLS
-            params.mediaEncryption = MediaEncryption.None
-            // If we wanted to start the call with video directly
-            //params.enableVideo(true)
-
-            // Finally we start the call
-            core.inviteAddressWithParams(remoteAddress, params)
-            // Call process can be followed in onCallStateChanged callback from core listener
-        }
-
-
-        fun terminateCall() {
-            if (core.callsNb == 0) return
-
-            // If the call state isn't paused, we can get it using core.currentCall
-            val call = if (core.currentCall != null) core.currentCall else core.calls[0]
-            call ?: return
-
-            // Terminating a call is quite simple
-            call.terminate()
-        }
-
-        fun durationTime() : Int? {
-            val durationTime = core.currentCall?.duration
-            return durationTime
-        }
-
-        private fun setLastOutgoingCallAddress() {
-            val callLog = core.lastOutgoingCallLog
-            if (callLog != null) {
-                //  enteredUri.value = LinphoneUtils.getDisplayableAddress(callLog.remoteAddress).substringBefore("@").substringAfter("sip:")
-            }
-        }
-
         private val coreListener = object : CoreListenerStub() {
             override fun onRegistrationStateChanged(
                 core: Core,
@@ -344,8 +122,142 @@ class Cans {
             }
         }
 
+        fun config(
+            activity: Activity,
+            packageManager: PackageManager,
+            packageName: String,
+            companyKey: String,
+            callback: () -> Unit
+        ) {
+            Companion.packageManager = packageManager
+            Companion.packageName = packageName
+
+            val factory = Factory.instance()
+            core = factory.createCore(null, null, activity)
+
+            if (username().isEmpty()) {
+                register(activity)
+            }
+            callback()
+        }
+
         fun registerListenerCall(listener: ContextCallback){
             CallbackListeners.registerListener(listener)
+        }
+
+        private fun loadJSONFromAsset(context: Context, fileName: String): String? {
+            return try {
+                val inputStream: InputStream = context.assets.open(fileName)
+                val size: Int = inputStream.available()
+                val buffer = ByteArray(size)
+                inputStream.read(buffer)
+                inputStream.close()
+                String(buffer, Charsets.UTF_8)
+            } catch (e: IOException) {
+                e.printStackTrace()
+                null
+            }
+        }
+
+        private fun register(activity: Activity) {
+            val fileName = "json/get_user.json"
+            val jsonString = loadJSONFromAsset(context = activity.applicationContext, fileName)
+
+            jsonString?.let {
+                val gson = Gson()
+                val user = gson.fromJson(it, UserService::class.java)
+                var username = user.username
+                var password = user.password
+                var domain = "${user.domain}:${user.port}"
+                var transportType : TransportType
+                if (user.transport.lowercase() == "tcp") {
+                    transportType = TransportType.Tcp
+                } else {
+                    transportType = TransportType.Udp
+                }
+
+                val authInfo = Factory.instance()
+                    .createAuthInfo(username, null, password, null, null, domain, null)
+
+                val params = core.createAccountParams()
+                val identity = Factory.instance().createAddress("sip:$username@$domain")
+                params.identityAddress = identity
+
+                val address = Factory.instance().createAddress("sip:$domain")
+                address?.transport = transportType
+                params.serverAddress = address
+                params.isRegisterEnabled = true
+                val account = core.createAccount(params)
+
+                core.addAuthInfo(authInfo)
+                core.addAccount(account)
+
+                // Asks the CaptureTextureView to resize to match the captured video's size ratio
+                //core.config.setBool("video", "auto_resize_preview_to_keep_ratio", true)
+
+                core.defaultAccount = account
+                core.addListener(coreListener)
+                core.start()
+
+                // We will need the RECORD_AUDIO permission for video call
+                if (packageManager?.checkPermission(
+                        Manifest.permission.RECORD_AUDIO,
+                        packageName
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    activity.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 0)
+                    return
+                }
+            }
+        }
+
+        fun username(): String {
+            core.defaultAccount?.params?.identityAddress?.let {
+                return "${it.username}@${it.domain}:${it.port}"
+            }
+            return ""
+        }
+
+        fun getCountCalls(): Int {
+            val call = core.callsNb
+            Log.i("[Application] getCountCalls : $call")
+            return call
+        }
+
+        fun startCall(addressToCall: String) {
+            val remoteAddress: Address? = core.interpretUrl(addressToCall)
+            remoteAddress ?: return // If address parsing fails, we can't continue with outgoing call process
+
+            // We also need a CallParams object
+            // Create call params expects a Call object for incoming calls, but for outgoing we must use null safely
+            val params = core.createCallParams(null)
+            params ?: return // Same for params
+
+            // We can now configure it
+            // Here we ask for no encryption but we could ask for ZRTP/SRTP/DTLS
+            params.mediaEncryption = MediaEncryption.None
+            // If we wanted to start the call with video directly
+            //params.enableVideo(true)
+
+            // Finally we start the call
+            core.inviteAddressWithParams(remoteAddress, params)
+            // Call process can be followed in onCallStateChanged callback from core listener
+        }
+
+        fun terminateCall() {
+            if (core.callsNb == 0) return
+
+            // If the call state isn't paused, we can get it using core.currentCall
+            val call = if (core.currentCall != null) core.currentCall else core.calls[0]
+            call ?: return
+
+            // Terminating a call is quite simple
+            call.terminate()
+        }
+
+        fun durationTime() : Int? {
+            val durationTime = core.currentCall?.duration
+            return durationTime
         }
     }
 }
