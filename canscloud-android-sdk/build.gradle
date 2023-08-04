@@ -132,7 +132,7 @@ publishing {
         release(MavenPublication) {
             groupId = 'com.github.cans-communication'
             artifactId = 'canscloud-android-sdk'
-            version = '0.1.25'
+            version = '0.1.26'
 
             afterEvaluate {
                 from components.release

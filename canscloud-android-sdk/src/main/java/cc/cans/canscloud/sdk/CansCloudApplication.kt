@@ -23,7 +23,6 @@ import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
 import androidx.lifecycle.LifecycleObserver
-import cc.cans.canscloud.sdk.core.CoreContext
 import cc.cans.canscloud.sdk.core.CorePreferences
 import org.linphone.core.*
 import org.linphone.core.tools.Log
@@ -33,13 +32,13 @@ class CansCloudApplication : Application(), LifecycleObserver {
         @SuppressLint("StaticFieldLeak")
         lateinit var corePreferences: CorePreferences
         @SuppressLint("StaticFieldLeak")
-        lateinit var coreContext: CoreContext
+        //lateinit var coreContext: CoreContext
 
         fun ensureCoreExists(context: Context, pushReceived: Boolean = false) {
-            if (Companion::coreContext.isInitialized && !coreContext.stopped) {
-                Log.d("[Application] Skipping Core creation (push received? $pushReceived)")
-                return
-            }
+//            if (Companion::coreContext.isInitialized && !coreContext.stopped) {
+//                Log.d("[Application] Skipping Core creation (push received? $pushReceived)")
+//                return
+//            }
 
             Factory.instance().setLogCollectionPath(context.filesDir.absolutePath)
             Factory.instance().enableLogCollection(LogCollectionState.Enabled)
@@ -48,7 +47,7 @@ class CansCloudApplication : Application(), LifecycleObserver {
             corePreferences.copyAssetsFromPackage()
 
             if (corePreferences.vfsEnabled) {
-                CoreContext.activateVFS()
+               // CoreContext.activateVFS()
             }
 
             val config = Factory.instance().createConfigWithFactory(corePreferences.configPath, corePreferences.factoryConfigPath)
@@ -62,8 +61,8 @@ class CansCloudApplication : Application(), LifecycleObserver {
             }
 
             Log.i("[Application] Core context created ${if (pushReceived) "from push" else ""}")
-            coreContext = CoreContext(context, config)
-            coreContext.start()
+//            coreContext = CoreContext(context, config)
+//            coreContext.start()
         }
     }
 }

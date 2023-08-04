@@ -24,9 +24,9 @@ import android.content.SharedPreferences
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import cc.cans.canscloud.sdk.CansCloudApplication.Companion.coreContext
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import cc.cans.canscloud.sdk.Cans.Companion.core
 import org.linphone.core.*
 import org.linphone.core.tools.Log
 import java.security.KeyStoreException
@@ -34,7 +34,7 @@ import java.security.KeyStoreException
 class CorePreferences constructor(private val context: Context) {
     private var _config: Config? = null
     var config: Config
-        get() = _config ?: coreContext.core.config
+        get() = _config ?: core.config
         set(value) {
             _config = value
         }
@@ -93,18 +93,6 @@ class CorePreferences constructor(private val context: Context) {
             // TODO: decide if we do it
             // logcatLogsOutput = false
         }
-
-    fun chatRoomMuted(id: String): Boolean {
-        val sharedPreferences: SharedPreferences = coreContext.context.getSharedPreferences("notifications", Context.MODE_PRIVATE)
-        return sharedPreferences.getBoolean(id, false)
-    }
-
-    fun muteChatRoom(id: String, mute: Boolean) {
-        val sharedPreferences: SharedPreferences = coreContext.context.getSharedPreferences("notifications", Context.MODE_PRIVATE)
-        val editor = sharedPreferences.edit()
-        editor.putBoolean(id, mute)
-        editor.apply()
-    }
 
     /* App settings */
 

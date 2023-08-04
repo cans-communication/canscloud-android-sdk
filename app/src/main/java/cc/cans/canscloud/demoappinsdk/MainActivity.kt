@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.buttonCall.setOnClickListener {
             val intent = Intent(this, CansCallActivity::class.java)
-            intent.putExtra("phoneNumber", "50105")
+            intent.putExtra("phoneNumber", binding.editTextPhoneNumber.text.toString())
             startActivity(intent)
         }
     }
