@@ -144,9 +144,7 @@ class Cans {
             val config = Factory.instance().createConfigWithFactory(corePreferences.configPath, corePreferences.factoryConfigPath)
             corePreferences.config = config
             core = Factory.instance().createCoreWithConfig(config, activity)
-            core.start()
-
-            println("register1: ${core.defaultAccount?.params?.identityAddress?.username}")
+            
             register(activity)
             callback()
         }
