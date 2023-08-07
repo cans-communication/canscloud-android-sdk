@@ -9,6 +9,7 @@ import android.widget.RadioGroup
 import cc.cans.canscloud.sdk.callback.ContextCallback
 import cc.cans.canscloud.sdk.core.CorePreferences
 import com.google.gson.Gson
+import org.linphone.core.Account
 import org.linphone.core.AccountCreator
 import org.linphone.core.Address
 import org.linphone.core.Call
@@ -144,7 +145,8 @@ class Cans {
             val config = Factory.instance().createConfigWithFactory(corePreferences.configPath, corePreferences.factoryConfigPath)
             corePreferences.config = config
             core = Factory.instance().createCoreWithConfig(config, activity)
-            
+            core.start()
+
             register(activity)
             callback()
         }
@@ -171,7 +173,8 @@ class Cans {
                 val gson = Gson()
                 val user = gson.fromJson(it, UserService::class.java)
                 val account = core.defaultAccount?.params
-                if (username().isEmpty() || (user.username != account?.identityAddress?.username) || (user.domain != account.identityAddress?.domain) || (user.port != account.identityAddress?.port.toString() || (user.transport.lowercase() != account.transport?.name?.lowercase()))) {
+                if (username().isEmpty() || (user.username != account?.identityAddress?.username) || (user.domain != account.identityAddress?.domain)) {
+                    core.defaultAccount?.let { it -> deleteAccount(it) }
                     val username = user.username
                     val password = user.password
                     val domain = "${user.domain}:${user.port}"
@@ -224,6 +227,18 @@ class Cans {
             return ""
         }
 
+        private fun deleteAccount(account: Account) {
+            val authInfo = account.findAuthInfo()
+            if (authInfo != null) {
+                Log.i("[Account Settings] Found auth info $authInfo, removing it.")
+                core.removeAuthInfo(authInfo)
+            } else {
+                Log.w("[Account Settings] Couldn't find matching auth info...")
+            }
+            core.removeAccount(account)
+        }
+
+
         fun getCountCalls(): Int {
             val call = core.callsNb
             Log.i("[Application] getCountCalls : $call")
@@ -244,6 +259,9 @@ class Cans {
             params.mediaEncryption = MediaEncryption.None
             // If we wanted to start the call with video directly
             //params.enableVideo(true)
+
+            core.addListener(coreListener)
+            core.start()
 
             // Finally we start the call
             core.inviteAddressWithParams(remoteAddress, params)
