@@ -33,10 +33,7 @@ class Cans {
     companion object {
         lateinit var core: Core
         lateinit var corePreferences: CorePreferences
-
         private var proxyConfigToCheck: ProxyConfig? = null
-        private lateinit var accountCreator: AccountCreator
-        private var useGenericSipAccount: Boolean = false
         var packageManager : PackageManager? = null
         var packageName : String = ""
         val listeners = ArrayList<ContextCallback>()
@@ -136,9 +133,6 @@ class Cans {
             Companion.packageManager = packageManager
             Companion.packageName = packageName
 
-            val factory = Factory.instance()
-            core = factory.createCore(null, null, activity)
-
             corePreferences = CorePreferences(activity)
             corePreferences.copyAssetsFromPackage()
 
@@ -178,7 +172,7 @@ class Cans {
                     val username = user.username
                     val password = user.password
                     val domain = "${user.domain}:${user.port}"
-                    var transportType = if (user.transport.lowercase() == "tcp") {
+                    val transportType = if (user.transport.lowercase() == "tcp") {
                         TransportType.Tcp
                     } else {
                         TransportType.Udp
@@ -195,8 +189,8 @@ class Cans {
                     address?.transport = transportType
                     params.serverAddress = address
                     params.isRegisterEnabled = true
-                    val account = core.createAccount(params)
 
+                    val account = core.createAccount(params)
                     core.addAuthInfo(authInfo)
                     core.addAccount(account)
 
