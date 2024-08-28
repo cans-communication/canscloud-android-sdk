@@ -20,6 +20,7 @@ import org.linphone.core.Event
 import org.linphone.core.Factory
 import org.linphone.core.MediaEncryption
 import org.linphone.core.ProxyConfig
+import org.linphone.core.Reason
 import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import org.linphone.core.tools.Log
@@ -66,43 +67,37 @@ class Cans {
                 // which includes new incoming/outgoing calls
 
                 when (state) {
-                    Call.State.OutgoingInit -> {
+                    Call.State.IncomingReceived, Call.State.IncomingEarlyMedia -> {
+                        callListeners.forEach { it.onInComingCall() }
                     }
-                    Call.State.OutgoingProgress -> {
+                    Call.State.OutgoingInit -> {
                         callListeners.forEach { it.onStartCall() }
                     }
-                    Call.State.OutgoingRinging -> {
+                    Call.State.OutgoingProgress -> {
+                        callListeners.forEach { it.onCallOutGoing() }
                     }
                     Call.State.Connected -> {
                         callListeners.forEach { it.onConnected() }
                     }
                     Call.State.StreamsRunning -> {
-                        // This state indicates the call is active.
-                        // You may reach this state multiple times, for example after a pause/resume
-                        // or after the ICE negotiation completes
-                        // Wait for the call to be connected before allowing a call update
                     }
                     Call.State.Paused -> {
                         // When you put a call in pause, it will became Paused
                     }
-                    Call.State.PausedByRemote -> {
-                        // When the remote end of the call pauses it, it will be PausedByRemote
-                    }
-                    Call.State.Updating -> {
-                        // When we request a call update, for example when toggling video
-                    }
-                    Call.State.UpdatedByRemote -> {
-                        // When the remote requests a call update
-                    }
-                    Call.State.Released -> {
-                        // Call state will be released shortly after the End state
-                    }
                     Call.State.Error -> {
                         callListeners.forEach { it.onError(message) }
+                    }
+                    Call.State.End -> {
+                        callListeners.forEach { it.onCallEnd() }
                     }
 
                     else -> {}
                 }
+            }
+
+            override fun onLastCallEnded(core: Core) {
+                super.onLastCallEnded(core)
+                callListeners.forEach { it.onLastCallEnd() }
             }
         }
 
@@ -119,6 +114,7 @@ class Cans {
         }
 
         fun unRegisterListener(listener: RegisterCallback) {
+            core.defaultAccount?.let { it -> deleteAccount(it) }
             registerListeners.forEach { it.onUnRegister() }
             registerListeners.remove(listener)
         }
