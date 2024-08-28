@@ -33,7 +33,6 @@ class Cans {
     companion object {
         lateinit var core: Core
         lateinit var corePreferences: CorePreferences
-        private var proxyConfigToCheck: ProxyConfig? = null
         var packageManager : PackageManager? = null
         var packageName : String = ""
         val listeners = ArrayList<ContextCallback>()
@@ -45,17 +44,15 @@ class Cans {
                 state: RegistrationState,
                 message: String
             ) {
-                if (cfg == proxyConfigToCheck) {
-                    Log.i("[Assistant] [Generic Login] Registration state is $state: $message")
-                    if (state == RegistrationState.Ok) {
+                Log.i("[Assistant] [Generic Login] Registration state is $state: $message")
+                if (state == RegistrationState.Ok) {
 //                        waitForServerAnswer.value = false
 //                        leaveAssistantEvent.value = Event(true)
-                        core.removeListener(this)
-                    } else if (state == RegistrationState.Failed) {
+                    core.removeListener(this)
+                } else if (state == RegistrationState.Failed) {
 //                        waitForServerAnswer.value = false
 //                        invalidCredentialsEvent.value = Event(true)
-                        core.removeListener(this)
-                    }
+                    core.removeListener(this)
                 }
             }
 
@@ -141,7 +138,6 @@ class Cans {
             core = Factory.instance().createCoreWithConfig(config, activity)
             core.start()
 
-            register(activity)
             callback()
         }
 
@@ -159,7 +155,7 @@ class Cans {
             }
         }
 
-        private fun register(activity: Activity) {
+        fun register(activity: Activity) {
             val fileName = "json/get_user.json"
             val jsonString = loadJSONFromAsset(context = activity.applicationContext, fileName)
 
@@ -210,6 +206,53 @@ class Cans {
                         activity.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 0)
                         return
                     }
+                }
+            }
+        }
+
+        fun registerByUser(activity: Activity, username: String , password: String, domain: String, port: String, transport: String ) {
+
+            val account = core.defaultAccount?.params
+            if ((username != account?.identityAddress?.username) || (domain != account.identityAddress?.domain)) {
+                core.defaultAccount?.let { it -> deleteAccount(it) }
+                val domainApp = "${domain}:${port}"
+                val transportType = if (transport.lowercase() == "tcp") {
+                    TransportType.Tcp
+                } else {
+                    TransportType.Udp
+                }
+
+                val authInfo = Factory.instance()
+                    .createAuthInfo(username, null, password, null, null, domainApp, null)
+
+                val params = core.createAccountParams()
+                val identity = Factory.instance().createAddress("sip:$username@$domainApp")
+                params.identityAddress = identity
+
+                val address = Factory.instance().createAddress("sip:$domainApp")
+                address?.transport = transportType
+                params.serverAddress = address
+                params.isRegisterEnabled = true
+
+                val account = core.createAccount(params)
+                core.addAuthInfo(authInfo)
+                core.addAccount(account)
+
+                // Asks the CaptureTextureView to resize to match the captured video's size ratio
+                //core.config.setBool("video", "auto_resize_preview_to_keep_ratio", true)
+
+                core.defaultAccount = account
+                core.addListener(coreListener)
+                core.start()
+
+                // We will need the RECORD_AUDIO permission for video call
+                if (packageManager?.checkPermission(
+                        Manifest.permission.RECORD_AUDIO,
+                        packageName
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    activity.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 0)
+                    return
                 }
             }
         }

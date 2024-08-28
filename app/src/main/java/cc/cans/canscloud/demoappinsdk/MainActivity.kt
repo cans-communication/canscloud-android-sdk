@@ -30,9 +30,10 @@ class MainActivity : AppCompatActivity() {
 
         Cans.registerListenerCall(coreListener)
         Cans.config(this, packageManager, packageName, "robinhood") {
+            Cans.registerByUser(this, "1005", "p1005","sitmms.cans.cc","8446", "TCP" )
             binding.register.text = Cans.username()
         }
-
+        
         binding.buttonCall.setOnClickListener {
             val intent = Intent(this, CansCallActivity::class.java)
             intent.putExtra("phoneNumber", binding.editTextPhoneNumber.text.toString())
