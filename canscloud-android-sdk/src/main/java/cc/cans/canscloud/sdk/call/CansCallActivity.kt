@@ -18,6 +18,8 @@ class CansCallActivity : ComponentActivity() {
         val phoneNumber: String = intent.getStringExtra("phoneNumber") ?: ""
 
         Cans.startCall(phoneNumber)
+        Cans.updateMicState()
+        Cans.updateSpeakerState()
 
         binding.textViewPhoneNumber.text = phoneNumber
 
@@ -25,6 +27,24 @@ class CansCallActivity : ComponentActivity() {
 //            findNavController().popBackStack()
             Cans.terminateCall()
             finish()
+        }
+
+        binding.buttonSpeaker.setOnClickListener {
+            Cans.toggleSpeaker()
+            if (Cans.isSpeakerSelected) {
+                binding.buttonSpeaker.text = "Off Speaker"
+            } else {
+                binding.buttonSpeaker.text = "on Speaker"
+            }
+        }
+
+        binding.buttonMute.setOnClickListener {
+            Cans.toggleMuteMicrophone()
+            if (Cans.isMicrophoneMuted) {
+                binding.buttonMute.text = "On Mute"
+            } else {
+                binding.buttonMute.text = "Off Mute"
+            }
         }
     }
 
