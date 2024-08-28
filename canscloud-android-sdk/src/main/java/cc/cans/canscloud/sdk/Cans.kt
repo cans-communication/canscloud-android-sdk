@@ -5,14 +5,17 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
+import android.telecom.CallAudioState
 import cc.cans.canscloud.sdk.callback.ContextCallback
 import cc.cans.canscloud.sdk.core.CorePreferences
 import com.google.gson.Gson
 import org.linphone.core.Account
 import org.linphone.core.Address
+import org.linphone.core.AudioDevice
 import org.linphone.core.Call
 import org.linphone.core.Core
 import org.linphone.core.CoreListenerStub
+import org.linphone.core.Event
 import org.linphone.core.Factory
 import org.linphone.core.MediaEncryption
 import org.linphone.core.ProxyConfig
@@ -31,6 +34,9 @@ class Cans {
         var packageManager : PackageManager? = null
         var packageName : String = ""
         val listeners = ArrayList<ContextCallback>()
+        val audioListeners = ArrayList<ContextCallback>()
+        var isMicrophoneMuted : Boolean = false
+        var isSpeakerSelected : Boolean = false
 
         private val coreListener = object : CoreListenerStub() {
             override fun onRegistrationStateChanged(
@@ -308,6 +314,204 @@ class Cans {
         fun durationTime() : Int? {
             val durationTime = core.currentCall?.duration
             return durationTime
+        }
+
+        fun toggleMuteMicrophone() {
+            if (packageManager?.checkPermission(
+                    Manifest.permission.RECORD_AUDIO,
+                    packageName
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                return
+            }
+
+            val call = core.currentCall
+            if (call != null && call.conference != null) {
+                val micMuted = call.conference?.microphoneMuted ?: false
+                call.conference?.microphoneMuted = !micMuted
+            } else {
+                val micMuted = call?.microphoneMuted ?: false
+                call?.microphoneMuted = !micMuted
+            }
+            updateMicState()
+        }
+
+        fun updateMicState() {
+            isMicrophoneMuted = core.currentCall?.microphoneMuted == true
+        }
+
+        fun toggleSpeaker() {
+            if (isSpeakerAudio()) {
+                forceEarpieceAudioRoute()
+            } else {
+                forceSpeakerAudioRoute()
+            }
+            updateSpeakerState()
+        }
+
+        fun updateSpeakerState() {
+            isSpeakerSelected = isSpeakerAudio()
+        }
+
+        private fun isSpeakerAudio(call: Call? = null): Boolean {
+            val currentCall = if (core.callsNb > 0) {
+                call ?: core.currentCall ?: core.calls[0]
+            } else {
+                Log.w("[Audio Route Helper] No call found, checking audio route on Core")
+                null
+            }
+            val conference = core.conference
+
+            val audioDevice = if (conference != null && conference.isIn) {
+                conference.outputAudioDevice
+            } else if (currentCall != null) {
+                currentCall.outputAudioDevice
+            } else {
+                core.outputAudioDevice
+            }
+
+            if (audioDevice == null) return false
+            Log.i(
+                "[Audio Route Helper] Playback audio device currently in use is [${audioDevice.deviceName} (${audioDevice.driverName}) ${audioDevice.type}]"
+            )
+            return audioDevice.type == AudioDevice.Type.Speaker
+        }
+
+        private fun isHeadsetAudioRouteAvailable(): Boolean {
+            for (audioDevice in core.audioDevices) {
+                if ((audioDevice.type == AudioDevice.Type.Headset || audioDevice.type == AudioDevice.Type.Headphones) &&
+                    audioDevice.hasCapability(AudioDevice.Capabilities.CapabilityPlay)
+                ) {
+                    Log.i(
+                        "[Audio Route Helper] Found headset/headphones audio device [${audioDevice.deviceName} (${audioDevice.driverName})]"
+                    )
+                    return true
+                }
+            }
+            return false
+        }
+
+        private fun forceEarpieceAudioRoute() {
+            if (isHeadsetAudioRouteAvailable()) {
+                Log.i("[Call Controls] Headset found, route audio to it instead of earpiece")
+                routeAudioToHeadset()
+            } else {
+                routeAudioToEarpiece()
+            }
+        }
+
+        private fun forceSpeakerAudioRoute() {
+            routeAudioToSpeaker()
+        }
+
+        private fun routeAudioToSpeaker(call: Call? = null, skipTelecom: Boolean = false) {
+            routeAudioTo(call, arrayListOf(AudioDevice.Type.Speaker), skipTelecom)
+        }
+
+        private fun routeAudioToHeadset(call: Call? = null, skipTelecom: Boolean = false) {
+            routeAudioTo(
+                call,
+                arrayListOf(AudioDevice.Type.Headphones, AudioDevice.Type.Headset),
+                skipTelecom
+            )
+        }
+
+        private fun routeAudioTo(
+            call: Call?,
+            types: List<AudioDevice.Type>,
+            skipTelecom: Boolean = false
+        ) {
+            val currentCall = call ?: core.currentCall ?: core.calls.firstOrNull()
+            applyAudioRouteChange(currentCall, types)
+        }
+
+        fun routeAudioToEarpiece(call: Call? = null, skipTelecom: Boolean = false) {
+            routeAudioTo(call, arrayListOf(AudioDevice.Type.Earpiece), skipTelecom)
+        }
+
+        private fun applyAudioRouteChange(
+            call: Call?,
+            types: List<AudioDevice.Type>,
+            output: Boolean = true
+        ) {
+            val currentCall = if (core.callsNb > 0) {
+                call ?: core.currentCall ?: core.calls[0]
+            } else {
+                Log.w("[Audio Route Helper] No call found, setting audio route on Core")
+                null
+            }
+            val conference = core.conference
+            val capability = if (output) {
+                AudioDevice.Capabilities.CapabilityPlay
+            } else {
+                AudioDevice.Capabilities.CapabilityRecord
+            }
+            val preferredDriver = if (output) {
+                core.defaultOutputAudioDevice?.driverName
+            } else {
+                core.defaultInputAudioDevice?.driverName
+            }
+
+            val extendedAudioDevices = core.extendedAudioDevices
+            Log.i(
+                "[Audio Route Helper] Looking for an ${if (output) "output" else "input"} audio device with capability [$capability], driver name [$preferredDriver] and type [$types] in extended audio devices list (size ${extendedAudioDevices.size})"
+            )
+            val foundAudioDevice = extendedAudioDevices.find {
+                it.driverName == preferredDriver && types.contains(it.type) && it.hasCapability(
+                    capability
+                )
+            }
+            val audioDevice = if (foundAudioDevice == null) {
+                Log.w(
+                    "[Audio Route Helper] Failed to find an audio device with capability [$capability], driver name [$preferredDriver] and type [$types]"
+                )
+                extendedAudioDevices.find {
+                    types.contains(it.type) && it.hasCapability(capability)
+                }
+            } else {
+                foundAudioDevice
+            }
+
+            if (audioDevice == null) {
+                Log.e(
+                    "[Audio Route Helper] Couldn't find audio device with capability [$capability] and type [$types]"
+                )
+                for (device in extendedAudioDevices) {
+                    // TODO: switch to debug?
+                    Log.i(
+                        "[Audio Route Helper] Extended audio device: [${device.deviceName} (${device.driverName}) ${device.type} / ${device.capabilities}]"
+                    )
+                }
+                return
+            }
+            if (conference != null && conference.isIn) {
+                Log.i(
+                    "[Audio Route Helper] Found [${audioDevice.type}] ${if (output) "playback" else "recorder"} audio device [${audioDevice.deviceName} (${audioDevice.driverName})], routing conference audio to it"
+                )
+                if (output) {
+                    conference.outputAudioDevice = audioDevice
+                } else {
+                    conference.inputAudioDevice = audioDevice
+                }
+            } else if (currentCall != null) {
+                Log.i(
+                    "[Audio Route Helper] Found [${audioDevice.type}] ${if (output) "playback" else "recorder"} audio device [${audioDevice.deviceName} (${audioDevice.driverName})], routing call audio to it"
+                )
+                if (output) {
+                    currentCall.outputAudioDevice = audioDevice
+                } else {
+                    currentCall.inputAudioDevice = audioDevice
+                }
+            } else {
+                Log.i(
+                    "[Audio Route Helper] Found [${audioDevice.type}] ${if (output) "playback" else "recorder"} audio device [${audioDevice.deviceName} (${audioDevice.driverName})], changing core default audio device"
+                )
+                if (output) {
+                    core.outputAudioDevice = audioDevice
+                } else {
+                    core.inputAudioDevice = audioDevice
+                }
+            }
         }
     }
 }
