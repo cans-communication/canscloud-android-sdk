@@ -9,15 +9,24 @@ import androidx.navigation.fragment.findNavController
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityMainBinding
 import cc.cans.canscloud.sdk.call.CansCallActivity
-import cc.cans.canscloud.sdk.callback.ContextCallback
+import cc.cans.canscloud.sdk.callback.CallCallback
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
-    private val coreListener = object : ContextCallback {
-        override fun onConnectedCall() {
-          Log.i("Cans Center","onConnectedCall")
+    private val coreListener = object : CallCallback {
+
+        override fun onStartCall() {
+            Log.i("Cans Center","onStartCall")
+        }
+
+        override fun onConnected() {
+            Log.i("Cans Center","onConnected")
+        }
+
+        override fun onError(message: String) {
+            Log.i("Cans Center","onError")
         }
     }
 
@@ -28,7 +37,7 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        Cans.registerListenerCall(coreListener)
+        Cans.registerCallListener(coreListener)
         Cans.config(this, packageManager, packageName) {
             Cans.register(this,"line")
             //Cans.registerByUser(this, "40102", "p40102CANS","cns.cans.cc","8446", "udp" )

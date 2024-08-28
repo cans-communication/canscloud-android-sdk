@@ -6,7 +6,8 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.telecom.CallAudioState
-import cc.cans.canscloud.sdk.callback.ContextCallback
+import cc.cans.canscloud.sdk.callback.CallCallback
+import cc.cans.canscloud.sdk.callback.RegisterCallback
 import cc.cans.canscloud.sdk.core.CorePreferences
 import com.google.gson.Gson
 import org.linphone.core.Account
@@ -33,8 +34,8 @@ class Cans {
         lateinit var corePreferences: CorePreferences
         var packageManager : PackageManager? = null
         var packageName : String = ""
-        val listeners = ArrayList<ContextCallback>()
-        val audioListeners = ArrayList<ContextCallback>()
+        val callListeners = ArrayList<CallCallback>()
+        val registerListeners = ArrayList<RegisterCallback>()
         var isMicrophoneMuted : Boolean = false
         var isSpeakerSelected : Boolean = false
 
@@ -47,8 +48,10 @@ class Cans {
             ) {
                 Log.i("[Assistant] [Generic Login] Registration state is $state: $message")
                 if (state == RegistrationState.Ok) {
+                    registerListeners.forEach { it.onRegistrationOk() }
                     core.removeListener(this)
                 } else if (state == RegistrationState.Failed) {
+                    registerListeners.forEach { it.onRegistrationFail(message) }
                     core.removeListener(this)
                 }
             }
@@ -64,16 +67,14 @@ class Cans {
 
                 when (state) {
                     Call.State.OutgoingInit -> {
-                        // First state an outgoing call will go through
                     }
                     Call.State.OutgoingProgress -> {
-                        // Right after outgoing init
+                        callListeners.forEach { it.onStartCall() }
                     }
                     Call.State.OutgoingRinging -> {
-                        // This state will be reached upon reception of the 180 RINGING
                     }
                     Call.State.Connected -> {
-                        listeners.forEach { it.onConnectedCall() }
+                        callListeners.forEach { it.onConnected() }
                     }
                     Call.State.StreamsRunning -> {
                         // This state indicates the call is active.
@@ -97,7 +98,7 @@ class Cans {
                         // Call state will be released shortly after the End state
                     }
                     Call.State.Error -> {
-
+                        callListeners.forEach { it.onError(message) }
                     }
 
                     else -> {}
@@ -105,16 +106,21 @@ class Cans {
             }
         }
 
-        fun registerListenerCall(listener: ContextCallback){
-            registerListener(listener)
+        fun registerCallListener(listener: CallCallback) {
+            callListeners.add(listener)
         }
 
-        private fun registerListener(listener: ContextCallback) {
-            listeners.add(listener)
+        fun unCallListener(listener: CallCallback) {
+            callListeners.remove(listener)
         }
 
-        private fun unRegisterListener(listener: ContextCallback) {
-            listeners.remove(listener)
+        fun registersListener(listener: RegisterCallback) {
+            registerListeners.add(listener)
+        }
+
+        fun unRegisterListener(listener: RegisterCallback) {
+            registerListeners.forEach { it.onUnRegister() }
+            registerListeners.remove(listener)
         }
 
         fun config(
