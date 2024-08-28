@@ -1,0 +1,8 @@
+{
+  "company":"robinhood",
+  "username": "40101",
+  "password": "p40101CANS",
+  "domain": "cns.cans.cc",
+  "port": "8446",
+  "transport": "udp"
+}

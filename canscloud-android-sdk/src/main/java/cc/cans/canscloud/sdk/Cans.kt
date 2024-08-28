@@ -5,28 +5,23 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
-import android.widget.RadioGroup
 import cc.cans.canscloud.sdk.callback.ContextCallback
 import cc.cans.canscloud.sdk.core.CorePreferences
 import com.google.gson.Gson
 import org.linphone.core.Account
-import org.linphone.core.AccountCreator
 import org.linphone.core.Address
 import org.linphone.core.Call
 import org.linphone.core.Core
 import org.linphone.core.CoreListenerStub
 import org.linphone.core.Factory
-import org.linphone.core.LogLevel
 import org.linphone.core.MediaEncryption
 import org.linphone.core.ProxyConfig
-import org.linphone.core.R
 import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import org.linphone.core.tools.Log
 import java.io.IOException
 import java.io.InputStream
 import java.util.ArrayList
-import java.util.Locale
 
 class Cans {
 
@@ -46,12 +41,8 @@ class Cans {
             ) {
                 Log.i("[Assistant] [Generic Login] Registration state is $state: $message")
                 if (state == RegistrationState.Ok) {
-//                        waitForServerAnswer.value = false
-//                        leaveAssistantEvent.value = Event(true)
                     core.removeListener(this)
                 } else if (state == RegistrationState.Failed) {
-//                        waitForServerAnswer.value = false
-//                        invalidCredentialsEvent.value = Event(true)
                     core.removeListener(this)
                 }
             }
@@ -124,7 +115,6 @@ class Cans {
             activity: Activity,
             packageManager: PackageManager,
             packageName: String,
-            companyKey: String,
             callback: () -> Unit
         ) {
             Companion.packageManager = packageManager
@@ -155,8 +145,8 @@ class Cans {
             }
         }
 
-        fun register(activity: Activity) {
-            val fileName = "json/get_user.json"
+        fun register(activity: Activity, keyCompany: String) {
+            val fileName = "json/$keyCompany.json"
             val jsonString = loadJSONFromAsset(context = activity.applicationContext, fileName)
 
             jsonString?.let {
@@ -186,14 +176,14 @@ class Cans {
                     params.serverAddress = address
                     params.isRegisterEnabled = true
 
-                    val account = core.createAccount(params)
+                    val createAccount = core.createAccount(params)
                     core.addAuthInfo(authInfo)
-                    core.addAccount(account)
+                    core.addAccount(createAccount)
 
                     // Asks the CaptureTextureView to resize to match the captured video's size ratio
                     //core.config.setBool("video", "auto_resize_preview_to_keep_ratio", true)
 
-                    core.defaultAccount = account
+                    core.defaultAccount = createAccount
                     core.addListener(coreListener)
                     core.start()
 
@@ -211,7 +201,6 @@ class Cans {
         }
 
         fun registerByUser(activity: Activity, username: String , password: String, domain: String, port: String, transport: String ) {
-
             val account = core.defaultAccount?.params
             if ((username != account?.identityAddress?.username) || (domain != account.identityAddress?.domain)) {
                 core.defaultAccount?.let { it -> deleteAccount(it) }
@@ -234,14 +223,14 @@ class Cans {
                 params.serverAddress = address
                 params.isRegisterEnabled = true
 
-                val account = core.createAccount(params)
+                val createAccount = core.createAccount(params)
                 core.addAuthInfo(authInfo)
-                core.addAccount(account)
+                core.addAccount(createAccount)
 
                 // Asks the CaptureTextureView to resize to match the captured video's size ratio
                 //core.config.setBool("video", "auto_resize_preview_to_keep_ratio", true)
 
-                core.defaultAccount = account
+                core.defaultAccount = createAccount
                 core.addListener(coreListener)
                 core.start()
 

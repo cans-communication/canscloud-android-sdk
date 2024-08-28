@@ -29,8 +29,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         Cans.registerListenerCall(coreListener)
-        Cans.config(this, packageManager, packageName, "robinhood") {
-            Cans.registerByUser(this, "1005", "p1005","sitmms.cans.cc","8446", "TCP" )
+        Cans.config(this, packageManager, packageName) {
+            Cans.register(this,"line")
+            //Cans.registerByUser(this, "40102", "p40102CANS","cns.cans.cc","8446", "udp" )
             binding.register.text = Cans.username()
         }
         
