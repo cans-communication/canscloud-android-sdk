@@ -27,6 +27,23 @@
             android:padding="16dp"
             android:textColor="@color/white" />
 
+        <Button
+            android:id="@+id/button_speaker"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="50dp"
+            android:layout_below="@+id/textViewPhoneNumber"
+            android:text="open speaker" />
+
+        <Button
+            android:id="@+id/button_mute"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="50dp"
+            android:layout_alignParentRight="true"
+            android:layout_below="@+id/textViewPhoneNumber"
+            android:text="open mute" />
+
         <!-- Hang Up Button Image -->
         <ImageButton
             android:id="@+id/buttonHangUp"

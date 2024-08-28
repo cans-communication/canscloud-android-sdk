@@ -1,0 +1,8 @@
+{
+  "company":"line",
+  "username": "40102",
+  "password": "p40102CANS",
+  "domain": "cns.cans.cc",
+  "port": "8446",
+  "transport": "udp"
+}
