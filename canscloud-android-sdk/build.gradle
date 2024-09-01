@@ -115,7 +115,7 @@ dependencies {
     implementation 'androidx.compose.material3:material3'
     testImplementation 'junit:junit:4.13.2'
 
-    implementation  'org.linphone:linphone-sdk-android:5.3.0'
+    implementation  'org.linphone:linphone-sdk-android:5.3.+'
     implementation "androidx.security:security-crypto-ktx:1.1.0-alpha06"
     implementation 'com.google.code.gson:gson:2.9.0'
 
