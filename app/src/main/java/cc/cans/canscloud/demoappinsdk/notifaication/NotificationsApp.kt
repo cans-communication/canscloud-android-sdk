@@ -132,89 +132,89 @@ class NotificationsApp(private val context: Context) {
 
     private var currentForegroundServiceNotificationId: Int = 0
 
-    fun startForegroundToKeepAppAlive(
-        coreService: CoreService,
-        useAutoStartDescription: Boolean = true
-    ) {
-        service = coreService
-
-        val notification = serviceNotification ?: createServiceNotification(useAutoStartDescription)
-        if (notification == null) {
-            Log.e(
-                "[Notifications Manager] Failed to create service notification, aborting foreground service!"
-            )
-            return
-        }
-
-        currentForegroundServiceNotificationId = SERVICE_NOTIF_ID
-        Log.i(
-            "[Notifications Manager] Starting service as foreground [$currentForegroundServiceNotificationId]"
-        )
-
-        startDataSyncForegroundService(
-            coreService,
-            currentForegroundServiceNotificationId,
-            notification,
-            false
-        )
-    }
-
-    fun startDataSyncForegroundService(
-        service: Service,
-        notifId: Int,
-        notif: Notification,
-        isCallActive: Boolean
-    ) {
-        if (Version.sdkAboveOrEqual(Version.API34_ANDROID_14_UPSIDE_DOWN_CAKE)) {
-            Api34Compatibility.startDataSyncForegroundService(
-                service,
-                notifId,
-                notif,
-                isCallActive
-            )
-        } else {
-            startForegroundService(service, notifId, notif)
-        }
-    }
-
-    private fun createServiceNotification(useAutoStartDescription: Boolean = false): Notification? {
-        val serviceChannel = "Cans Cloud Service"
-//        if (Compatibility.getChannelImportance(notificationManager, serviceChannel) == NotificationManagerCompat.IMPORTANCE_NONE) {
-//            Log.w("[Notifications Manager] Service channel is disabled!")
-//            return null
+//    fun startForegroundToKeepAppAlive(
+//        coreService: CoreService,
+//        useAutoStartDescription: Boolean = true
+//    ) {
+//        service = coreService
+//
+//        val notification = serviceNotification ?: createServiceNotification(useAutoStartDescription)
+//        if (notification == null) {
+//            Log.e(
+//                "[Notifications Manager] Failed to create service notification, aborting foreground service!"
+//            )
+//            return
 //        }
-
-        val pendingIntent = NavDeepLinkBuilder(context)
-            .setComponentName(MainActivity::class.java)
-            .setGraph(org.linphone.core.R.navigation.main_nav_graph)
-            .setDestination(org.linphone.core.R.id.dialerFragment)
-            .createPendingIntent()
-
-        val builder = NotificationCompat.Builder(context, serviceChannel)
-            .setContentTitle("Cans Cloud Service")
-            .setContentText(
-                if (useAutoStartDescription) {
-                    "Cans Cloud Service"
-                } else {
-                    "Cans Cloud Service"
-                }
-            )
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setCategory(NotificationCompat.CATEGORY_SERVICE)
-            .setVisibility(NotificationCompat.VISIBILITY_SECRET)
-            .setWhen(System.currentTimeMillis())
-            .setShowWhen(true)
-            .setOngoing(true)
-            .setColor(ContextCompat.getColor(context, cc.cans.canscloud.sdk.R.color.primary_color))
-
-        if (!corePreferences.preventInterfaceFromShowingUp) {
-            builder.setContentIntent(pendingIntent)
-        }
-
-        val notif = builder.build()
-        serviceNotification = notif
-        return notif
-    }
+//
+//        currentForegroundServiceNotificationId = SERVICE_NOTIF_ID
+//        Log.i(
+//            "[Notifications Manager] Starting service as foreground [$currentForegroundServiceNotificationId]"
+//        )
+//
+//        startDataSyncForegroundService(
+//            coreService,
+//            currentForegroundServiceNotificationId,
+//            notification,
+//            false
+//        )
+//    }
+//
+//    fun startDataSyncForegroundService(
+//        service: Service,
+//        notifId: Int,
+//        notif: Notification,
+//        isCallActive: Boolean
+//    ) {
+//        if (Version.sdkAboveOrEqual(Version.API34_ANDROID_14_UPSIDE_DOWN_CAKE)) {
+//            Api34Compatibility.startDataSyncForegroundService(
+//                service,
+//                notifId,
+//                notif,
+//                isCallActive
+//            )
+//        } else {
+//            startForegroundService(service, notifId, notif)
+//        }
+//    }
+//
+//    private fun createServiceNotification(useAutoStartDescription: Boolean = false): Notification? {
+//        val serviceChannel = "Cans Cloud Service"
+////        if (Compatibility.getChannelImportance(notificationManager, serviceChannel) == NotificationManagerCompat.IMPORTANCE_NONE) {
+////            Log.w("[Notifications Manager] Service channel is disabled!")
+////            return null
+////        }
+//
+//        val pendingIntent = NavDeepLinkBuilder(context)
+//            .setComponentName(MainActivity::class.java)
+//            .setGraph(org.linphone.core.R.navigation.main_nav_graph)
+//            .setDestination(org.linphone.core.R.id.dialerFragment)
+//            .createPendingIntent()
+//
+//        val builder = NotificationCompat.Builder(context, serviceChannel)
+//            .setContentTitle("Cans Cloud Service")
+//            .setContentText(
+//                if (useAutoStartDescription) {
+//                    "Cans Cloud Service"
+//                } else {
+//                    "Cans Cloud Service"
+//                }
+//            )
+//            .setSmallIcon(R.drawable.ic_launcher_foreground)
+//            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+//            .setVisibility(NotificationCompat.VISIBILITY_SECRET)
+//            .setWhen(System.currentTimeMillis())
+//            .setShowWhen(true)
+//            .setOngoing(true)
+//            .setColor(ContextCompat.getColor(context, cc.cans.canscloud.sdk.R.color.primary_color))
+//
+//        if (!corePreferences.preventInterfaceFromShowingUp) {
+//            builder.setContentIntent(pendingIntent)
+//        }
+//
+//        val notif = builder.build()
+//        serviceNotification = notif
+//        return notif
+//    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun startForeground() {
