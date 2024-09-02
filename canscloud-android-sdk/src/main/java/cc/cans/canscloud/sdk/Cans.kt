@@ -49,12 +49,12 @@ class Cans {
 
         @SuppressLint("StaticFieldLeak")
         lateinit var context: Context
-        var packageManager : PackageManager? = null
-        var packageName : String = ""
+        var packageManager: PackageManager? = null
+        var packageName: String = ""
         val callListeners = ArrayList<CallCallback>()
         val registerListeners = ArrayList<RegisterCallback>()
-        var isMicrophoneMuted : Boolean = false
-        var isSpeakerSelected : Boolean = false
+        var isMicrophoneMuted: Boolean = false
+        var isSpeakerSelected: Boolean = false
 
         private val coreListener = object : CoreListenerStub() {
             override fun onRegistrationStateChanged(
@@ -85,23 +85,30 @@ class Cans {
                         callCans = call
                         callListeners.forEach { it.onInComingCall() }
                     }
+
                     Call.State.OutgoingInit -> {
                         callListeners.forEach { it.onStartCall() }
                     }
+
                     Call.State.OutgoingProgress -> {
                         callListeners.forEach { it.onCallOutGoing() }
                     }
+
                     Call.State.Connected -> {
                         callListeners.forEach { it.onConnected() }
                     }
+
                     Call.State.StreamsRunning -> {
                     }
+
                     Call.State.Paused -> {
                         // When you put a call in pause, it will became Paused
                     }
+
                     Call.State.Error -> {
                         callListeners.forEach { it.onError(message) }
                     }
+
                     Call.State.End -> {
                         callListeners.forEach { it.onCallEnd() }
                     }
@@ -147,7 +154,10 @@ class Cans {
             corePreferences = CorePreferences(activity)
             corePreferences.copyAssetsFromPackage()
 
-            val config = Factory.instance().createConfigWithFactory(corePreferences.configPath, corePreferences.factoryConfigPath)
+            val config = Factory.instance().createConfigWithFactory(
+                corePreferences.configPath,
+                corePreferences.factoryConfigPath
+            )
             corePreferences.config = config
             core = Factory.instance().createCoreWithConfig(config, activity)
             core.start()
@@ -177,8 +187,7 @@ class Cans {
             jsonString?.let {
                 val gson = Gson()
                 val user = gson.fromJson(it, UserService::class.java)
-                val account = core.defaultAccount?.params
-                if (usernameRegister().isEmpty() || (user.username != account?.identityAddress?.username) || (user.domain != account.identityAddress?.domain)) {
+                if (usernameRegister.isEmpty() || (user.username != usernameRegister) || (user.domain != domainRegister)) {
                     core.defaultAccount?.let { it -> deleteAccount(it) }
                     val username = user.username
                     val password = user.password
@@ -225,9 +234,15 @@ class Cans {
             }
         }
 
-        fun registerByUser(activity: Activity, username: String , password: String, domain: String, port: String, transport: String ) {
-            val account = core.defaultAccount?.params
-            if ((username != account?.identityAddress?.username) || (domain != account.identityAddress?.domain)) {
+        fun registerByUser(
+            activity: Activity,
+            username: String,
+            password: String,
+            domain: String,
+            port: String,
+            transport: String
+        ) {
+            if ((username != usernameRegister) || (domain != domainRegister)) {
                 core.defaultAccount?.let { it -> deleteAccount(it) }
                 val domainApp = "${domain}:${port}"
                 val transportType = if (transport.lowercase() == "tcp") {
@@ -271,12 +286,38 @@ class Cans {
             }
         }
 
-        fun usernameRegister(): String {
-            core.defaultAccount?.params?.identityAddress?.let {
-                return "${it.username}@${it.domain}:${it.port}"
+        val accountRegister: String
+            get() {
+                core.defaultAccount?.params?.identityAddress?.let {
+                    return "${it.username}@${it.domain}:${it.port}"
+                }
+                return ""
             }
-            return ""
-        }
+
+        val usernameRegister: String
+            get() {
+                core.defaultAccount?.params?.identityAddress?.let {
+                    return "${it.username}"
+                }
+                return ""
+            }
+
+
+        val domainRegister: String
+            get() {
+                core.defaultAccount?.params?.identityAddress?.let {
+                    return "${it.domain}"
+                }
+                return ""
+            }
+
+        val portRegister: String
+            get() {
+                core.defaultAccount?.params?.identityAddress?.let {
+                    return "${it.port}"
+                }
+                return ""
+            }
 
         private fun deleteAccount(account: Account) {
             val authInfo = account.findAuthInfo()
@@ -298,7 +339,8 @@ class Cans {
 
         fun startCall(addressToCall: String) {
             val remoteAddress: Address? = core.interpretUrl(addressToCall)
-            remoteAddress ?: return // If address parsing fails, we can't continue with outgoing call process
+            remoteAddress
+                ?: return // If address parsing fails, we can't continue with outgoing call process
 
             // We also need a CallParams object
             // Create call params expects a Call object for incoming calls, but for outgoing we must use null safely
@@ -341,15 +383,22 @@ class Cans {
         fun startAnswerCall() {
             val remoteSipAddress = remoteAddressCall()
             if (remoteSipAddress == null) {
-                android.util.Log.e("[Notification Broadcast Receiver]", "Remote SIP address is null for notification")
+                android.util.Log.e(
+                    "[Notification Broadcast Receiver]",
+                    "Remote SIP address is null for notification"
+                )
                 return
             }
 
 
             val remoteAddress = core.interpretUrl(remoteSipAddress)
-            val call = if (remoteAddress != null) core.getCallByRemoteAddress2(remoteAddress) else null
+            val call =
+                if (remoteAddress != null) core.getCallByRemoteAddress2(remoteAddress) else null
             if (call == null) {
-                android.util.Log.e("[Notification Broadcast Receiver]", "Couldn't find call from remote address $remoteSipAddress")
+                android.util.Log.e(
+                    "[Notification Broadcast Receiver]",
+                    "Couldn't find call from remote address $remoteSipAddress"
+                )
                 return
             }
             Toast.makeText(context, "Call Answered", Toast.LENGTH_SHORT).show()
@@ -366,7 +415,7 @@ class Cans {
             call.acceptWithParams(params)
         }
 
-        fun durationTime() : Int? {
+        fun durationTime(): Int? {
             val durationTime = core.currentCall?.duration
             return durationTime
         }

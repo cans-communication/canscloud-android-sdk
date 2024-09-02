@@ -79,9 +79,9 @@ class MainActivity : AppCompatActivity() {
 
         createNotificationChannel()
         Cans.config(this, packageManager, packageName) {
-            Cans.register(this,"line")
-            //Cans.registerByUser(this, "40102", "p40102CANS","cns.cans.cc","8446", "udp" )
-            binding.register.text = Cans.usernameRegister()
+           // Cans.register(this,"line")
+            Cans.registerByUser(this, "40107", "p40107CANS","cns.cans.cc","8446", "udp" )
+            binding.register.text = Cans.accountRegister
             NotificationsApp.onCoreReady()
             Cans.registerCallListener(coreListener)
             Cans.registersListener(registerListener)
@@ -106,13 +106,13 @@ class MainActivity : AppCompatActivity() {
             Cans.register(this,"line")
             Cans.registerCallListener(coreListener)
             Cans.registersListener(registerListener)
-            binding.register.text = Cans.usernameRegister()
+            binding.register.text = Cans.accountRegister
         }
 
         binding.buttonUnregister.setOnClickListener {
             Cans.unCallListener(coreListener)
             Cans.unRegisterListener(registerListener)
-            binding.register.text = Cans.usernameRegister()
+            binding.register.text = Cans.accountRegister
         }
     }
 
