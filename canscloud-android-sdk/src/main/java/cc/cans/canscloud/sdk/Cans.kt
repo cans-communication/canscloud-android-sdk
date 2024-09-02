@@ -5,19 +5,13 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.ConnectivityManager
-import android.net.NetworkInfo
-import android.telecom.CallAudioState
-import android.telephony.TelephonyManager.NETWORK_TYPE_EDGE
-import android.telephony.TelephonyManager.NETWORK_TYPE_GPRS
-import android.telephony.TelephonyManager.NETWORK_TYPE_IDEN
 import android.widget.Toast
 import cc.cans.canscloud.sdk.callback.CallCallback
 import cc.cans.canscloud.sdk.callback.RegisterCallback
 import cc.cans.canscloud.sdk.core.CorePreferences
 import cc.cans.canscloud.sdk.utils.CansUtils
+import cc.cans.canscloud.sdk.models.CansTransportType
 import com.google.gson.Gson
 import org.linphone.core.Account
 import org.linphone.core.Address
@@ -25,11 +19,9 @@ import org.linphone.core.AudioDevice
 import org.linphone.core.Call
 import org.linphone.core.Core
 import org.linphone.core.CoreListenerStub
-import org.linphone.core.Event
 import org.linphone.core.Factory
 import org.linphone.core.MediaEncryption
 import org.linphone.core.ProxyConfig
-import org.linphone.core.Reason
 import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import org.linphone.core.tools.Log
@@ -240,12 +232,12 @@ class Cans {
             password: String,
             domain: String,
             port: String,
-            transport: String
+            transport: CansTransportType
         ) {
             if ((username != usernameRegister) || (domain != domainRegister)) {
                 core.defaultAccount?.let { it -> deleteAccount(it) }
                 val domainApp = "${domain}:${port}"
-                val transportType = if (transport.lowercase() == "tcp") {
+                val transportType = if (transport.name.lowercase() == "tcp") {
                     TransportType.Tcp
                 } else {
                     TransportType.Udp
@@ -318,6 +310,12 @@ class Cans {
                 }
                 return ""
             }
+
+        val missedCallsCount: Int
+            get() {
+                return core.missedCallsCount
+            }
+
 
         private fun deleteAccount(account: Account) {
             val authInfo = account.findAuthInfo()
