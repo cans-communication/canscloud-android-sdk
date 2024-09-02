@@ -2,13 +2,22 @@ package cc.cans.canscloud.sdk
 
 import UserService
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.NetworkInfo
 import android.telecom.CallAudioState
+import android.telephony.TelephonyManager.NETWORK_TYPE_EDGE
+import android.telephony.TelephonyManager.NETWORK_TYPE_GPRS
+import android.telephony.TelephonyManager.NETWORK_TYPE_IDEN
+import android.widget.Toast
 import cc.cans.canscloud.sdk.callback.CallCallback
 import cc.cans.canscloud.sdk.callback.RegisterCallback
 import cc.cans.canscloud.sdk.core.CorePreferences
+import cc.cans.canscloud.sdk.utils.CansUtils
 import com.google.gson.Gson
 import org.linphone.core.Account
 import org.linphone.core.Address
@@ -32,7 +41,14 @@ class Cans {
 
     companion object {
         lateinit var core: Core
+        lateinit var callCans: Call
+
+        @SuppressLint("StaticFieldLeak")
         lateinit var corePreferences: CorePreferences
+        const val INTENT_REMOTE_ADDRESS = "REMOTE_ADDRESS"
+
+        @SuppressLint("StaticFieldLeak")
+        lateinit var context: Context
         var packageManager : PackageManager? = null
         var packageName : String = ""
         val callListeners = ArrayList<CallCallback>()
@@ -50,10 +66,8 @@ class Cans {
                 Log.i("[Assistant] [Generic Login] Registration state is $state: $message")
                 if (state == RegistrationState.Ok) {
                     registerListeners.forEach { it.onRegistrationOk() }
-                    core.removeListener(this)
                 } else if (state == RegistrationState.Failed) {
                     registerListeners.forEach { it.onRegistrationFail(message) }
-                    core.removeListener(this)
                 }
             }
 
@@ -68,6 +82,7 @@ class Cans {
 
                 when (state) {
                     Call.State.IncomingReceived, Call.State.IncomingEarlyMedia -> {
+                        callCans = call
                         callListeners.forEach { it.onInComingCall() }
                     }
                     Call.State.OutgoingInit -> {
@@ -127,6 +142,7 @@ class Cans {
         ) {
             Companion.packageManager = packageManager
             Companion.packageName = packageName
+            context = activity
 
             corePreferences = CorePreferences(activity)
             corePreferences.copyAssetsFromPackage()
@@ -135,6 +151,7 @@ class Cans {
             corePreferences.config = config
             core = Factory.instance().createCoreWithConfig(config, activity)
             core.start()
+            core.addListener(coreListener)
 
             callback()
         }
@@ -161,7 +178,7 @@ class Cans {
                 val gson = Gson()
                 val user = gson.fromJson(it, UserService::class.java)
                 val account = core.defaultAccount?.params
-                if (username().isEmpty() || (user.username != account?.identityAddress?.username) || (user.domain != account.identityAddress?.domain)) {
+                if (usernameRegister().isEmpty() || (user.username != account?.identityAddress?.username) || (user.domain != account.identityAddress?.domain)) {
                     core.defaultAccount?.let { it -> deleteAccount(it) }
                     val username = user.username
                     val password = user.password
@@ -254,7 +271,7 @@ class Cans {
             }
         }
 
-        fun username(): String {
+        fun usernameRegister(): String {
             core.defaultAccount?.params?.identityAddress?.let {
                 return "${it.username}@${it.domain}:${it.port}"
             }
@@ -311,6 +328,42 @@ class Cans {
 
             // Terminating a call is quite simple
             call.terminate()
+        }
+
+        fun remoteAddressCall(): String {
+            return callCans.remoteAddress.asStringUriOnly()
+        }
+
+        fun usernameCall(): String {
+            return callCans.remoteAddress.username ?: ""
+        }
+
+        fun startAnswerCall() {
+            val remoteSipAddress = remoteAddressCall()
+            if (remoteSipAddress == null) {
+                android.util.Log.e("[Notification Broadcast Receiver]", "Remote SIP address is null for notification")
+                return
+            }
+
+
+            val remoteAddress = core.interpretUrl(remoteSipAddress)
+            val call = if (remoteAddress != null) core.getCallByRemoteAddress2(remoteAddress) else null
+            if (call == null) {
+                android.util.Log.e("[Notification Broadcast Receiver]", "Couldn't find call from remote address $remoteSipAddress")
+                return
+            }
+            Toast.makeText(context, "Call Answered", Toast.LENGTH_SHORT).show()
+            answerCall(call)
+        }
+
+        fun answerCall(call: Call) {
+            Log.i("[Context] Answering call $call")
+            val params = core.createCallParams(call)
+            if (CansUtils.checkIfNetworkHasLowBandwidth(context)) {
+                Log.w("[Context] Enabling low bandwidth mode!")
+                params?.isLowBandwidthEnabled = true
+            }
+            call.acceptWithParams(params)
         }
 
         fun durationTime() : Int? {
