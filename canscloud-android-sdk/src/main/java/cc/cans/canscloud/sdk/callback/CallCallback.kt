@@ -8,4 +8,5 @@ interface CallCallback {
     fun onConnected()
     fun onError(message: String)
     fun onCallEnd()
+    fun onCall()
 }

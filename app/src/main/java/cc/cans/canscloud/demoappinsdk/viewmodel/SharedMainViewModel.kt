@@ -19,18 +19,97 @@
  */
 package cc.cans.canscloud.demoappinsdk.viewmodel
 
-import android.content.Context
-import android.net.Uri
-import android.provider.ContactsContract
+import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.sdk.Cans
+import cc.cans.canscloud.sdk.callback.CallCallback
+import cc.cans.canscloud.sdk.callback.RegisterCallback
 
 class SharedMainViewModel : ViewModel() {
     val missedCallsCount = MutableLiveData<Int>()
+    val statusRegister = MutableLiveData<Int>()
+    val callDuration = MutableLiveData<Int>()
+
+    private val coreListener = object : CallCallback {
+        override fun onCallOutGoing() {
+            Log.i("Cans Center","onCallOutGoing")
+        }
+
+        override fun onCallEnd() {
+            updateMissedCallCount()
+            Log.i("Cans Center","onCallEnd")
+        }
+
+        override fun onCall() {
+            Log.i("Cans Center","onCall")
+        }
+
+        override fun onStartCall() {
+            Log.i("Cans Center","onStartCall")
+        }
+
+        override fun onConnected() {
+            callDuration.value =  Cans.durationTime()
+            Log.i("Cans Center","onConnected")
+        }
+
+        override fun onError(message: String) {
+            updateMissedCallCount()
+            Log.i("Cans Center","onError")
+        }
+
+        override fun onLastCallEnd() {
+            Log.i("Cans Center","onLastCallEnd")
+        }
+
+        override fun onInComingCall() {
+            Log.i("Cans Center","onInComingCall")
+        }
+    }
+
+
+    private val registerListener = object : RegisterCallback {
+        override fun onRegistrationOk() {
+            statusRegister.value = R.string.register_success
+            Log.i("Cans Center","onRegistrationOk")
+        }
+
+        override fun onRegistrationFail(message: String) {
+            statusRegister.value = R.string.register_fail
+            Log.i("Cans Center","onRegistrationFail")
+        }
+
+        override fun onUnRegister() {
+            statusRegister.value = R.string.un_register
+            Log.i("Cans Center","onUnRegister")
+        }
+
+    }
+
+    init {
+        Cans.registerCallListener(coreListener)
+        Cans.registersListener(registerListener)
+    }
+
+    override fun onCleared() {
+        Cans.unCallListener(coreListener)
+
+        super.onCleared()
+    }
 
     fun updateMissedCallCount() {
         missedCallsCount.value = Cans.missedCallsCount
+    }
+
+    fun register(){
+        Cans.registerCallListener(coreListener)
+        Cans.registersListener(registerListener)
+    }
+
+    fun unregister(){
+        Cans.unCallListener(coreListener)
+        Cans.unRegisterListener(registerListener)
     }
 }

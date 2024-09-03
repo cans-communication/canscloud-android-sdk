@@ -105,7 +105,9 @@ class Cans {
                         callListeners.forEach { it.onCallEnd() }
                     }
 
-                    else -> {}
+                    else -> {
+                        callListeners.forEach { it.onCall() }
+                    }
                 }
             }
 
