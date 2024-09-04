@@ -3,26 +3,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/FirstFragment">
+    app:startDestination="@id/DialerFragment">
 
     <fragment
-        android:id="@+id/FirstFragment"
-        android:name="cc.cans.canscloud.demoappinsdk.FirstFragment"
-        android:label="@string/first_fragment_label"
-        tools:layout="@layout/fragment_first">
+        android:id="@+id/DialerFragment"
+        android:name="cc.cans.canscloud.demoappinsdk.dialer.DialerFragment"
+        android:label="Dialer Fragment"
+        tools:layout="@layout/fragment_dialer">
 
-        <action
-            android:id="@+id/action_FirstFragment_to_SecondFragment"
-            app:destination="@id/SecondFragment" />
     </fragment>
-    <fragment
-        android:id="@+id/SecondFragment"
-        android:name="cc.cans.canscloud.demoappinsdk.SecondFragment"
-        android:label="@string/second_fragment_label"
-        tools:layout="@layout/fragment_second">
-
-        <action
-            android:id="@+id/action_SecondFragment_to_FirstFragment"
-            app:destination="@id/FirstFragment" />
-    </fragment>
+    4
 </navigation>
