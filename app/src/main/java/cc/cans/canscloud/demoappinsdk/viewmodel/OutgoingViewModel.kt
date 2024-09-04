@@ -26,10 +26,9 @@ import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.callback.CallCallback
 import cc.cans.canscloud.sdk.models.CallState
 
-class CallsViewModel : ViewModel() {
-    val callDuration = MutableLiveData<Int>()
+class OutgoingViewModel : ViewModel() {
     var isCallEnd = MutableLiveData<Boolean>()
-
+    var isCalling = MutableLiveData<Boolean>()
 
     private val coreListener = object : CallCallback {
         override fun onCallState(state: CallState, message: String) {
@@ -39,7 +38,7 @@ class CallsViewModel : ViewModel() {
                 CallState.LASTCALLEND ->  isCallEnd.value = true
                 CallState.INCOMINGCALL -> {}
                 CallState.STARTCALL ->  {}
-                CallState.CONNECTED ->  callDuration.value =  Cans.durationTime()
+                CallState.CONNECTED -> isCalling.value = true
                 CallState.ERROR -> {}
                 CallState.CALLEND -> {}
                 CallState.UNKNOWN -> {}
@@ -49,7 +48,6 @@ class CallsViewModel : ViewModel() {
 
     init {
         Cans.registerCallListener(coreListener)
-        callDuration.value =  Cans.durationTime()
     }
 
     override fun onCleared() {

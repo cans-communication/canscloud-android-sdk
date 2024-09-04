@@ -3,10 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".call.CallFragment">
+    tools:context=".call.OutgoingActivity">
 
     <RelativeLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/white_gray"
@@ -19,10 +18,18 @@
             android:layout_height="wrap_content"
             android:text="Phone Number"
             android:textSize="28sp"
-            android:layout_alignParentTop="true"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="100dp"
             android:padding="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="calling ..."
+            android:textSize="15sp"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="20dp"
+            android:layout_below="@id/textViewPhoneNumber" />
 
         <LinearLayout
             android:id="@+id/layout_audio"

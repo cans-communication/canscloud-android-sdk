@@ -2,7 +2,6 @@ package cc.cans.canscloud.demoappinsdk.call
 
 import android.os.Bundle
 import android.os.SystemClock
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -11,7 +10,6 @@ import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.demoappinsdk.databinding.FragmentCallBinding
 import cc.cans.canscloud.demoappinsdk.viewmodel.CallsViewModel
-import cc.cans.canscloud.demoappinsdk.viewmodel.SharedMainViewModel
 import cc.cans.canscloud.sdk.Cans
 
 /**
@@ -22,7 +20,6 @@ import cc.cans.canscloud.sdk.Cans
 class CallFragment : Fragment() {
 
     private lateinit var callsViewModel: CallsViewModel
-    private lateinit var sharedViewModel: SharedMainViewModel
     private var _binding: FragmentCallBinding? = null
 
     // This property is only valid between onCreateView and
@@ -40,25 +37,19 @@ class CallFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        callsViewModel = ViewModelProvider(this)[CallsViewModel::class.java]
-
-        sharedViewModel = ViewModelProvider(this)[SharedMainViewModel::class.java]
-
-
         callsViewModel = requireActivity().run {
             ViewModelProvider(this)[CallsViewModel::class.java]
         }
+
+        binding.textViewPhoneNumber.text = Cans.usernameCall()
+        Cans.updateMicState()
+        Cans.updateSpeakerState()
 
         callsViewModel.isCallEnd.observe(viewLifecycleOwner) {
             requireActivity().finish()
         }
 
-        val phoneNumber = arguments?.getString("phoneNumber")
-        binding.textViewPhoneNumber.text = Cans.usernameCall()
-        Cans.updateMicState()
-        Cans.updateSpeakerState()
-
-        sharedViewModel.callDuration.observe(viewLifecycleOwner) {
+        callsViewModel.callDuration.observe(viewLifecycleOwner) {
             binding.activeCallTimer.visibility = View.VISIBLE
             binding.activeCallTimer.base = SystemClock.elapsedRealtime() - (1000 * Cans.durationTime()!!) // Linphone timestamps are in seconds
             binding.activeCallTimer.start()

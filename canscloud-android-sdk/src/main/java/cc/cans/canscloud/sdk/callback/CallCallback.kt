@@ -1,12 +1,7 @@
 package cc.cans.canscloud.sdk.callback
 
+import cc.cans.canscloud.sdk.models.CallState
+
 interface CallCallback {
-    fun onCallOutGoing()
-    fun onLastCallEnd()
-    fun onInComingCall()
-    fun onStartCall()
-    fun onConnected()
-    fun onError(message: String)
-    fun onCallEnd()
-    fun onCall()
+   fun onCallState(state : CallState, message: String = "")
 }

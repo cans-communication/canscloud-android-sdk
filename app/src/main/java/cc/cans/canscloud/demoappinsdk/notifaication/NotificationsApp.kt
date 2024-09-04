@@ -17,6 +17,7 @@ import cc.cans.canscloud.sdk.Cans.Companion.context
 import cc.cans.canscloud.sdk.callback.CallCallback
 import cc.cans.canscloud.sdk.core.CoreService
 import cc.cans.canscloud.demoappinsdk.call.IncomingActivity
+import cc.cans.canscloud.sdk.models.CallState
 
 class NotificationsApp(private val context: Context) {
 
@@ -40,37 +41,19 @@ class NotificationsApp(private val context: Context) {
         private const val SERVICE_NOTIF_ID = 1
 
         private val listener = object : CallCallback {
-            override fun onCallEnd() {
-            }
-
-            override fun onCall() {
-            }
-
             @RequiresApi(Build.VERSION_CODES.S)
-            override fun onCallOutGoing() {
-                displayCallNotification()
-            }
-
-            @RequiresApi(Build.VERSION_CODES.S)
-            override fun onConnected() {
-                displayCallNotification()
-                Log.i("Cans Center", "onConnectedCall")
-            }
-
-            override fun onError(message: String) {
-            }
-
-            override fun onInComingCall() {
-                showIncomingCallNotification(Cans.context)
-                Log.i("Cans Center", "onInComingCall")
-            }
-
-            override fun onLastCallEnd() {
-                Log.i("Cans Center", "onLastCallEnd")
-            }
-
-            override fun onStartCall() {
-                Log.i("Cans Center", "onStartCall")
+            override fun onCallState(state: CallState, message: String) {
+                Log.i("Cans Center", "$state")
+                when (state) {
+                    CallState.CAllOUTGOING -> {}
+                    CallState.LASTCALLEND -> {}
+                    CallState.INCOMINGCALL -> showIncomingCallNotification(Cans.context)
+                    CallState.STARTCALL -> {}
+                    CallState.CONNECTED ->  displayCallNotification()
+                    CallState.ERROR -> {}
+                    CallState.CALLEND -> {}
+                    CallState.UNKNOWN -> {}
+                }
             }
         }
 

@@ -10,6 +10,7 @@ import android.widget.Toast
 import cc.cans.canscloud.sdk.callback.CallCallback
 import cc.cans.canscloud.sdk.callback.RegisterCallback
 import cc.cans.canscloud.sdk.core.CorePreferences
+import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.utils.CansUtils
 import cc.cans.canscloud.sdk.models.CansTransportType
 import com.google.gson.Gson
@@ -71,49 +72,42 @@ class Cans {
             ) {
                 // This function will be called each time a call state changes,
                 // which includes new incoming/outgoing calls
+                callCans = call
 
                 when (state) {
                     Call.State.IncomingReceived, Call.State.IncomingEarlyMedia -> {
-                        callCans = call
-                        callListeners.forEach { it.onInComingCall() }
+                        callListeners.forEach { it.onCallState(CallState.INCOMINGCALL) }
                     }
 
                     Call.State.OutgoingInit -> {
-                        callListeners.forEach { it.onStartCall() }
+                        callListeners.forEach { it.onCallState(CallState.STARTCALL) }
                     }
 
                     Call.State.OutgoingProgress -> {
-                        callListeners.forEach { it.onCallOutGoing() }
+                        callListeners.forEach { it.onCallState(CallState.CAllOUTGOING) }
                     }
 
                     Call.State.Connected -> {
-                        callListeners.forEach { it.onConnected() }
-                    }
-
-                    Call.State.StreamsRunning -> {
-                    }
-
-                    Call.State.Paused -> {
-                        // When you put a call in pause, it will became Paused
+                        callListeners.forEach { it.onCallState(CallState.CONNECTED) }
                     }
 
                     Call.State.Error -> {
-                        callListeners.forEach { it.onError(message) }
+                        callListeners.forEach { it.onCallState(CallState.ERROR) }
                     }
 
                     Call.State.End -> {
-                        callListeners.forEach { it.onCallEnd() }
+                        callListeners.forEach { it.onCallState(CallState.CALLEND) }
                     }
 
                     else -> {
-                        callListeners.forEach { it.onCall() }
+                        callListeners.forEach { it.onCallState(CallState.UNKNOWN) }
                     }
                 }
             }
 
             override fun onLastCallEnded(core: Core) {
                 super.onLastCallEnded(core)
-                callListeners.forEach { it.onLastCallEnd() }
+                callListeners.forEach { it.onCallState(CallState.LASTCALLEND) }
             }
         }
 

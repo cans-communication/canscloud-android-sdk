@@ -26,46 +26,24 @@ import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.callback.CallCallback
 import cc.cans.canscloud.sdk.callback.RegisterCallback
+import cc.cans.canscloud.sdk.models.CallState
 
 class SharedMainViewModel : ViewModel() {
     val missedCallsCount = MutableLiveData<Int>()
     val statusRegister = MutableLiveData<Int>()
-    val callDuration = MutableLiveData<Int>()
 
     private val coreListener = object : CallCallback {
-        override fun onCallOutGoing() {
-            Log.i("Cans Center","onCallOutGoing")
-        }
-
-        override fun onCallEnd() {
-            updateMissedCallCount()
-            Log.i("Cans Center","onCallEnd")
-        }
-
-        override fun onCall() {
-            Log.i("Cans Center","onCall")
-        }
-
-        override fun onStartCall() {
-            Log.i("Cans Center","onStartCall")
-        }
-
-        override fun onConnected() {
-            callDuration.value =  Cans.durationTime()
-            Log.i("Cans Center","onConnected")
-        }
-
-        override fun onError(message: String) {
-            updateMissedCallCount()
-            Log.i("Cans Center","onError")
-        }
-
-        override fun onLastCallEnd() {
-            Log.i("Cans Center","onLastCallEnd")
-        }
-
-        override fun onInComingCall() {
-            Log.i("Cans Center","onInComingCall")
+        override fun onCallState(state: CallState, message: String) {
+            when (state) {
+                CallState.CAllOUTGOING -> {}
+                CallState.LASTCALLEND -> {}
+                CallState.INCOMINGCALL -> {}
+                CallState.STARTCALL -> {}
+                CallState.CONNECTED -> {}
+                CallState.ERROR -> updateMissedCallCount()
+                CallState.CALLEND -> updateMissedCallCount()
+                CallState.UNKNOWN -> {}
+            }
         }
     }
 

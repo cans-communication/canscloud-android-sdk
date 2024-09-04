@@ -8,10 +8,12 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.call.CallActivity
+import cc.cans.canscloud.demoappinsdk.call.OutgoingActivity
 import cc.cans.canscloud.demoappinsdk.databinding.FragmentDialerBinding
 import cc.cans.canscloud.demoappinsdk.notifaication.NotificationsApp
 import cc.cans.canscloud.demoappinsdk.viewmodel.SharedMainViewModel
@@ -44,11 +46,11 @@ class DialerFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        // binding.textViewUsername.text = "Register by : " + Cans.username()
+        //binding.textViewUsername.text = "Register by : " + Cans.username()
         sharedViewModel = ViewModelProvider(this)[SharedMainViewModel::class.java]
 
         sharedViewModel.missedCallsCount.observe(viewLifecycleOwner) {
-            binding.misscall.text = "MissCall : $it"
+           binding.misscall.text = "MissCall : $it"
         }
 
         sharedViewModel.statusRegister.observe(viewLifecycleOwner) {
@@ -57,10 +59,14 @@ class DialerFragment : Fragment() {
         }
 
         binding.buttonCall.setOnClickListener {
-            Cans.startCall(binding.editTextPhoneNumber.text.toString())
-            val intent = Intent(requireContext(), CallActivity::class.java)
-            intent.putExtra("phoneNumber", binding.editTextPhoneNumber.text.toString())
-            startActivity(intent)
+            if (binding.editTextPhoneNumber.text.isNotEmpty()) {
+                Cans.startCall(binding.editTextPhoneNumber.text.toString())
+                val intent = Intent(requireContext(), OutgoingActivity::class.java)
+                intent.putExtra("phoneNumber", binding.editTextPhoneNumber.text.toString())
+                startActivity(intent)
+            } else {
+                Toast.makeText(requireContext(), "Can not start call, Please enter phone number", Toast.LENGTH_SHORT).show()
+            }
         }
 
         binding.buttonRegister.setOnClickListener {
