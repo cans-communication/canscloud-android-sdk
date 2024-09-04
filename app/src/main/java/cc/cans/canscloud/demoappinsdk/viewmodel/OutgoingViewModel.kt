@@ -32,7 +32,7 @@ class OutgoingViewModel : ViewModel() {
 
     private val coreListener = object : CallCallback {
         override fun onCallState(state: CallState, message: String) {
-            Log.i("Cans Center","$state")
+            Log.i("[OutgoingViewModel] onCallState: ","$state")
             when (state) {
                 CallState.CAllOUTGOING -> {}
                 CallState.LASTCALLEND ->  isCallEnd.value = true
