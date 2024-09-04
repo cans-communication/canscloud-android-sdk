@@ -43,4 +43,9 @@
         libero vel nunc consequat, quis tincidunt nisl eleifend. Cras bibendum enim a justo luctus
         vestibulum. Fusce dictum libero quis erat maximus, vitae volutpat diam dignissim.
     </string>
+
+    <string name="register">Register: </string>
+    <string name="register_success">Success</string>
+    <string name="register_fail">Fail</string>
+    <string name="un_register">No Account</string>
 </resources>

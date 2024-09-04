@@ -27,6 +27,24 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".call.CallActivity"
+            android:launchMode="singleTask"
+            android:resizeableActivity="true"
+            android:supportsPictureInPicture="true"/>
+
+        <activity
+            android:name=".call.IncomingActivity"
+            android:launchMode="singleTask"
+            android:resizeableActivity="true"
+            android:supportsPictureInPicture="true"/>
+
+        <activity
+            android:name=".call.OutgoingActivity"
+            android:launchMode="singleTask"
+            android:resizeableActivity="true"
+            android:supportsPictureInPicture="true"/>
+
         <receiver android:name=".notifaication.AnswerCallReceiver" />
         <receiver android:name=".notifaication.DeclineCallReceiver" />
 

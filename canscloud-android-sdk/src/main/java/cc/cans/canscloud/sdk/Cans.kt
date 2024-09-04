@@ -5,19 +5,14 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.ConnectivityManager
-import android.net.NetworkInfo
-import android.telecom.CallAudioState
-import android.telephony.TelephonyManager.NETWORK_TYPE_EDGE
-import android.telephony.TelephonyManager.NETWORK_TYPE_GPRS
-import android.telephony.TelephonyManager.NETWORK_TYPE_IDEN
 import android.widget.Toast
 import cc.cans.canscloud.sdk.callback.CallCallback
 import cc.cans.canscloud.sdk.callback.RegisterCallback
 import cc.cans.canscloud.sdk.core.CorePreferences
+import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.utils.CansUtils
+import cc.cans.canscloud.sdk.models.CansTransportType
 import com.google.gson.Gson
 import org.linphone.core.Account
 import org.linphone.core.Address
@@ -25,11 +20,9 @@ import org.linphone.core.AudioDevice
 import org.linphone.core.Call
 import org.linphone.core.Core
 import org.linphone.core.CoreListenerStub
-import org.linphone.core.Event
 import org.linphone.core.Factory
 import org.linphone.core.MediaEncryption
 import org.linphone.core.ProxyConfig
-import org.linphone.core.Reason
 import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import org.linphone.core.tools.Log
@@ -79,47 +72,42 @@ class Cans {
             ) {
                 // This function will be called each time a call state changes,
                 // which includes new incoming/outgoing calls
+                callCans = call
 
                 when (state) {
                     Call.State.IncomingReceived, Call.State.IncomingEarlyMedia -> {
-                        callCans = call
-                        callListeners.forEach { it.onInComingCall() }
+                        callListeners.forEach { it.onCallState(CallState.INCOMINGCALL) }
                     }
 
                     Call.State.OutgoingInit -> {
-                        callListeners.forEach { it.onStartCall() }
+                        callListeners.forEach { it.onCallState(CallState.STARTCALL) }
                     }
 
                     Call.State.OutgoingProgress -> {
-                        callListeners.forEach { it.onCallOutGoing() }
+                        callListeners.forEach { it.onCallState(CallState.CAllOUTGOING) }
                     }
 
                     Call.State.Connected -> {
-                        callListeners.forEach { it.onConnected() }
-                    }
-
-                    Call.State.StreamsRunning -> {
-                    }
-
-                    Call.State.Paused -> {
-                        // When you put a call in pause, it will became Paused
+                        callListeners.forEach { it.onCallState(CallState.CONNECTED) }
                     }
 
                     Call.State.Error -> {
-                        callListeners.forEach { it.onError(message) }
+                        callListeners.forEach { it.onCallState(CallState.ERROR) }
                     }
 
                     Call.State.End -> {
-                        callListeners.forEach { it.onCallEnd() }
+                        callListeners.forEach { it.onCallState(CallState.CALLEND) }
                     }
 
-                    else -> {}
+                    else -> {
+                        callListeners.forEach { it.onCallState(CallState.UNKNOWN) }
+                    }
                 }
             }
 
             override fun onLastCallEnded(core: Core) {
                 super.onLastCallEnded(core)
-                callListeners.forEach { it.onLastCallEnd() }
+                callListeners.forEach { it.onCallState(CallState.LASTCALLEND) }
             }
         }
 
@@ -240,12 +228,12 @@ class Cans {
             password: String,
             domain: String,
             port: String,
-            transport: String
+            transport: CansTransportType
         ) {
             if ((username != usernameRegister) || (domain != domainRegister)) {
                 core.defaultAccount?.let { it -> deleteAccount(it) }
                 val domainApp = "${domain}:${port}"
-                val transportType = if (transport.lowercase() == "tcp") {
+                val transportType = if (transport.name.lowercase() == "tcp") {
                     TransportType.Tcp
                 } else {
                     TransportType.Udp
@@ -318,6 +306,12 @@ class Cans {
                 }
                 return ""
             }
+
+        val missedCallsCount: Int
+            get() {
+                return core.missedCallsCount
+            }
+
 
         private fun deleteAccount(account: Account) {
             val authInfo = account.findAuthInfo()
