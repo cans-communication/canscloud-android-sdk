@@ -6,4 +6,8 @@
     </style>
 
     <style name="Theme.CansCloudAndroidSDK" parent="Base.Theme.CansCloudAndroidSDK" />
+
+    <style name="Theme.CansCloudAndroidSDK.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="Theme.CansCloudAndroidSDK.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 </resources>
