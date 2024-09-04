@@ -49,10 +49,13 @@ class CallFragment : Fragment() {
             requireActivity().finish()
         }
 
-        callsViewModel.callDuration.observe(viewLifecycleOwner) {
-            binding.activeCallTimer.visibility = View.VISIBLE
-            binding.activeCallTimer.base = SystemClock.elapsedRealtime() - (1000 * Cans.durationTime()!!) // Linphone timestamps are in seconds
-            binding.activeCallTimer.start()
+        callsViewModel.callDuration.observe(viewLifecycleOwner) { duration ->
+            if (duration != null) {
+                binding.activeCallTimer.visibility = View.VISIBLE
+                binding.activeCallTimer.base =
+                    SystemClock.elapsedRealtime() - (1000 * duration)
+                binding.activeCallTimer.start()
+            }
         }
 
         binding.buttonHangUp.setOnClickListener {
