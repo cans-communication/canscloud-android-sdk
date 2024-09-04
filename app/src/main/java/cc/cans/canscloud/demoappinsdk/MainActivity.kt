@@ -2,11 +2,9 @@ package cc.cans.canscloud.demoappinsdk
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -17,9 +15,6 @@ import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityMainBinding
 import cc.cans.canscloud.demoappinsdk.notifaication.NotificationsApp
 import cc.cans.canscloud.demoappinsdk.viewmodel.SharedMainViewModel
-import cc.cans.canscloud.sdk.call.CansCallActivity
-import cc.cans.canscloud.sdk.callback.CallCallback
-import cc.cans.canscloud.sdk.callback.RegisterCallback
 import cc.cans.canscloud.sdk.models.CansTransportType
 
 class MainActivity : AppCompatActivity() {
@@ -54,17 +49,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelId = "incoming_call_channel"
-            val channelName = "Incoming Call"
-            val importance = NotificationManager.IMPORTANCE_HIGH
-            val channel = NotificationChannel(channelId, channelName, importance)
-            channel.description = "Channel for incoming call notifications"
-            channel.setSound(null, null) // Disable sound if required
+        val channelId = getString(R.string.cans_incoming_channel)
+        val channelName = getString(R.string.cans_incoming_channel_name)
+        val importance = NotificationManager.IMPORTANCE_HIGH
+        val channel = NotificationChannel(channelId, channelName, importance)
+        channel.description = getString(R.string.cans_incoming_channel_description)
+        channel.setSound(null, null) // Disable sound if required
 
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager.createNotificationChannel(channel)
-        }
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.createNotificationChannel(channel)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {

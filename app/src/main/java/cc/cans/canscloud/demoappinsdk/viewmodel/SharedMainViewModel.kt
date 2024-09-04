@@ -34,6 +34,7 @@ class SharedMainViewModel : ViewModel() {
 
     private val coreListener = object : CallCallback {
         override fun onCallState(state: CallState, message: String) {
+            Log.i("[SharedMainViewModel] onCallState: ","$state")
             when (state) {
                 CallState.CAllOUTGOING -> {}
                 CallState.LASTCALLEND -> {}
@@ -51,17 +52,17 @@ class SharedMainViewModel : ViewModel() {
     private val registerListener = object : RegisterCallback {
         override fun onRegistrationOk() {
             statusRegister.value = R.string.register_success
-            Log.i("Cans Center","onRegistrationOk")
+            Log.i("[SharedMainViewModel]","onRegistrationOk")
         }
 
         override fun onRegistrationFail(message: String) {
             statusRegister.value = R.string.register_fail
-            Log.i("Cans Center","onRegistrationFail")
+            Log.i("[SharedMainViewModel]","onRegistrationFail")
         }
 
         override fun onUnRegister() {
             statusRegister.value = R.string.un_register
-            Log.i("Cans Center","onUnRegister")
+            Log.i("[SharedMainViewModel]","onUnRegister")
         }
 
     }

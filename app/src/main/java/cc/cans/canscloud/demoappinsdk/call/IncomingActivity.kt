@@ -1,13 +1,8 @@
 package cc.cans.canscloud.demoappinsdk.call
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
-import androidx.navigation.findNavController
-import androidx.navigation.fragment.findNavController
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityIncomingBinding
 import cc.cans.canscloud.sdk.Cans
 

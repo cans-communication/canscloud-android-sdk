@@ -7,11 +7,6 @@ import android.net.NetworkInfo
 import android.telephony.TelephonyManager.NETWORK_TYPE_EDGE
 import android.telephony.TelephonyManager.NETWORK_TYPE_GPRS
 import android.telephony.TelephonyManager.NETWORK_TYPE_IDEN
-import org.linphone.core.Address
-import java.text.DateFormat
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class CansUtils {
     companion object {
@@ -29,15 +24,5 @@ class CansUtils {
             // In doubt return false
             return false
         }
-
-//        fun getRecordingFilePathForAddress(address: Address): String {
-//            val displayName = getDisplayName(address)
-//            val dateFormat: DateFormat = SimpleDateFormat(
-//                RECORDING_DATE_PATTERN,
-//                Locale.getDefault(),
-//            )
-//            val fileName = "${displayName}_${dateFormat.format(Date())}.mkv"
-//            return FileUtils.getFileStoragePath(fileName).absolutePath
-//        }
     }
 }
