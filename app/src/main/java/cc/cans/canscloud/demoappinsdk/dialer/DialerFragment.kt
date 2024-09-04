@@ -1,25 +1,18 @@
 package cc.cans.canscloud.demoappinsdk.dialer
 
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
-import cc.cans.canscloud.demoappinsdk.call.CallActivity
+import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.demoappinsdk.call.OutgoingActivity
 import cc.cans.canscloud.demoappinsdk.databinding.FragmentDialerBinding
-import cc.cans.canscloud.demoappinsdk.notifaication.NotificationsApp
 import cc.cans.canscloud.demoappinsdk.viewmodel.SharedMainViewModel
 import cc.cans.canscloud.sdk.Cans
-import cc.cans.canscloud.sdk.call.CansCallActivity
-import cc.cans.canscloud.sdk.models.CansTransportType
 
 
 /**
@@ -46,7 +39,6 @@ class DialerFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        //binding.textViewUsername.text = "Register by : " + Cans.username()
         sharedViewModel = ViewModelProvider(this)[SharedMainViewModel::class.java]
 
         sharedViewModel.missedCallsCount.observe(viewLifecycleOwner) {
@@ -65,7 +57,7 @@ class DialerFragment : Fragment() {
                 intent.putExtra("phoneNumber", binding.editTextPhoneNumber.text.toString())
                 startActivity(intent)
             } else {
-                Toast.makeText(requireContext(), "Can not start call, Please enter phone number", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.start_call_error), Toast.LENGTH_SHORT).show()
             }
         }
 

@@ -30,10 +30,9 @@ class CallsViewModel : ViewModel() {
     val callDuration = MutableLiveData<Int>()
     var isCallEnd = MutableLiveData<Boolean>()
 
-
     private val coreListener = object : CallCallback {
         override fun onCallState(state: CallState, message: String) {
-            Log.i("Cans Center","$state")
+            Log.i("[CallsViewModel] onCallState: ","$state")
             when (state) {
                 CallState.CAllOUTGOING -> {}
                 CallState.LASTCALLEND ->  isCallEnd.value = true

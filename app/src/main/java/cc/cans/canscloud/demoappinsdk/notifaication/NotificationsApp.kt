@@ -1,6 +1,5 @@
 package cc.cans.canscloud.demoappinsdk.notifaication
 
-import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
@@ -9,41 +8,24 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.demoappinsdk.call.CallActivity
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.Cans.Companion.context
 import cc.cans.canscloud.sdk.callback.CallCallback
-import cc.cans.canscloud.sdk.core.CoreService
 import cc.cans.canscloud.demoappinsdk.call.IncomingActivity
 import cc.cans.canscloud.sdk.models.CallState
 
-class NotificationsApp(private val context: Context) {
-
-    private val notificationManager: NotificationManagerCompat by lazy {
-        NotificationManagerCompat.from(context)
-    }
-
-    private var service: CoreService? = null
-    private var serviceNotification: Notification? = null
-
+class NotificationsApp() {
 
     companion object {
 
-        const val INTENT_NOTIF_ID = "NOTIFICATION_ID"
-        const val INTENT_REPLY_NOTIF_ACTION = "cc.cans.canscloud.REPLY_ACTION"
-        const val INTENT_HANGUP_CALL_NOTIF_ACTION = "cc.cans.canscloud.sdk.HANGUP_CALL_ACTION"
-        const val INTENT_ANSWER_CALL_NOTIF_ACTION = "cc.cans.canscloud.sdk.ANSWER_CALL_ACTION"
-        const val INTENT_LOCAL_IDENTITY = "LOCAL_IDENTITY"
         const val INTENT_REMOTE_ADDRESS = "REMOTE_ADDRESS"
-
-        private const val SERVICE_NOTIF_ID = 1
 
         private val listener = object : CallCallback {
             @RequiresApi(Build.VERSION_CODES.S)
             override fun onCallState(state: CallState, message: String) {
-                Log.i("Cans Center", "$state")
+                Log.i("[NotificationsApp] onCallState: ", "$state")
                 when (state) {
                     CallState.CAllOUTGOING -> {}
                     CallState.LASTCALLEND -> {}
@@ -57,10 +39,8 @@ class NotificationsApp(private val context: Context) {
             }
         }
 
-
         fun onCoreReady() {
             Cans.registerCallListener(listener)
-            context.startService(Intent(context, IncomingCallService::class.java))
         }
 
         fun showIncomingCallNotification(context: Context) {
@@ -99,9 +79,9 @@ class NotificationsApp(private val context: Context) {
             val name = Cans.usernameCall()
 
             // Build the notification
-            val builder = NotificationCompat.Builder(context, "incoming_call_channel")
+            val builder = NotificationCompat.Builder(context, context.getString(R.string.cans_incoming_channel))
                 .setSmallIcon(R.drawable.ic_launcher_foreground)  // Your call icon here
-                .setContentTitle("Incoming Call")
+                .setContentTitle(context.getString(R.string.cans_incoming_channel_name))
                 .setContentText("$name is calling...")
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_CALL)

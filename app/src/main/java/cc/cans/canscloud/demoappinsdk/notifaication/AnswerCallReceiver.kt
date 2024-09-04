@@ -9,6 +9,6 @@ import cc.cans.canscloud.sdk.Cans
 class AnswerCallReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         Cans.startAnswerCall()
-        Toast.makeText(context, "Call Answer", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "AnswerCallReceiver", Toast.LENGTH_SHORT).show()
     }
 }
