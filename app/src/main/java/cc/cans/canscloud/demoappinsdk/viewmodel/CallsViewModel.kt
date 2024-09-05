@@ -27,7 +27,7 @@ import cc.cans.canscloud.sdk.callback.CallCallback
 import cc.cans.canscloud.sdk.models.CallState
 
 class CallsViewModel : ViewModel() {
-    val callDuration = MutableLiveData<Int>()
+    val callDuration = MutableLiveData<Int?>()
     var isCallEnd = MutableLiveData<Boolean>()
 
     private val coreListener = object : CallCallback {
