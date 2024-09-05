@@ -38,10 +38,10 @@ class Cans {
 
         @SuppressLint("StaticFieldLeak")
         lateinit var corePreferences: CorePreferences
-        const val INTENT_REMOTE_ADDRESS = "REMOTE_ADDRESS"
 
         @SuppressLint("StaticFieldLeak")
         lateinit var context: Context
+        
         var packageManager: PackageManager? = null
         var packageName: String = ""
         val callListeners = ArrayList<CallCallback>()
