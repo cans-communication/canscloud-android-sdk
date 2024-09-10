@@ -9,12 +9,11 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.core.app.NotificationManagerCompat
-import cc.cans.canscloud.sdk.callback.CallListeners
-import cc.cans.canscloud.sdk.callback.RegisterListeners
 import cc.cans.canscloud.sdk.core.CorePreferences
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.utils.CansUtils
-import cc.cans.canscloud.sdk.models.CansTransportType
+import cc.cans.canscloud.sdk.models.CansTransport
+import cc.cans.canscloud.sdk.models.RegisterState
 import org.linphone.core.Account
 import org.linphone.core.Address
 import org.linphone.core.AudioDevice
@@ -43,27 +42,12 @@ class Cans {
         private val notificationManager: NotificationManagerCompat by lazy {
             NotificationManagerCompat.from(context)
         }
-        
+
         private var packageManager: PackageManager? = null
         private var packageName: String = ""
+        var coreListeners = mutableListOf<cc.cans.canscloud.sdk.callback.CansListenerStub>()
 
-      //  val callListeners: MutableSet<CallListeners> = HashSet()
-        val registerListeners: MutableSet<RegisterListeners> = HashSet()
-
-        var callListeners: CallListeners? = null
-
-        fun setOnCallListeners(listener: CallListeners) {
-            this.callListeners = listener
-        }
-
-        fun removeCallListeners() {
-            this.callListeners = null
-        }
-
-        var isMicrophoneMuted: Boolean = false
-        var isSpeakerSelected: Boolean = false
-
-        private val coreListener = object : CoreListenerStub() {
+        private val coreListenerStub = object : CoreListenerStub() {
             override fun onRegistrationStateChanged(
                 core: Core,
                 cfg: ProxyConfig,
@@ -72,9 +56,9 @@ class Cans {
             ) {
                 Log.i("[Assistant] [Generic Login] Registration state is $state: $message")
                 if (state == RegistrationState.Ok) {
-                    registerListeners.forEach { it.onRegistrationOk() }
+                    coreListeners.forEach { it.onRegistration(RegisterState.OK, message) }
                 } else if (state == RegistrationState.Failed) {
-                    registerListeners.forEach { it.onRegistrationFail(message) }
+                    coreListeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
                 }
             }
 
@@ -90,38 +74,42 @@ class Cans {
 
                 when (state) {
                     Call.State.IncomingReceived, Call.State.IncomingEarlyMedia -> {
-                        callListeners?.onCallState(CallState.INCOMINGCALL)
+                        coreListeners.forEach { it.onCallState(CallState.INCOMING_CALL) }
                     }
 
                     Call.State.OutgoingInit -> {
-                        callListeners?.onCallState(CallState.STARTCALL)
+                        coreListeners.forEach { it.onCallState(CallState.START_CALL) }
                     }
 
                     Call.State.OutgoingProgress -> {
-                        callListeners?.onCallState(CallState.CAllOUTGOING)
+                        coreListeners.forEach { it.onCallState(CallState.CAll_OUTGOING) }
                     }
 
                     Call.State.Connected -> {
-                        callListeners?.onCallState(CallState.CONNECTED)
+                        coreListeners.forEach { it.onCallState(CallState.CONNECTED) }
                     }
 
                     Call.State.Error -> {
-                        callListeners?.onCallState(CallState.ERROR)
+                        coreListeners.forEach { it.onCallState(CallState.ERROR) }
                     }
 
                     Call.State.End -> {
-                        callListeners?.onCallState(CallState.CALLEND)
+                        coreListeners.forEach { it.onCallState(CallState.CALLEND) }
                     }
 
                     else -> {
-                        callListeners?.onCallState(CallState.UNKNOWN)
+                        coreListeners.forEach { it.onCallState(CallState.UNKNOWN) }
                     }
                 }
             }
 
             override fun onLastCallEnded(core: Core) {
                 super.onLastCallEnded(core)
-                callListeners?.onCallState(CallState.LASTCALLEND)
+                if (!core.isMicEnabled) {
+                    Log.w("[Context] Mic was muted in Core, enabling it back for next call")
+                    core.isMicEnabled = true
+                }
+                coreListeners.forEach { it.onCallState(CallState.LAST_CALLEND) }
             }
         }
 
@@ -144,7 +132,7 @@ class Cans {
             corePreferences.config = config
             core = Factory.instance().createCoreWithConfig(config, activity)
             core.start()
-            core.addListener(coreListener)
+            core.addListener(coreListenerStub)
             createNotificationChannels(context, notificationManager)
         }
 
@@ -194,7 +182,7 @@ class Cans {
             password: String,
             domain: String,
             port: String,
-            transport: CansTransportType
+            transport: CansTransport
         ) {
             if ((username != usernameRegister) || (domain != domainRegister)) {
                 core.defaultAccount?.let { it -> deleteAccount(it) }
@@ -225,7 +213,7 @@ class Cans {
                 //core.config.setBool("video", "auto_resize_preview_to_keep_ratio", true)
 
                 core.defaultAccount = createAccount
-                core.addListener(coreListener)
+                core.addListener(coreListenerStub)
                 core.start()
 
                 // We will need the RECORD_AUDIO permission for video call
@@ -277,11 +265,43 @@ class Cans {
                 return ""
             }
 
+        val remoteAddressCall: String
+            get() {
+                return callCans.remoteAddress.asStringUriOnly()
+            }
+
+        val destinationUsername: String
+            get() {
+                return callCans.remoteAddress.username ?: ""
+            }
+
+        val durationTime: Int?
+            get() {
+                val durationTime = core.currentCall?.duration
+                return durationTime
+            }
+
         val missedCallsCount: Int
             get() {
                 return core.missedCallsCount
             }
 
+        val countCalls: Int
+            get() {
+                val call = core.callsNb
+                Log.i("[Application] getCountCalls : $call")
+                return call
+            }
+
+        val isMicState: Boolean
+            get() {
+                return core.currentCall?.microphoneMuted == true
+            }
+
+        val isSpeakerState: Boolean
+            get() {
+                return isSpeakerAudio()
+            }
 
         private fun deleteAccount(account: Account) {
             val authInfo = account.findAuthInfo()
@@ -292,14 +312,7 @@ class Cans {
                 Log.w("[Account Settings] Couldn't find matching auth info...")
             }
             core.removeAccount(account)
-            registerListeners.forEach { it.onUnRegister() }
-        }
-
-
-        fun getCountCalls(): Int {
-            val call = core.callsNb
-            Log.i("[Application] getCountCalls : $call")
-            return call
+            coreListeners.forEach { it.onUnRegister() }
         }
 
         fun startCall(addressToCall: String) {
@@ -318,7 +331,7 @@ class Cans {
             // If we wanted to start the call with video directly
             //params.enableVideo(true)
 
-            core.addListener(coreListener)
+            core.addListener(coreListenerStub)
             core.start()
 
             // Finally we start the call
@@ -337,16 +350,8 @@ class Cans {
             call.terminate()
         }
 
-        fun remoteAddressCall(): String {
-            return callCans.remoteAddress.asStringUriOnly()
-        }
-
-        fun usernameCall(): String {
-            return callCans.remoteAddress.username ?: ""
-        }
-
         fun startAnswerCall() {
-            val remoteSipAddress = remoteAddressCall()
+            val remoteSipAddress = remoteAddressCall
             val remoteAddress = core.interpretUrl(remoteSipAddress)
             val call =
                 if (remoteAddress != null) core.getCallByRemoteAddress2(remoteAddress) else null
@@ -371,11 +376,6 @@ class Cans {
             call.acceptWithParams(params)
         }
 
-        fun durationTime(): Int? {
-            val durationTime = core.currentCall?.duration
-            return durationTime
-        }
-
         fun toggleMuteMicrophone() {
             if (packageManager?.checkPermission(
                     Manifest.permission.RECORD_AUDIO,
@@ -393,12 +393,8 @@ class Cans {
                 val micMuted = call?.microphoneMuted ?: false
                 call?.microphoneMuted = !micMuted
             }
-            updateMicState()
         }
 
-        fun updateMicState() {
-            isMicrophoneMuted = core.currentCall?.microphoneMuted == true
-        }
 
         fun toggleSpeaker() {
             if (isSpeakerAudio()) {
@@ -406,11 +402,6 @@ class Cans {
             } else {
                 forceSpeakerAudioRoute()
             }
-            updateSpeakerState()
-        }
-
-        fun updateSpeakerState() {
-            isSpeakerSelected = isSpeakerAudio()
         }
 
         private fun isSpeakerAudio(call: Call? = null): Boolean {

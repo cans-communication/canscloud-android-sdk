@@ -1,6 +1,5 @@
 package cc.cans.canscloud.demoappinsdk.dialer
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -9,11 +8,10 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.R
-import cc.cans.canscloud.demoappinsdk.call.OutgoingActivity
 import cc.cans.canscloud.demoappinsdk.databinding.FragmentDialerBinding
 import cc.cans.canscloud.demoappinsdk.viewmodel.SharedMainViewModel
 import cc.cans.canscloud.sdk.Cans
-import cc.cans.canscloud.sdk.models.CansTransportType
+import cc.cans.canscloud.sdk.models.CansTransport
 
 
 /**
@@ -54,24 +52,9 @@ class DialerFragment : Fragment() {
         binding.buttonCall.setOnClickListener {
             if (binding.editTextPhoneNumber.text.isNotEmpty()) {
                 Cans.startCall(binding.editTextPhoneNumber.text.toString())
-                val intent = Intent(requireContext(), OutgoingActivity::class.java)
-                intent.putExtra("phoneNumber", binding.editTextPhoneNumber.text.toString())
-                startActivity(intent)
             } else {
                 Toast.makeText(requireContext(), getString(R.string.start_call_error), Toast.LENGTH_SHORT).show()
             }
-        }
-
-        binding.buttonRegister.setOnClickListener {
-            Cans.registerByUser(
-                requireActivity(),
-                "40102",
-                "p40102CANS",
-                "cns.cans.cc",
-                "8446",
-                CansTransportType.UDP
-            )
-            sharedViewModel.register()
         }
 
         binding.buttonUnregister.setOnClickListener {

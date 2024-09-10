@@ -24,22 +24,40 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.sdk.Cans
-import cc.cans.canscloud.sdk.callback.CallListeners
-import cc.cans.canscloud.sdk.callback.RegisterListeners
+import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.models.CallState
+import cc.cans.canscloud.sdk.models.RegisterState
 
 class SharedMainViewModel : ViewModel() {
     val missedCallsCount = MutableLiveData<Int>()
     val statusRegister = MutableLiveData<Int>()
 
-    private val callListener = object : CallListeners {
+    private val listener = object : CansListenerStub {
+        override fun onRegistration(state: RegisterState, message: String) {
+            Log.i("[SharedMainViewModel]","onRegistration ${state}")
+            when (state) {
+                RegisterState.OK -> {
+                    statusRegister.value = R.string.register_success
+                }
+                RegisterState.FAIL -> {
+                    statusRegister.value = R.string.register_fail
+                }
+            }
+        }
+
+        override fun onUnRegister() {
+            if (Cans.usernameRegister.isNotEmpty()) {
+                statusRegister.value = R.string.un_register
+            }
+        }
+
         override fun onCallState(state: CallState, message: String) {
             Log.i("[SharedMainViewModel] onCallState: ","$state")
             when (state) {
-                CallState.CAllOUTGOING -> {}
-                CallState.LASTCALLEND -> {}
-                CallState.INCOMINGCALL -> {}
-                CallState.STARTCALL -> {}
+                CallState.CAll_OUTGOING -> {}
+                CallState.LAST_CALLEND -> {}
+                CallState.INCOMING_CALL -> {}
+                CallState.START_CALL -> {}
                 CallState.CONNECTED -> {}
                 CallState.ERROR -> updateMissedCallCount()
                 CallState.CALLEND -> updateMissedCallCount()
@@ -48,33 +66,12 @@ class SharedMainViewModel : ViewModel() {
         }
     }
 
-
-    private val registerListener = object : RegisterListeners {
-        override fun onRegistrationOk() {
-            statusRegister.value = R.string.register_success
-            Log.i("[SharedMainViewModel]","onRegistrationOk")
-        }
-
-        override fun onRegistrationFail(message: String) {
-            statusRegister.value = R.string.register_fail
-            Log.i("[SharedMainViewModel]","onRegistrationFail")
-        }
-
-        override fun onUnRegister() {
-            statusRegister.value = R.string.un_register
-            Log.i("[SharedMainViewModel]","onUnRegister")
-        }
-
-    }
-
     init {
-        Cans.setOnCallListeners(callListener)
-        Cans.registerListeners.add(registerListener)
+        Cans.coreListeners.add(listener)
     }
 
     override fun onCleared() {
-        Cans.removeCallListeners()
-
+        Cans.coreListeners.remove(listener)
         super.onCleared()
     }
 
@@ -83,12 +80,11 @@ class SharedMainViewModel : ViewModel() {
     }
 
     fun register(){
-        Cans.setOnCallListeners(callListener)
-        Cans.registerListeners.add(registerListener)
+        Cans.coreListeners.add(listener)
     }
 
     fun unregister(){
-        Cans.removeCallListeners()
+        Cans.coreListeners.remove(listener)
         Cans.removeAccount()
     }
 }

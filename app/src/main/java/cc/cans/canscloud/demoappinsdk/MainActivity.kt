@@ -9,11 +9,12 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
+import cc.cans.canscloud.demoappinsdk.core.CoreContext
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityMainBinding
-import cc.cans.canscloud.demoappinsdk.notifaication.NotificationsApp
+import cc.cans.canscloud.demoappinsdk.notifaication.NotificationsManager
 import cc.cans.canscloud.demoappinsdk.viewmodel.SharedMainViewModel
-import cc.cans.canscloud.sdk.models.CansTransportType
+import cc.cans.canscloud.sdk.models.CansTransport
 
 class MainActivity : AppCompatActivity() {
     private val POST_NOTIFICATIONS_REQUEST_CODE = 1001
@@ -36,9 +37,11 @@ class MainActivity : AppCompatActivity() {
             "p40102CANS",
             "cns.cans.cc",
             "8446",
-            CansTransportType.UDP
+            CansTransport.UDP
         )
-        NotificationsApp.onCoreReady()
+
+        NotificationsManager(this)
+        CoreContext(this)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(

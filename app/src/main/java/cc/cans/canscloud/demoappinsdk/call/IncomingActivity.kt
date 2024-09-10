@@ -30,7 +30,7 @@ class IncomingActivity : AppCompatActivity() {
             ViewModelProvider(this)[CallsViewModel::class.java]
         }
 
-        binding.contactName.text = Cans.usernameCall()
+        binding.contactName.text = Cans.destinationUsername
 
         callsViewModel.isCallEnd.observe(this) {
             finish()

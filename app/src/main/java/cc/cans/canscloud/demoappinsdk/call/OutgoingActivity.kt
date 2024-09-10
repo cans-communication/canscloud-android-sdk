@@ -30,15 +30,7 @@ class OutgoingActivity : AppCompatActivity() {
 
         outgoingViewModel = ViewModelProvider(this)[OutgoingViewModel::class.java]
 
-        val phoneNumber = this.intent?.getStringExtra("phoneNumber")
-        binding.textViewPhoneNumber.text = phoneNumber
-        Cans.updateMicState()
-        Cans.updateSpeakerState()
-
-        outgoingViewModel.isCalling.observe(this) {
-            val intent = Intent(this, CallActivity::class.java)
-            startActivity(intent)
-        }
+        binding.textViewPhoneNumber.text = Cans.destinationUsername
 
         outgoingViewModel.isCallEnd.observe(this) {
             finish()
@@ -51,7 +43,7 @@ class OutgoingActivity : AppCompatActivity() {
 
         binding.micro.setOnClickListener {
             Cans.toggleMuteMicrophone()
-            if (Cans.isMicrophoneMuted) {
+            if (Cans.isMicState) {
                 binding.micro.setImageResource(R.drawable.ongoing_mute_select)
             } else {
                 binding.micro.setImageResource(R.drawable.ongoing_mute_default)
@@ -60,7 +52,7 @@ class OutgoingActivity : AppCompatActivity() {
 
         binding.speaker.setOnClickListener {
             Cans.toggleSpeaker()
-            if (Cans.isSpeakerSelected) {
+            if (Cans.isSpeakerState) {
                 binding.speaker.setImageResource(R.drawable.ongoing_speaker_selected)
             } else {
                 binding.speaker.setImageResource(R.drawable.ongoing_speaker_default)

@@ -23,22 +23,29 @@ import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import cc.cans.canscloud.sdk.Cans
-import cc.cans.canscloud.sdk.callback.CallListeners
+import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.models.CallState
+import cc.cans.canscloud.sdk.models.RegisterState
 
 class CallsViewModel : ViewModel() {
     val callDuration = MutableLiveData<Int?>()
     var isCallEnd = MutableLiveData<Boolean>()
 
-    private val callListener = object : CallListeners {
+    private val listener = object : CansListenerStub {
+        override fun onRegistration(state: RegisterState, message: String) {
+        }
+
+        override fun onUnRegister() {
+        }
+
         override fun onCallState(state: CallState, message: String) {
             Log.i("[CallsViewModel] onCallState: ","$state")
             when (state) {
-                CallState.CAllOUTGOING -> {}
-                CallState.LASTCALLEND ->  isCallEnd.value = true
-                CallState.INCOMINGCALL -> {}
-                CallState.STARTCALL ->  {}
-                CallState.CONNECTED ->  callDuration.value =  Cans.durationTime()
+                CallState.CAll_OUTGOING -> {}
+                CallState.LAST_CALLEND ->  isCallEnd.value = true
+                CallState.INCOMING_CALL -> {}
+                CallState.START_CALL ->  {}
+                CallState.CONNECTED ->  callDuration.value = Cans.durationTime
                 CallState.ERROR -> {}
                 CallState.CALLEND -> {}
                 CallState.UNKNOWN -> {}
@@ -47,12 +54,12 @@ class CallsViewModel : ViewModel() {
     }
 
     init {
-        Cans.setOnCallListeners(callListener)
-        callDuration.value =  Cans.durationTime()
+        Cans.coreListeners.add(listener)
+        callDuration.value = Cans.durationTime
     }
 
     override fun onCleared() {
-        Cans.removeCallListeners()
+        Cans.coreListeners.remove(listener)
         super.onCleared()
     }
 }
