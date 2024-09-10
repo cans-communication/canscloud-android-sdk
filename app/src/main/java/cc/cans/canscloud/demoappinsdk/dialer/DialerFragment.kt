@@ -13,6 +13,7 @@ import cc.cans.canscloud.demoappinsdk.call.OutgoingActivity
 import cc.cans.canscloud.demoappinsdk.databinding.FragmentDialerBinding
 import cc.cans.canscloud.demoappinsdk.viewmodel.SharedMainViewModel
 import cc.cans.canscloud.sdk.Cans
+import cc.cans.canscloud.sdk.models.CansTransportType
 
 
 /**
@@ -62,7 +63,14 @@ class DialerFragment : Fragment() {
         }
 
         binding.buttonRegister.setOnClickListener {
-            Cans.register(requireActivity(), "line")
+            Cans.registerByUser(
+                requireActivity(),
+                "40102",
+                "p40102CANS",
+                "cns.cans.cc",
+                "8446",
+                CansTransportType.UDP
+            )
             sharedViewModel.register()
         }
 

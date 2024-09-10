@@ -13,11 +13,6 @@
     <string name="register_fail">Fail</string>
     <string name="un_register">No Account</string>
 
-    <!-- Notification -->
-    <string name="cans_incoming_channel">cans_incoming_call_channel</string>
-    <string name="cans_incoming_channel_name">Incoming call</string>
-    <string name="cans_incoming_channel_description">Channel for incoming call notifications</string>
-
     <!-- Call -->
     <string name="start_call_error">Can not start call, Please enter phone number</string>
 </resources>

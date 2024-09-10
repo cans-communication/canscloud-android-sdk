@@ -24,15 +24,15 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.sdk.Cans
-import cc.cans.canscloud.sdk.callback.CallCallback
-import cc.cans.canscloud.sdk.callback.RegisterCallback
+import cc.cans.canscloud.sdk.callback.CallListeners
+import cc.cans.canscloud.sdk.callback.RegisterListeners
 import cc.cans.canscloud.sdk.models.CallState
 
 class SharedMainViewModel : ViewModel() {
     val missedCallsCount = MutableLiveData<Int>()
     val statusRegister = MutableLiveData<Int>()
 
-    private val coreListener = object : CallCallback {
+    private val callListener = object : CallListeners {
         override fun onCallState(state: CallState, message: String) {
             Log.i("[SharedMainViewModel] onCallState: ","$state")
             when (state) {
@@ -49,7 +49,7 @@ class SharedMainViewModel : ViewModel() {
     }
 
 
-    private val registerListener = object : RegisterCallback {
+    private val registerListener = object : RegisterListeners {
         override fun onRegistrationOk() {
             statusRegister.value = R.string.register_success
             Log.i("[SharedMainViewModel]","onRegistrationOk")
@@ -68,12 +68,12 @@ class SharedMainViewModel : ViewModel() {
     }
 
     init {
-        Cans.registerCallListener(coreListener)
-        Cans.registersListener(registerListener)
+        Cans.setOnCallListeners(callListener)
+        Cans.registerListeners.add(registerListener)
     }
 
     override fun onCleared() {
-        Cans.unCallListener(coreListener)
+        Cans.removeCallListeners()
 
         super.onCleared()
     }
@@ -83,12 +83,12 @@ class SharedMainViewModel : ViewModel() {
     }
 
     fun register(){
-        Cans.registerCallListener(coreListener)
-        Cans.registersListener(registerListener)
+        Cans.setOnCallListeners(callListener)
+        Cans.registerListeners.add(registerListener)
     }
 
     fun unregister(){
-        Cans.unCallListener(coreListener)
-        Cans.unRegisterListener(registerListener)
+        Cans.removeCallListeners()
+        Cans.removeAccount()
     }
 }

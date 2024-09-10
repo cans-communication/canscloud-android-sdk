@@ -4,4 +4,5 @@
     <color name="white">#FFFFFFFF</color>
     <color name="primary_color">#003c3e</color>
     <color name="accent_color">#00857F</color>
+    <color name="notification_led_color">#ff8000</color>
 </resources>

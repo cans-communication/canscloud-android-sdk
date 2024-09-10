@@ -1,19 +1,20 @@
 package cc.cans.canscloud.sdk
 
-import UserService
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.widget.Toast
-import cc.cans.canscloud.sdk.callback.CallCallback
-import cc.cans.canscloud.sdk.callback.RegisterCallback
+import androidx.core.app.NotificationManagerCompat
+import cc.cans.canscloud.sdk.callback.CallListeners
+import cc.cans.canscloud.sdk.callback.RegisterListeners
 import cc.cans.canscloud.sdk.core.CorePreferences
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.utils.CansUtils
 import cc.cans.canscloud.sdk.models.CansTransportType
-import com.google.gson.Gson
 import org.linphone.core.Account
 import org.linphone.core.Address
 import org.linphone.core.AudioDevice
@@ -26,9 +27,6 @@ import org.linphone.core.ProxyConfig
 import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import org.linphone.core.tools.Log
-import java.io.IOException
-import java.io.InputStream
-import java.util.ArrayList
 
 class Cans {
 
@@ -41,11 +39,27 @@ class Cans {
 
         @SuppressLint("StaticFieldLeak")
         lateinit var context: Context
+
+        private val notificationManager: NotificationManagerCompat by lazy {
+            NotificationManagerCompat.from(context)
+        }
         
-        var packageManager: PackageManager? = null
-        var packageName: String = ""
-        val callListeners = ArrayList<CallCallback>()
-        val registerListeners = ArrayList<RegisterCallback>()
+        private var packageManager: PackageManager? = null
+        private var packageName: String = ""
+
+      //  val callListeners: MutableSet<CallListeners> = HashSet()
+        val registerListeners: MutableSet<RegisterListeners> = HashSet()
+
+        var callListeners: CallListeners? = null
+
+        fun setOnCallListeners(listener: CallListeners) {
+            this.callListeners = listener
+        }
+
+        fun removeCallListeners() {
+            this.callListeners = null
+        }
+
         var isMicrophoneMuted: Boolean = false
         var isSpeakerSelected: Boolean = false
 
@@ -76,64 +90,45 @@ class Cans {
 
                 when (state) {
                     Call.State.IncomingReceived, Call.State.IncomingEarlyMedia -> {
-                        callListeners.forEach { it.onCallState(CallState.INCOMINGCALL) }
+                        callListeners?.onCallState(CallState.INCOMINGCALL)
                     }
 
                     Call.State.OutgoingInit -> {
-                        callListeners.forEach { it.onCallState(CallState.STARTCALL) }
+                        callListeners?.onCallState(CallState.STARTCALL)
                     }
 
                     Call.State.OutgoingProgress -> {
-                        callListeners.forEach { it.onCallState(CallState.CAllOUTGOING) }
+                        callListeners?.onCallState(CallState.CAllOUTGOING)
                     }
 
                     Call.State.Connected -> {
-                        callListeners.forEach { it.onCallState(CallState.CONNECTED) }
+                        callListeners?.onCallState(CallState.CONNECTED)
                     }
 
                     Call.State.Error -> {
-                        callListeners.forEach { it.onCallState(CallState.ERROR) }
+                        callListeners?.onCallState(CallState.ERROR)
                     }
 
                     Call.State.End -> {
-                        callListeners.forEach { it.onCallState(CallState.CALLEND) }
+                        callListeners?.onCallState(CallState.CALLEND)
                     }
 
                     else -> {
-                        callListeners.forEach { it.onCallState(CallState.UNKNOWN) }
+                        callListeners?.onCallState(CallState.UNKNOWN)
                     }
                 }
             }
 
             override fun onLastCallEnded(core: Core) {
                 super.onLastCallEnded(core)
-                callListeners.forEach { it.onCallState(CallState.LASTCALLEND) }
+                callListeners?.onCallState(CallState.LASTCALLEND)
             }
-        }
-
-        fun registerCallListener(listener: CallCallback) {
-            callListeners.add(listener)
-        }
-
-        fun unCallListener(listener: CallCallback) {
-            callListeners.remove(listener)
-        }
-
-        fun registersListener(listener: RegisterCallback) {
-            registerListeners.add(listener)
-        }
-
-        fun unRegisterListener(listener: RegisterCallback) {
-            core.defaultAccount?.let { it -> deleteAccount(it) }
-            registerListeners.forEach { it.onUnRegister() }
-            registerListeners.remove(listener)
         }
 
         fun config(
             activity: Activity,
             packageManager: PackageManager,
-            packageName: String,
-            callback: () -> Unit
+            packageName: String
         ) {
             Companion.packageManager = packageManager
             Companion.packageName = packageName
@@ -150,76 +145,47 @@ class Cans {
             core = Factory.instance().createCoreWithConfig(config, activity)
             core.start()
             core.addListener(coreListener)
-
-            callback()
+            createNotificationChannels(context, notificationManager)
         }
 
-        private fun loadJSONFromAsset(context: Context, fileName: String): String? {
-            return try {
-                val inputStream: InputStream = context.assets.open(fileName)
-                val size: Int = inputStream.available()
-                val buffer = ByteArray(size)
-                inputStream.read(buffer)
-                inputStream.close()
-                String(buffer, Charsets.UTF_8)
-            } catch (e: IOException) {
-                e.printStackTrace()
-                null
-            }
+        private fun createNotificationChannels(
+            context: Context,
+            notificationManager: NotificationManagerCompat,
+        ) {
+            createMissedCallChannel(context, notificationManager)
+            createIncomingCallChannel(context, notificationManager)
         }
 
-        fun register(activity: Activity, keyCompany: String) {
-            val fileName = "json/$keyCompany.json"
-            val jsonString = loadJSONFromAsset(context = activity.applicationContext, fileName)
+        private fun createMissedCallChannel(
+            context: Context,
+            notificationManager: NotificationManagerCompat,
+        ) {
+            val id = context.getString(R.string.notification_channel_missed_call_id)
+            val name = context.getString(R.string.notification_channel_missed_call_name)
+            val description = context.getString(R.string.notification_channel_missed_call_name)
+            val channel = NotificationChannel(id, name, NotificationManager.IMPORTANCE_LOW)
+            channel.description = description
+            channel.lightColor = context.getColor(R.color.notification_led_color)
+            channel.enableVibration(true)
+            channel.enableLights(true)
+            channel.setShowBadge(true)
+            notificationManager.createNotificationChannel(channel)
+        }
 
-            jsonString?.let {
-                val gson = Gson()
-                val user = gson.fromJson(it, UserService::class.java)
-                if (usernameRegister.isEmpty() || (user.username != usernameRegister) || (user.domain != domainRegister)) {
-                    core.defaultAccount?.let { it -> deleteAccount(it) }
-                    val username = user.username
-                    val password = user.password
-                    val domain = "${user.domain}:${user.port}"
-                    val transportType = if (user.transport.lowercase() == "tcp") {
-                        TransportType.Tcp
-                    } else {
-                        TransportType.Udp
-                    }
-
-                    val authInfo = Factory.instance()
-                        .createAuthInfo(username, null, password, null, null, domain, null)
-
-                    val params = core.createAccountParams()
-                    val identity = Factory.instance().createAddress("sip:$username@$domain")
-                    params.identityAddress = identity
-
-                    val address = Factory.instance().createAddress("sip:$domain")
-                    address?.transport = transportType
-                    params.serverAddress = address
-                    params.isRegisterEnabled = true
-
-                    val createAccount = core.createAccount(params)
-                    core.addAuthInfo(authInfo)
-                    core.addAccount(createAccount)
-
-                    // Asks the CaptureTextureView to resize to match the captured video's size ratio
-                    //core.config.setBool("video", "auto_resize_preview_to_keep_ratio", true)
-
-                    core.defaultAccount = createAccount
-                    core.addListener(coreListener)
-                    core.start()
-
-                    // We will need the RECORD_AUDIO permission for video call
-                    if (packageManager?.checkPermission(
-                            Manifest.permission.RECORD_AUDIO,
-                            packageName
-                        ) != PackageManager.PERMISSION_GRANTED
-                    ) {
-                        activity.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 0)
-                        return
-                    }
-                }
-            }
+        private fun createIncomingCallChannel(
+            context: Context,
+            notificationManager: NotificationManagerCompat,
+        ) {
+            val id = context.getString(R.string.notification_channel_incoming_call_id)
+            val name = context.getString(R.string.notification_channel_incoming_call_name)
+            val description = context.getString(R.string.notification_channel_incoming_call_name)
+            val channel = NotificationChannel(id, name, NotificationManager.IMPORTANCE_HIGH)
+            channel.description = description
+            channel.lightColor = context.getColor(R.color.notification_led_color)
+            channel.enableVibration(true)
+            channel.enableLights(true)
+            channel.setShowBadge(true)
+            notificationManager.createNotificationChannel(channel)
         }
 
         fun registerByUser(
@@ -274,6 +240,10 @@ class Cans {
             }
         }
 
+        fun removeAccount() {
+            core.defaultAccount?.let { deleteAccount(it) }
+        }
+
         val accountRegister: String
             get() {
                 core.defaultAccount?.params?.identityAddress?.let {
@@ -322,6 +292,7 @@ class Cans {
                 Log.w("[Account Settings] Couldn't find matching auth info...")
             }
             core.removeAccount(account)
+            registerListeners.forEach { it.onUnRegister() }
         }
 
 
@@ -376,20 +347,11 @@ class Cans {
 
         fun startAnswerCall() {
             val remoteSipAddress = remoteAddressCall()
-            if (remoteSipAddress == null) {
-                android.util.Log.e(
-                    "[Notification Broadcast Receiver]",
-                    "Remote SIP address is null for notification"
-                )
-                return
-            }
-
-
             val remoteAddress = core.interpretUrl(remoteSipAddress)
             val call =
                 if (remoteAddress != null) core.getCallByRemoteAddress2(remoteAddress) else null
             if (call == null) {
-                android.util.Log.e(
+                Log.e(
                     "[Notification Broadcast Receiver]",
                     "Couldn't find call from remote address $remoteSipAddress"
                 )
@@ -399,7 +361,7 @@ class Cans {
             answerCall(call)
         }
 
-        fun answerCall(call: Call) {
+        private fun answerCall(call: Call) {
             Log.i("[Context] Answering call $call")
             val params = core.createCallParams(call)
             if (CansUtils.checkIfNetworkHasLowBandwidth(context)) {
@@ -520,10 +482,10 @@ class Cans {
             skipTelecom: Boolean = false
         ) {
             val currentCall = call ?: core.currentCall ?: core.calls.firstOrNull()
-            applyAudioRouteChange(currentCall, types)
+            applyAudioRouteChange(currentCall, types, skipTelecom)
         }
 
-        fun routeAudioToEarpiece(call: Call? = null, skipTelecom: Boolean = false) {
+        private fun routeAudioToEarpiece(call: Call? = null, skipTelecom: Boolean = false) {
             routeAudioTo(call, arrayListOf(AudioDevice.Type.Earpiece), skipTelecom)
         }
 

@@ -23,14 +23,14 @@ import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import cc.cans.canscloud.sdk.Cans
-import cc.cans.canscloud.sdk.callback.CallCallback
+import cc.cans.canscloud.sdk.callback.CallListeners
 import cc.cans.canscloud.sdk.models.CallState
 
 class OutgoingViewModel : ViewModel() {
     var isCallEnd = MutableLiveData<Boolean>()
     var isCalling = MutableLiveData<Boolean>()
 
-    private val coreListener = object : CallCallback {
+    private val callListener = object : CallListeners {
         override fun onCallState(state: CallState, message: String) {
             Log.i("[OutgoingViewModel] onCallState: ","$state")
             when (state) {
@@ -47,12 +47,11 @@ class OutgoingViewModel : ViewModel() {
     }
 
     init {
-        Cans.registerCallListener(coreListener)
+        Cans.setOnCallListeners(callListener)
     }
 
     override fun onCleared() {
-        Cans.unCallListener(coreListener)
-
+        Cans.removeCallListeners()
         super.onCleared()
     }
 }

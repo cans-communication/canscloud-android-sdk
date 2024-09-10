@@ -3,12 +3,15 @@ package cc.cans.canscloud.demoappinsdk.call
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityIncomingBinding
+import cc.cans.canscloud.demoappinsdk.viewmodel.CallsViewModel
 import cc.cans.canscloud.sdk.Cans
 
 class IncomingActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityIncomingBinding
+    private lateinit var callsViewModel: CallsViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,7 +26,15 @@ class IncomingActivity : AppCompatActivity() {
                     WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
         )
 
+        callsViewModel = this.run {
+            ViewModelProvider(this)[CallsViewModel::class.java]
+        }
+
         binding.contactName.text = Cans.usernameCall()
+
+        callsViewModel.isCallEnd.observe(this) {
+            finish()
+        }
 
         binding.acceptCall.setOnClickListener {
             Cans.startAnswerCall()
@@ -34,7 +45,5 @@ class IncomingActivity : AppCompatActivity() {
             Cans.terminateCall()
             finish()
         }
-
     }
-
 }
