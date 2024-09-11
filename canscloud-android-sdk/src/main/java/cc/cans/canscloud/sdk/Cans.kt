@@ -48,6 +48,77 @@ class Cans {
         private var packageName: String = ""
         private var listeners = mutableListOf<CansListenerStub>()
 
+        val account: String
+            get() {
+                core.defaultAccount?.params?.identityAddress?.let {
+                    return "${it.username}@${it.domain}:${it.port}"
+                }
+                return ""
+            }
+
+        val username: String
+            get() {
+                core.defaultAccount?.params?.identityAddress?.let {
+                    return "${it.username}"
+                }
+                return ""
+            }
+
+
+        val domain: String
+            get() {
+                core.defaultAccount?.params?.identityAddress?.let {
+                    return "${it.domain}"
+                }
+                return ""
+            }
+
+        val port: String
+            get() {
+                core.defaultAccount?.params?.identityAddress?.let {
+                    return "${it.port}"
+                }
+                return ""
+            }
+
+        val destinationRemoteAddress: String
+            get() {
+                return callCans.remoteAddress.asStringUriOnly()
+            }
+
+        val destinationUsername: String
+            get() {
+                return callCans.remoteAddress.username ?: ""
+            }
+
+        val durationTime: Int?
+            get() {
+                val durationTime = core.currentCall?.duration
+                return durationTime
+            }
+
+        val missedCallsCount: Int
+            get() {
+                return core.missedCallsCount
+            }
+
+        val countCalls: Int
+            get() {
+                val call = core.callsNb
+                Log.i("[Application] getCountCalls : $call")
+                return call
+            }
+
+        val isMicState: Boolean
+            get() {
+                return core.currentCall?.microphoneMuted == true
+            }
+
+        val isSpeakerState: Boolean
+            get() {
+                return isSpeakerAudio()
+            }
+
         private var coreListenerStub = object : CoreListenerStub() {
             override fun onRegistrationStateChanged(
                 core: Core,
@@ -185,7 +256,7 @@ class Cans {
             transport: CansTransport
         ) {
             if ((username != this.username) || (domain != this.domain)) {
-                core.defaultAccount?.let { it -> deleteAccount(it) }
+                removeAccount()
                 val serverAddress = "${domain}:${port}"
                 val transportType = if (transport.name.lowercase() == "tcp") {
                     TransportType.Tcp
@@ -229,90 +300,17 @@ class Cans {
         }
 
         fun removeAccount() {
-            core.defaultAccount?.let { deleteAccount(it) }
-        }
-
-        val account: String
-            get() {
-                core.defaultAccount?.params?.identityAddress?.let {
-                    return "${it.username}@${it.domain}:${it.port}"
+            core.defaultAccount?.let { account ->
+                val authInfo = account.findAuthInfo()
+                if (authInfo != null) {
+                    Log.i("[Account Settings] Found auth info $authInfo, removing it.")
+                    core.removeAuthInfo(authInfo)
+                } else {
+                    Log.w("[Account Settings] Couldn't find matching auth info...")
                 }
-                return ""
+                core.removeAccount(account)
+                listeners.forEach { it.onUnRegister() }
             }
-
-        val username: String
-            get() {
-                core.defaultAccount?.params?.identityAddress?.let {
-                    return "${it.username}"
-                }
-                return ""
-            }
-
-
-        val domain: String
-            get() {
-                core.defaultAccount?.params?.identityAddress?.let {
-                    return "${it.domain}"
-                }
-                return ""
-            }
-
-        val port: String
-            get() {
-                core.defaultAccount?.params?.identityAddress?.let {
-                    return "${it.port}"
-                }
-                return ""
-            }
-
-        val destinationRemoteAddress: String
-            get() {
-                return callCans.remoteAddress.asStringUriOnly()
-            }
-
-        val destinationUsername: String
-            get() {
-                return callCans.remoteAddress.username ?: ""
-            }
-
-        val durationTime: Int?
-            get() {
-                val durationTime = core.currentCall?.duration
-                return durationTime
-            }
-
-        val missedCallsCount: Int
-            get() {
-                return core.missedCallsCount
-            }
-
-        val countCalls: Int
-            get() {
-                val call = core.callsNb
-                Log.i("[Application] getCountCalls : $call")
-                return call
-            }
-
-        val isMicState: Boolean
-            get() {
-                return core.currentCall?.microphoneMuted == true
-            }
-
-        val isSpeakerState: Boolean
-            get() {
-                return isSpeakerAudio()
-            }
-
-        private fun deleteAccount(account: Account) {
-            val authInfo = account.findAuthInfo()
-            if (authInfo != null) {
-                Log.i("[Account Settings] Found auth info $authInfo, removing it.")
-                core.removeAuthInfo(authInfo)
-            } else {
-                Log.w("[Account Settings] Couldn't find matching auth info...")
-            }
-            core.removeAccount(account)
-            listeners.forEach { it.onUnRegister() }
         }
 
         fun startCall(addressToCall: String) {
