@@ -54,7 +54,10 @@ class CallsViewModel : ViewModel() {
     }
 
     init {
-        Cans.coreListeners.add(listener)
+//        Cans.coreListeners.add(listener)
+
+        Cans.addListener(listener)
+
         callDuration.value = Cans.durationTime
     }
 

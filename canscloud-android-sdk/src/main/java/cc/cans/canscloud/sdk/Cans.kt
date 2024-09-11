@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.core.app.NotificationManagerCompat
+import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.core.CorePreferences
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.utils.CansUtils
@@ -47,7 +48,13 @@ class Cans {
         private var packageName: String = ""
         var coreListeners = mutableListOf<cc.cans.canscloud.sdk.callback.CansListenerStub>()
 
-        private val coreListenerStub = object : CoreListenerStub() {
+        private var listener: CansListenerStub? = null
+
+        fun addListener(listener: CansListenerStub) {
+            this.listener = listener
+        }
+
+        var coreListenerStub = object : CoreListenerStub() {
             override fun onRegistrationStateChanged(
                 core: Core,
                 cfg: ProxyConfig,
@@ -74,7 +81,8 @@ class Cans {
 
                 when (state) {
                     Call.State.IncomingReceived, Call.State.IncomingEarlyMedia -> {
-                        coreListeners.forEach { it.onCallState(CallState.IncomingCall) }
+//                        coreListeners.forEach { it.onCallState(CallState.IncomingCall) }
+                        listener?.onCallState(CallState.IncomingCall)
                     }
 
                     Call.State.OutgoingInit -> {
