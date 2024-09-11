@@ -46,17 +46,7 @@ class Cans {
 
         private var packageManager: PackageManager? = null
         private var packageName: String = ""
-//        var coreListeners = mutableListOf<CansListenerStub>()
-
-        private var listener: CansListenerStub? = null
-
-        fun addListener(listener: CansListenerStub) {
-            this.listener = listener
-        }
-
-        fun removeListener() {
-            this.listener = null
-        }
+        private var listeners = mutableListOf<CansListenerStub>()
 
         private var coreListenerStub = object : CoreListenerStub() {
             override fun onRegistrationStateChanged(
@@ -67,11 +57,9 @@ class Cans {
             ) {
                 Log.i("[Assistant] [Generic Login] Registration state is $state: $message")
                 if (state == RegistrationState.Ok) {
-//                    coreListeners.forEach { it.onRegistration(RegisterState.OK, message) }
-                    listener?.onRegistration(RegisterState.OK, message)
+                    listeners.forEach { it.onRegistration(RegisterState.OK, message) }
                 } else if (state == RegistrationState.Failed) {
-//                    coreListeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
-                    listener?.onRegistration(RegisterState.FAIL, message)
+                    listeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
                 }
             }
 
@@ -87,37 +75,30 @@ class Cans {
 
                 when (state) {
                     Call.State.IncomingReceived, Call.State.IncomingEarlyMedia -> {
-//                        coreListeners.forEach { it.onCallState(CallState.IncomingCall) }
-                        listener?.onCallState(CallState.IncomingCall)
+                        listeners.forEach { it.onCallState(CallState.IncomingCall) }
                     }
 
                     Call.State.OutgoingInit -> {
-//                        coreListeners.forEach { it.onCallState(CallState.StartCall) }
-                        listener?.onCallState(CallState.StartCall)
+                        listeners.forEach { it.onCallState(CallState.StartCall) }
                     }
 
                     Call.State.OutgoingProgress -> {
-//                        coreListeners.forEach { it.onCallState(CallState.CallOutgoing) }
-                        listener?.onCallState(CallState.CallOutgoing)
+                        listeners.forEach { it.onCallState(CallState.CallOutgoing) }
                     }
 
                     Call.State.Connected -> {
-//                        coreListeners.forEach { it.onCallState(CallState.Connected) }
-                        listener?.onCallState(CallState.Connected)
+                        listeners.forEach { it.onCallState(CallState.Connected) }
                     }
 
                     Call.State.Error -> {
-//                        coreListeners.forEach { it.onCallState(CallState.Error) }
-                        listener?.onCallState(CallState.Error)
+                        listeners.forEach { it.onCallState(CallState.Error) }
                     }
 
                     Call.State.End -> {
-//                        coreListeners.forEach { it.onCallState(CallState.CallEnd) }
-                        listener?.onCallState(CallState.CallEnd)
+                        listeners.forEach { it.onCallState(CallState.CallEnd) }
                     }
                     else -> {
-//                        coreListeners.forEach { it.onCallState(CallState.Unknown) }
-                        listener?.onCallState(CallState.Unknown)
+                        listeners.forEach { it.onCallState(CallState.Unknown) }
                     }
                 }
             }
@@ -128,8 +109,7 @@ class Cans {
                     Log.w("[Context] Mic was muted in Core, enabling it back for next call")
                     core.isMicEnabled = true
                 }
-//                coreListeners.forEach { it.onCallState(CallState.LastCallEnd) }
-                listener?.onCallState(CallState.LastCallEnd)
+                listeners.forEach { it.onCallState(CallState.LastCallEnd) }
             }
         }
 
@@ -332,8 +312,7 @@ class Cans {
                 Log.w("[Account Settings] Couldn't find matching auth info...")
             }
             core.removeAccount(account)
-//            coreListeners.forEach { it.onUnRegister() }
-            listener?.onUnRegister()
+            listeners.forEach { it.onUnRegister() }
         }
 
         fun startCall(addressToCall: String) {
@@ -585,5 +564,13 @@ class Cans {
                 }
             }
         }
+    }
+
+    fun addListener(listener: CansListenerStub) {
+        listeners.add(listener)
+    }
+
+    fun removeListener(listener: CansListenerStub) {
+        listeners.remove(listener)
     }
 }

@@ -67,8 +67,6 @@ class SharedMainViewModel : ViewModel() {
     }
 
     init {
-//        Cans.coreListeners.add(listener)
-
         Cans.addListener(listener)
     }
 
