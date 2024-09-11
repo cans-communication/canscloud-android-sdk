@@ -33,6 +33,7 @@ class CallsViewModel : ViewModel() {
 
     private val listener = object : CansListenerStub {
         override fun onRegistration(state: RegisterState, message: String) {
+            Log.i("[CallsViewModel]","onRegistration ${state}")
         }
 
         override fun onUnRegister() {
@@ -55,14 +56,15 @@ class CallsViewModel : ViewModel() {
 
     init {
 //        Cans.coreListeners.add(listener)
-
         Cans.addListener(listener)
 
         callDuration.value = Cans.durationTime
     }
 
     override fun onCleared() {
-        Cans.coreListeners.remove(listener)
+//        Cans.coreListeners.remove(listener)
+        Cans.removeListener()
+
         super.onCleared()
     }
 }

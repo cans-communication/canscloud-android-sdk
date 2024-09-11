@@ -46,7 +46,7 @@ class Cans {
 
         private var packageManager: PackageManager? = null
         private var packageName: String = ""
-        var coreListeners = mutableListOf<cc.cans.canscloud.sdk.callback.CansListenerStub>()
+//        var coreListeners = mutableListOf<CansListenerStub>()
 
         private var listener: CansListenerStub? = null
 
@@ -54,7 +54,11 @@ class Cans {
             this.listener = listener
         }
 
-        var coreListenerStub = object : CoreListenerStub() {
+        fun removeListener() {
+            this.listener = null
+        }
+
+        private var coreListenerStub = object : CoreListenerStub() {
             override fun onRegistrationStateChanged(
                 core: Core,
                 cfg: ProxyConfig,
@@ -63,9 +67,11 @@ class Cans {
             ) {
                 Log.i("[Assistant] [Generic Login] Registration state is $state: $message")
                 if (state == RegistrationState.Ok) {
-                    coreListeners.forEach { it.onRegistration(RegisterState.OK, message) }
+//                    coreListeners.forEach { it.onRegistration(RegisterState.OK, message) }
+                    listener?.onRegistration(RegisterState.OK, message)
                 } else if (state == RegistrationState.Failed) {
-                    coreListeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
+//                    coreListeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
+                    listener?.onRegistration(RegisterState.FAIL, message)
                 }
             }
 
@@ -86,27 +92,32 @@ class Cans {
                     }
 
                     Call.State.OutgoingInit -> {
-                        coreListeners.forEach { it.onCallState(CallState.StartCall) }
+//                        coreListeners.forEach { it.onCallState(CallState.StartCall) }
+                        listener?.onCallState(CallState.StartCall)
                     }
 
                     Call.State.OutgoingProgress -> {
-                        coreListeners.forEach { it.onCallState(CallState.CallOutgoing) }
+//                        coreListeners.forEach { it.onCallState(CallState.CallOutgoing) }
+                        listener?.onCallState(CallState.CallOutgoing)
                     }
 
                     Call.State.Connected -> {
-                        coreListeners.forEach { it.onCallState(CallState.Connected) }
+//                        coreListeners.forEach { it.onCallState(CallState.Connected) }
+                        listener?.onCallState(CallState.Connected)
                     }
 
                     Call.State.Error -> {
-                        coreListeners.forEach { it.onCallState(CallState.Error) }
+//                        coreListeners.forEach { it.onCallState(CallState.Error) }
+                        listener?.onCallState(CallState.Error)
                     }
 
                     Call.State.End -> {
-                        coreListeners.forEach { it.onCallState(CallState.CallEnd) }
+//                        coreListeners.forEach { it.onCallState(CallState.CallEnd) }
+                        listener?.onCallState(CallState.CallEnd)
                     }
-
                     else -> {
-                        coreListeners.forEach { it.onCallState(CallState.Unknown) }
+//                        coreListeners.forEach { it.onCallState(CallState.Unknown) }
+                        listener?.onCallState(CallState.Unknown)
                     }
                 }
             }
@@ -117,7 +128,8 @@ class Cans {
                     Log.w("[Context] Mic was muted in Core, enabling it back for next call")
                     core.isMicEnabled = true
                 }
-                coreListeners.forEach { it.onCallState(CallState.LastCallEnd) }
+//                coreListeners.forEach { it.onCallState(CallState.LastCallEnd) }
+                listener?.onCallState(CallState.LastCallEnd)
             }
         }
 
@@ -320,7 +332,8 @@ class Cans {
                 Log.w("[Account Settings] Couldn't find matching auth info...")
             }
             core.removeAccount(account)
-            coreListeners.forEach { it.onUnRegister() }
+//            coreListeners.forEach { it.onUnRegister() }
+            listener?.onUnRegister()
         }
 
         fun startCall(addressToCall: String) {

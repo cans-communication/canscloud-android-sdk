@@ -67,11 +67,15 @@ class SharedMainViewModel : ViewModel() {
     }
 
     init {
-        Cans.coreListeners.add(listener)
+//        Cans.coreListeners.add(listener)
+
+        Cans.addListener(listener)
     }
 
     override fun onCleared() {
-        Cans.coreListeners.remove(listener)
+//        Cans.coreListeners.remove(listener)
+        Cans.removeListener()
+
         super.onCleared()
     }
 
@@ -80,7 +84,9 @@ class SharedMainViewModel : ViewModel() {
     }
 
     fun unregister(){
-        Cans.coreListeners.remove(listener)
+//        Cans.coreListeners.remove(listener)
+        Cans.removeListener()
+
         Cans.removeAccount()
     }
 }
