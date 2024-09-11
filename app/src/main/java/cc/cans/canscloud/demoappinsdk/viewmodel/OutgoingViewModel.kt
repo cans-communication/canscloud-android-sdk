@@ -32,6 +32,7 @@ class OutgoingViewModel : ViewModel() {
 
     private val listener = object : CansListenerStub {
         override fun onRegistration(state: RegisterState, message: String) {
+            Log.i("[OutgoingViewModel]","onRegistration ${state}")
         }
 
         override fun onUnRegister() {
@@ -53,11 +54,11 @@ class OutgoingViewModel : ViewModel() {
     }
 
     init {
-        Cans.coreListeners.add(listener)
+        Cans.addListener(listener)
     }
 
     override fun onCleared() {
-        Cans.coreListeners.remove(listener)
+        Cans.removeListener(listener)
         super.onCleared()
     }
 }

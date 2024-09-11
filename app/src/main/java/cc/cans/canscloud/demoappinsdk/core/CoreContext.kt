@@ -78,7 +78,8 @@ class CoreContext(
     }
 
     init {
-        Cans.coreListeners.add(listener)
+        Cans.addListener(listener)
+
         notificationsManager.onCoreReady()
 
         _lifecycleRegistry.currentState = Lifecycle.State.INITIALIZED

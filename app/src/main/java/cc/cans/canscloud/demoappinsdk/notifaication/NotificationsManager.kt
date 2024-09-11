@@ -51,7 +51,7 @@ class NotificationsManager(private val context: Context) {
     }
 
     fun onCoreReady() {
-        Cans.coreListeners.add(listener)
+        Cans.addListener(listener)
     }
 
     fun showIncomingCallNotification(context: Context) {
