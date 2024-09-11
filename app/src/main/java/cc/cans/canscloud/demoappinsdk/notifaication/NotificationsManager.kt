@@ -34,14 +34,14 @@ class NotificationsManager(private val context: Context) {
         override fun onCallState(state: CallState, message: String) {
             Log.i("[NotificationsApp] onCallState: ", "$state")
             when (state) {
-                CallState.CAll_OUTGOING -> {}
-                CallState.LAST_CALLEND -> {}
-                CallState.INCOMING_CALL -> showIncomingCallNotification(context)
-                CallState.START_CALL -> {}
-                CallState.CONNECTED -> {}
-                CallState.ERROR -> {}
-                CallState.CALLEND -> {}
-                CallState.UNKNOWN -> {}
+                CallState.CallOutgoing -> {}
+                CallState.LastCallEnd -> {}
+                CallState.IncomingCall -> showIncomingCallNotification(context)
+                CallState.StartCall -> {}
+                CallState.Connected -> {}
+                CallState.Error -> {}
+                CallState.CallEnd -> {}
+                CallState.Unknown -> {}
             }
         }
     }

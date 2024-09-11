@@ -67,14 +67,14 @@ class CoreContext(
         override fun onCallState(state: CallState, message: String) {
             Log.i("[Context] onCallState: ","$state")
             when (state) {
-                CallState.CAll_OUTGOING -> { onOutgoingStarted() }
-                CallState.LAST_CALLEND -> {}
-                CallState.INCOMING_CALL -> { onIncomingReceived() }
-                CallState.START_CALL -> {}
-                CallState.CONNECTED -> {  onCallStarted() }
-                CallState.ERROR -> {}
-                CallState.CALLEND -> {}
-                CallState.UNKNOWN -> {}
+                CallState.CallOutgoing -> onOutgoingStarted()
+                CallState.LastCallEnd -> {}
+                CallState.IncomingCall -> onIncomingReceived()
+                CallState.StartCall -> {}
+                CallState.Connected -> onCallStarted()
+                CallState.Error -> {}
+                CallState.CallEnd -> {}
+                CallState.Unknown -> {}
             }
         }
     }

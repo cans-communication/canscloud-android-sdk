@@ -54,14 +54,14 @@ class SharedMainViewModel : ViewModel() {
         override fun onCallState(state: CallState, message: String) {
             Log.i("[SharedMainViewModel] onCallState: ","$state")
             when (state) {
-                CallState.CAll_OUTGOING -> {}
-                CallState.LAST_CALLEND -> {}
-                CallState.INCOMING_CALL -> {}
-                CallState.START_CALL -> {}
-                CallState.CONNECTED -> {}
-                CallState.ERROR -> updateMissedCallCount()
-                CallState.CALLEND -> updateMissedCallCount()
-                CallState.UNKNOWN -> {}
+                CallState.CallOutgoing -> {}
+                CallState.LastCallEnd -> {}
+                CallState.IncomingCall -> {}
+                CallState.StartCall -> {}
+                CallState.Connected -> {}
+                CallState.Error -> updateMissedCallCount()
+                CallState.CallEnd -> updateMissedCallCount()
+                CallState.Unknown -> {}
             }
         }
     }
@@ -77,10 +77,6 @@ class SharedMainViewModel : ViewModel() {
 
     fun updateMissedCallCount() {
         missedCallsCount.value = Cans.missedCallsCount
-    }
-
-    fun register(){
-        Cans.coreListeners.add(listener)
     }
 
     fun unregister(){

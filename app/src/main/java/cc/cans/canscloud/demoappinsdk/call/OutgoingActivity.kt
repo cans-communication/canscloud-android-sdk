@@ -1,8 +1,6 @@
 package cc.cans.canscloud.demoappinsdk.call
 
-import android.content.Intent
 import android.os.Bundle
-import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.R
@@ -19,14 +17,6 @@ class OutgoingActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityOutgoinglBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        // Make activity full screen
-        window.addFlags(
-            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
-                    WindowManager.LayoutParams.FLAG_FULLSCREEN or
-                    WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-        )
 
         outgoingViewModel = ViewModelProvider(this)[OutgoingViewModel::class.java]
 

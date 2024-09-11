@@ -41,14 +41,14 @@ class CallsViewModel : ViewModel() {
         override fun onCallState(state: CallState, message: String) {
             Log.i("[CallsViewModel] onCallState: ","$state")
             when (state) {
-                CallState.CAll_OUTGOING -> {}
-                CallState.LAST_CALLEND ->  isCallEnd.value = true
-                CallState.INCOMING_CALL -> {}
-                CallState.START_CALL ->  {}
-                CallState.CONNECTED ->  callDuration.value = Cans.durationTime
-                CallState.ERROR -> {}
-                CallState.CALLEND -> {}
-                CallState.UNKNOWN -> {}
+                CallState.CallOutgoing -> {}
+                CallState.LastCallEnd ->  isCallEnd.value = true
+                CallState.IncomingCall -> {}
+                CallState.StartCall ->  {}
+                CallState.Connected ->  callDuration.value = Cans.durationTime
+                CallState.Error -> {}
+                CallState.CallEnd -> {}
+                CallState.Unknown -> {}
             }
         }
     }

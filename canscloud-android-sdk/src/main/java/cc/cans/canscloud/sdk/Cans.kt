@@ -74,31 +74,31 @@ class Cans {
 
                 when (state) {
                     Call.State.IncomingReceived, Call.State.IncomingEarlyMedia -> {
-                        coreListeners.forEach { it.onCallState(CallState.INCOMING_CALL) }
+                        coreListeners.forEach { it.onCallState(CallState.IncomingCall) }
                     }
 
                     Call.State.OutgoingInit -> {
-                        coreListeners.forEach { it.onCallState(CallState.START_CALL) }
+                        coreListeners.forEach { it.onCallState(CallState.StartCall) }
                     }
 
                     Call.State.OutgoingProgress -> {
-                        coreListeners.forEach { it.onCallState(CallState.CAll_OUTGOING) }
+                        coreListeners.forEach { it.onCallState(CallState.CallOutgoing) }
                     }
 
                     Call.State.Connected -> {
-                        coreListeners.forEach { it.onCallState(CallState.CONNECTED) }
+                        coreListeners.forEach { it.onCallState(CallState.Connected) }
                     }
 
                     Call.State.Error -> {
-                        coreListeners.forEach { it.onCallState(CallState.ERROR) }
+                        coreListeners.forEach { it.onCallState(CallState.Error) }
                     }
 
                     Call.State.End -> {
-                        coreListeners.forEach { it.onCallState(CallState.CALLEND) }
+                        coreListeners.forEach { it.onCallState(CallState.CallEnd) }
                     }
 
                     else -> {
-                        coreListeners.forEach { it.onCallState(CallState.UNKNOWN) }
+                        coreListeners.forEach { it.onCallState(CallState.Unknown) }
                     }
                 }
             }
@@ -109,7 +109,7 @@ class Cans {
                     Log.w("[Context] Mic was muted in Core, enabling it back for next call")
                     core.isMicEnabled = true
                 }
-                coreListeners.forEach { it.onCallState(CallState.LAST_CALLEND) }
+                coreListeners.forEach { it.onCallState(CallState.LastCallEnd) }
             }
         }
 

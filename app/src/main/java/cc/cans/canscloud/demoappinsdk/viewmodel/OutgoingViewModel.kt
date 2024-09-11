@@ -40,14 +40,14 @@ class OutgoingViewModel : ViewModel() {
         override fun onCallState(state: CallState, message: String) {
             Log.i("[OutgoingViewModel] onCallState: ","$state")
             when (state) {
-                CallState.CAll_OUTGOING -> {}
-                CallState.LAST_CALLEND ->  isCallEnd.value = true
-                CallState.INCOMING_CALL -> {}
-                CallState.START_CALL ->  {}
-                CallState.CONNECTED -> {}
-                CallState.ERROR -> {}
-                CallState.CALLEND -> {}
-                CallState.UNKNOWN -> {}
+                CallState.CallOutgoing -> {}
+                CallState.LastCallEnd -> isCallEnd.value = true
+                CallState.IncomingCall -> {}
+                CallState.StartCall -> {}
+                CallState.Connected -> {}
+                CallState.Error -> {}
+                CallState.CallEnd -> {}
+                CallState.Unknown -> {}
             }
         }
     }
