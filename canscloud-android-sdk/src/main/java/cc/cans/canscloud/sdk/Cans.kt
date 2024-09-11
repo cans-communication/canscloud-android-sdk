@@ -473,7 +473,7 @@ class Cans {
             skipTelecom: Boolean = false
         ) {
             val currentCall = call ?: core.currentCall ?: core.calls.firstOrNull()
-            applyAudioRouteChange(currentCall, types, skipTelecom)
+            applyAudioRouteChange(currentCall, types)
         }
 
         private fun routeAudioToEarpiece(call: Call? = null, skipTelecom: Boolean = false) {
