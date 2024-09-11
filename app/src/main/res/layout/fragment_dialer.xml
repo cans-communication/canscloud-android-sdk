@@ -84,22 +84,17 @@
                 android:text="MissCall : 0"
                 android:textColor="@color/red_color" />
 
-            <LinearLayout
-                android:id="@+id/button_status_register"
-                android:layout_width="match_parent"
+            <Button
+                android:id="@+id/button_register"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:gravity="center"
-                android:layout_below="@+id/button_Call"
-                android:orientation="horizontal">
+                android:text="register" />
 
-                <Button
-                    android:id="@+id/button_unregister"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="20dp"
-                    android:text="unregister" />
-
-            </LinearLayout>
+            <Button
+                android:id="@+id/button_unregister"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="unregister" />
 
         </LinearLayout>
     </LinearLayout>

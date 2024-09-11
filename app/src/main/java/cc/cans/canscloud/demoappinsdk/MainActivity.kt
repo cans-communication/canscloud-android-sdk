@@ -8,18 +8,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
-import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.core.CoreContext
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityMainBinding
 import cc.cans.canscloud.demoappinsdk.notifaication.NotificationsManager
-import cc.cans.canscloud.demoappinsdk.viewmodel.SharedMainViewModel
 import cc.cans.canscloud.sdk.models.CansTransport
 
 class MainActivity : AppCompatActivity() {
     private val POST_NOTIFICATIONS_REQUEST_CODE = 1001
     private lateinit var binding: ActivityMainBinding
-    private lateinit var sharedViewModel: SharedMainViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, true)
@@ -28,10 +25,8 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        sharedViewModel = ViewModelProvider(this)[SharedMainViewModel::class.java]
-
         Cans.config(this, packageManager, packageName)
-        Cans.registerByUser(
+        Cans.register(
             this,
             "40102",
             "p40102CANS",

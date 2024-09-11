@@ -58,7 +58,7 @@ class NotificationsManager(private val context: Context) {
         val incomingCallNotificationIntent = Intent(context, IncomingActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION)
 
-            putExtra(INTENT_REMOTE_ADDRESS, Cans.remoteAddressCall)
+            putExtra(INTENT_REMOTE_ADDRESS, Cans.destinationRemoteAddress)
         }
         val pendingIntent = PendingIntent.getActivity(
             context,

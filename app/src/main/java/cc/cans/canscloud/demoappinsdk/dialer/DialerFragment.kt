@@ -41,20 +41,41 @@ class DialerFragment : Fragment() {
         sharedViewModel = ViewModelProvider(this)[SharedMainViewModel::class.java]
 
         sharedViewModel.missedCallsCount.observe(viewLifecycleOwner) {
-           binding.misscall.text = "MissCall : $it"
+            binding.misscall.text = "MissCall : $it"
         }
 
         sharedViewModel.statusRegister.observe(viewLifecycleOwner) {
             binding.registerStatus.text = getString(it)
-            binding.registerUser.text = Cans.accountRegister
+            binding.registerUser.text = Cans.account
+        }
+
+        sharedViewModel.isRegister.observe(viewLifecycleOwner) {
+            binding.buttonRegister.visibility = if (!it) View.VISIBLE else View.GONE
+            binding.buttonUnregister.visibility = if (it) View.VISIBLE else View.GONE
         }
 
         binding.buttonCall.setOnClickListener {
             if (binding.editTextPhoneNumber.text.isNotEmpty()) {
                 Cans.startCall(binding.editTextPhoneNumber.text.toString())
             } else {
-                Toast.makeText(requireContext(), getString(R.string.start_call_error), Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.start_call_error),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
+        }
+
+        binding.buttonRegister.setOnClickListener {
+            Cans.register(
+                requireActivity(),
+                "40102",
+                "p40102CANS",
+                "cns.cans.cc",
+                "8446",
+                CansTransport.UDP
+            )
+            sharedViewModel.register()
         }
 
         binding.buttonUnregister.setOnClickListener {

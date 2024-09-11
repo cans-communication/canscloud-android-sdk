@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.core.app.NotificationManagerCompat
+import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.core.CorePreferences
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.utils.CansUtils
@@ -45,7 +46,7 @@ class Cans {
 
         private var packageManager: PackageManager? = null
         private var packageName: String = ""
-        var coreListeners = mutableListOf<cc.cans.canscloud.sdk.callback.CansListenerStub>()
+        var coreListeners = mutableListOf<CansListenerStub>()
 
         private val coreListenerStub = object : CoreListenerStub() {
             override fun onRegistrationStateChanged(
@@ -176,7 +177,7 @@ class Cans {
             notificationManager.createNotificationChannel(channel)
         }
 
-        fun registerByUser(
+        fun register(
             activity: Activity,
             username: String,
             password: String,
@@ -184,9 +185,9 @@ class Cans {
             port: String,
             transport: CansTransport
         ) {
-            if ((username != usernameRegister) || (domain != domainRegister)) {
+            if ((username != this.username) || (domain != this.domain)) {
                 core.defaultAccount?.let { it -> deleteAccount(it) }
-                val domainApp = "${domain}:${port}"
+                val serverAddress = "${domain}:${port}"
                 val transportType = if (transport.name.lowercase() == "tcp") {
                     TransportType.Tcp
                 } else {
@@ -194,13 +195,13 @@ class Cans {
                 }
 
                 val authInfo = Factory.instance()
-                    .createAuthInfo(username, null, password, null, null, domainApp, null)
+                    .createAuthInfo(username, null, password, null, null, serverAddress, null)
 
                 val params = core.createAccountParams()
-                val identity = Factory.instance().createAddress("sip:$username@$domainApp")
+                val identity = Factory.instance().createAddress("sip:$username@$serverAddress")
                 params.identityAddress = identity
 
-                val address = Factory.instance().createAddress("sip:$domainApp")
+                val address = Factory.instance().createAddress("sip:$serverAddress")
                 address?.transport = transportType
                 params.serverAddress = address
                 params.isRegisterEnabled = true
@@ -232,7 +233,7 @@ class Cans {
             core.defaultAccount?.let { deleteAccount(it) }
         }
 
-        val accountRegister: String
+        val account: String
             get() {
                 core.defaultAccount?.params?.identityAddress?.let {
                     return "${it.username}@${it.domain}:${it.port}"
@@ -240,7 +241,7 @@ class Cans {
                 return ""
             }
 
-        val usernameRegister: String
+        val username: String
             get() {
                 core.defaultAccount?.params?.identityAddress?.let {
                     return "${it.username}"
@@ -249,7 +250,7 @@ class Cans {
             }
 
 
-        val domainRegister: String
+        val domain: String
             get() {
                 core.defaultAccount?.params?.identityAddress?.let {
                     return "${it.domain}"
@@ -257,7 +258,7 @@ class Cans {
                 return ""
             }
 
-        val portRegister: String
+        val port: String
             get() {
                 core.defaultAccount?.params?.identityAddress?.let {
                     return "${it.port}"
@@ -265,7 +266,7 @@ class Cans {
                 return ""
             }
 
-        val remoteAddressCall: String
+        val destinationRemoteAddress: String
             get() {
                 return callCans.remoteAddress.asStringUriOnly()
             }
@@ -351,7 +352,7 @@ class Cans {
         }
 
         fun startAnswerCall() {
-            val remoteSipAddress = remoteAddressCall
+            val remoteSipAddress = destinationRemoteAddress
             val remoteAddress = core.interpretUrl(remoteSipAddress)
             val call =
                 if (remoteAddress != null) core.getCallByRemoteAddress2(remoteAddress) else null

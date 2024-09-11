@@ -63,6 +63,7 @@ class CallFragment : Fragment() {
 
         binding.micro.setOnClickListener {
             Cans.toggleMuteMicrophone()
+
             if (Cans.isMicState) {
                 binding.micro.setImageResource(R.drawable.ongoing_mute_select)
             } else {

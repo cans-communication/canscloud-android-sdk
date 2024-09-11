@@ -53,8 +53,6 @@ class CoreContext(
         NotificationsManager(context)
     }
 
-    private var callOverlay: View? = null
-
     private val listener = object : CansListenerStub {
         override fun onRegistration(state: RegisterState, message: String) {
             Log.i("[SharedMainViewModel]","onRegistration ${state}")

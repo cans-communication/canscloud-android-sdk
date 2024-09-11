@@ -20,6 +20,7 @@
 package cc.cans.canscloud.demoappinsdk.viewmodel
 
 import android.util.Log
+import android.view.View
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import cc.cans.canscloud.demoappinsdk.R
@@ -31,6 +32,7 @@ import cc.cans.canscloud.sdk.models.RegisterState
 class SharedMainViewModel : ViewModel() {
     val missedCallsCount = MutableLiveData<Int>()
     val statusRegister = MutableLiveData<Int>()
+    val isRegister = MutableLiveData<Boolean>()
 
     private val listener = object : CansListenerStub {
         override fun onRegistration(state: RegisterState, message: String) {
@@ -38,16 +40,19 @@ class SharedMainViewModel : ViewModel() {
             when (state) {
                 RegisterState.OK -> {
                     statusRegister.value = R.string.register_success
+                    isRegister.value = true
                 }
                 RegisterState.FAIL -> {
                     statusRegister.value = R.string.register_fail
+                    isRegister.value = false
                 }
             }
         }
 
         override fun onUnRegister() {
-            if (Cans.usernameRegister.isNotEmpty()) {
+            if (Cans.username.isEmpty()) {
                 statusRegister.value = R.string.un_register
+                isRegister.value = false
             }
         }
 
@@ -79,8 +84,12 @@ class SharedMainViewModel : ViewModel() {
         missedCallsCount.value = Cans.missedCallsCount
     }
 
+    fun register(){
+        Cans.coreListeners.add(listener)
+    }
+
     fun unregister(){
-        Cans.coreListeners.remove(listener)
         Cans.removeAccount()
+        Cans.coreListeners.remove(listener)
     }
 }
