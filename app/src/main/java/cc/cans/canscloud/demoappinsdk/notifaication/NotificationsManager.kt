@@ -1,13 +1,17 @@
 package cc.cans.canscloud.demoappinsdk.notifaication
 
+import android.Manifest
+import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
+import android.content.pm.PackageManager
 import android.util.Log
-import androidx.annotation.RequiresApi
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import cc.cans.canscloud.sdk.R
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.callback.CansListenerStub
@@ -19,6 +23,12 @@ class NotificationsManager(private val context: Context) {
 
     companion object {
         const val INTENT_REMOTE_ADDRESS = "REMOTE_ADDRESS"
+        private const val MISSED_CALL_TAG = "Missed call"
+        private const val MISSED_CALLS_NOTIF_ID = 10
+    }
+
+    private val notificationManager: NotificationManagerCompat by lazy {
+        NotificationManagerCompat.from(context)
     }
 
     private val listener = object : CansListenerStub {
@@ -30,18 +40,22 @@ class NotificationsManager(private val context: Context) {
             Log.i("[Context]","onUnRegistration")
         }
 
-        @RequiresApi(Build.VERSION_CODES.S)
         override fun onCallState(state: CallState, message: String) {
             Log.i("[NotificationsApp] onCallState: ", "$state")
             when (state) {
                 CallState.CallOutgoing -> {}
-                CallState.LastCallEnd -> {}
+                CallState.LastCallEnd -> dismissCallNotification()
                 CallState.IncomingCall -> showIncomingCallNotification(context)
                 CallState.StartCall -> {}
                 CallState.Connected -> {}
                 CallState.Error -> {}
                 CallState.CallEnd -> {}
-                CallState.Unknown -> {}
+                CallState.MissCall -> {
+                    if (Cans.isCallLogMissed()) {
+                        displayMissedCallNotification()
+                    }
+                }
+                CallState.Unknown -> dismissCallNotification()
             }
         }
     }
@@ -107,5 +121,55 @@ class NotificationsManager(private val context: Context) {
             .setContentIntent(pendingIntent)
         // Show the notification
         notificationManager.notify(1, builder.build())
+    }
+
+    private fun displayMissedCallNotification() {
+        val missedCallCount: Int = Cans.missedCallsCount
+
+        val body: String
+        if (missedCallCount > 1) {
+            body = context.getString(R.string.missed_call_notification_body).format(missedCallCount)
+        } else {
+            body = Cans.destinationUsername
+        }
+
+        val builder = NotificationCompat.Builder(
+            context,
+            context.getString(R.string.notification_channel_missed_call_id)
+        )
+            .setContentTitle(context.getString(R.string.missed_call_notification_title))
+            .setContentText(body)
+            .setSmallIcon(R.drawable.topbar_missed_call_notification)
+            .setAutoCancel(true)
+            // .setCategory(NotificationCompat.CATEGORY_EVENT) No one really matches "missed call"
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setWhen(System.currentTimeMillis())
+            .setShowWhen(true)
+            .setNumber(missedCallCount)
+            .setColor(ContextCompat.getColor(context, R.color.notification_led_color))
+
+        val notification = builder.build()
+        notify(MISSED_CALLS_NOTIF_ID, notification, MISSED_CALL_TAG)
+    }
+
+    private fun notify(id: Int, notification: Notification, tag: String? = null) {
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        notificationManager.notify(tag, id, notification)
+    }
+
+    fun dismissCallNotification() {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(1)
+    }
+
+    fun dismissMissedCallNotification() {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(MISSED_CALL_TAG, MISSED_CALLS_NOTIF_ID)
     }
 }

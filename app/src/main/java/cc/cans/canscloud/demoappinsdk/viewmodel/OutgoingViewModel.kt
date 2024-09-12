@@ -48,6 +48,7 @@ class OutgoingViewModel : ViewModel() {
                 CallState.Connected -> {}
                 CallState.Error -> {}
                 CallState.CallEnd -> {}
+                CallState.MissCall -> {}
                 CallState.Unknown -> {}
             }
         }

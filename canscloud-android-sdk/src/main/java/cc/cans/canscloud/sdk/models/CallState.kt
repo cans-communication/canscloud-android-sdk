@@ -8,5 +8,6 @@ enum class CallState {
     Connected,
     Error,
     CallEnd,
+    MissCall,
     Unknown
 }

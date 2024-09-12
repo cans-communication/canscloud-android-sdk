@@ -49,6 +49,7 @@ class CallsViewModel : ViewModel() {
                 CallState.Connected ->  callDuration.value = Cans.durationTime
                 CallState.Error -> {}
                 CallState.CallEnd -> {}
+                CallState.MissCall -> {}
                 CallState.Unknown -> {}
             }
         }

@@ -20,7 +20,6 @@
 package cc.cans.canscloud.demoappinsdk.viewmodel
 
 import android.util.Log
-import android.view.View
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import cc.cans.canscloud.demoappinsdk.R
@@ -66,6 +65,7 @@ class SharedMainViewModel : ViewModel() {
                 CallState.Connected -> {}
                 CallState.Error -> updateMissedCallCount()
                 CallState.CallEnd -> updateMissedCallCount()
+                CallState.MissCall -> {}
                 CallState.Unknown -> {}
             }
         }

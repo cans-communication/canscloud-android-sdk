@@ -72,6 +72,7 @@ class CoreContext(
                 CallState.Connected -> onCallStarted()
                 CallState.Error -> {}
                 CallState.CallEnd -> {}
+                CallState.MissCall -> {}
                 CallState.Unknown -> {}
             }
         }

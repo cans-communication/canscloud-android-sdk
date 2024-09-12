@@ -19,6 +19,7 @@ import org.linphone.core.Account
 import org.linphone.core.Address
 import org.linphone.core.AudioDevice
 import org.linphone.core.Call
+import org.linphone.core.CallLog
 import org.linphone.core.Core
 import org.linphone.core.CoreListenerStub
 import org.linphone.core.Factory
@@ -168,6 +169,11 @@ class Cans {
                     Call.State.End -> {
                         listeners.forEach { it.onCallState(CallState.CallEnd) }
                     }
+
+                    Call.State.Released -> {
+                        listeners.forEach { it.onCallState(CallState.MissCall) }
+                    }
+
                     else -> {
                         listeners.forEach { it.onCallState(CallState.Unknown) }
                     }
@@ -561,6 +567,18 @@ class Cans {
                     core.inputAudioDevice = audioDevice
                 }
             }
+        }
+
+        fun isCallLogMissed(): Boolean {
+            return (
+                    callCans.callLog.dir == Call.Dir.Incoming &&
+                            (
+                                    callCans.callLog.status == Call.Status.Missed ||
+                                            callCans.callLog.status == Call.Status.Aborted ||
+                                            callCans.callLog.status == Call.Status.EarlyAborted ||
+                                            callCans.callLog.status == Call.Status.Declined
+                                    )
+                    )
         }
 
         fun addListener(listener: CansListenerStub) {
