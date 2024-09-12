@@ -24,57 +24,59 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.sdk.Cans
-import cc.cans.canscloud.sdk.callback.CallCallback
-import cc.cans.canscloud.sdk.callback.RegisterCallback
+import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.models.CallState
+import cc.cans.canscloud.sdk.models.RegisterState
 
 class SharedMainViewModel : ViewModel() {
     val missedCallsCount = MutableLiveData<Int>()
     val statusRegister = MutableLiveData<Int>()
+    val isRegister = MutableLiveData<Boolean>()
 
-    private val coreListener = object : CallCallback {
+    private val listener = object : CansListenerStub {
+        override fun onRegistration(state: RegisterState, message: String) {
+            Log.i("[SharedMainViewModel]","onRegistration ${state}")
+            when (state) {
+                RegisterState.OK -> {
+                    statusRegister.value = R.string.register_success
+                    isRegister.value = true
+                }
+                RegisterState.FAIL -> {
+                    statusRegister.value = R.string.register_fail
+                    isRegister.value = false
+                }
+            }
+        }
+
+        override fun onUnRegister() {
+            if (Cans.username.isEmpty()) {
+                statusRegister.value = R.string.un_register
+                isRegister.value = false
+            }
+        }
+
         override fun onCallState(state: CallState, message: String) {
             Log.i("[SharedMainViewModel] onCallState: ","$state")
             when (state) {
-                CallState.CAllOUTGOING -> {}
-                CallState.LASTCALLEND -> {}
-                CallState.INCOMINGCALL -> {}
-                CallState.STARTCALL -> {}
-                CallState.CONNECTED -> {}
-                CallState.ERROR -> updateMissedCallCount()
-                CallState.CALLEND -> updateMissedCallCount()
-                CallState.UNKNOWN -> {}
+                CallState.CallOutgoing -> {}
+                CallState.LastCallEnd -> {}
+                CallState.IncomingCall -> {}
+                CallState.StartCall -> {}
+                CallState.Connected -> {}
+                CallState.Error -> updateMissedCallCount()
+                CallState.CallEnd -> updateMissedCallCount()
+                CallState.MissCall -> {}
+                CallState.Unknown -> {}
             }
         }
     }
 
-
-    private val registerListener = object : RegisterCallback {
-        override fun onRegistrationOk() {
-            statusRegister.value = R.string.register_success
-            Log.i("[SharedMainViewModel]","onRegistrationOk")
-        }
-
-        override fun onRegistrationFail(message: String) {
-            statusRegister.value = R.string.register_fail
-            Log.i("[SharedMainViewModel]","onRegistrationFail")
-        }
-
-        override fun onUnRegister() {
-            statusRegister.value = R.string.un_register
-            Log.i("[SharedMainViewModel]","onUnRegister")
-        }
-
-    }
-
     init {
-        Cans.registerCallListener(coreListener)
-        Cans.registersListener(registerListener)
+        Cans.addListener(listener)
     }
 
     override fun onCleared() {
-        Cans.unCallListener(coreListener)
-
+        Cans.removeListener(listener)
         super.onCleared()
     }
 
@@ -83,12 +85,11 @@ class SharedMainViewModel : ViewModel() {
     }
 
     fun register(){
-        Cans.registerCallListener(coreListener)
-        Cans.registersListener(registerListener)
+        Cans.addListener(listener)
     }
 
     fun unregister(){
-        Cans.unCallListener(coreListener)
-        Cans.unRegisterListener(registerListener)
+        Cans.removeAccount()
+        Cans.removeListener(listener)
     }
 }

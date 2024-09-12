@@ -41,9 +41,7 @@ class CallFragment : Fragment() {
             ViewModelProvider(this)[CallsViewModel::class.java]
         }
 
-        binding.textViewPhoneNumber.text = Cans.usernameCall()
-        Cans.updateMicState()
-        Cans.updateSpeakerState()
+        binding.textViewPhoneNumber.text = Cans.destinationUsername
 
         callsViewModel.isCallEnd.observe(viewLifecycleOwner) {
             requireActivity().finish()
@@ -65,7 +63,8 @@ class CallFragment : Fragment() {
 
         binding.micro.setOnClickListener {
             Cans.toggleMuteMicrophone()
-            if (Cans.isMicrophoneMuted) {
+
+            if (Cans.isMicState) {
                 binding.micro.setImageResource(R.drawable.ongoing_mute_select)
             } else {
                 binding.micro.setImageResource(R.drawable.ongoing_mute_default)
@@ -74,20 +73,11 @@ class CallFragment : Fragment() {
 
         binding.speaker.setOnClickListener {
             Cans.toggleSpeaker()
-            if (Cans.isSpeakerSelected) {
+            if (Cans.isSpeakerState) {
                 binding.speaker.setImageResource(R.drawable.ongoing_speaker_selected)
             } else {
                 binding.speaker.setImageResource(R.drawable.ongoing_speaker_default)
             }
         }
     }
-
-    override fun onDestroy() {
-        super.onDestroy()
-    }
-
-    override fun onStart() {
-        super.onStart()
-    }
-
 }

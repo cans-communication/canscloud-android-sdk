@@ -1,8 +1,6 @@
 package cc.cans.canscloud.demoappinsdk.call
 
-import android.content.Intent
 import android.os.Bundle
-import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.R
@@ -20,25 +18,9 @@ class OutgoingActivity : AppCompatActivity() {
         binding = ActivityOutgoinglBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Make activity full screen
-        window.addFlags(
-            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
-                    WindowManager.LayoutParams.FLAG_FULLSCREEN or
-                    WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-        )
-
         outgoingViewModel = ViewModelProvider(this)[OutgoingViewModel::class.java]
 
-        val phoneNumber = this.intent?.getStringExtra("phoneNumber")
-        binding.textViewPhoneNumber.text = phoneNumber
-        Cans.updateMicState()
-        Cans.updateSpeakerState()
-
-        outgoingViewModel.isCalling.observe(this) {
-            val intent = Intent(this, CallActivity::class.java)
-            startActivity(intent)
-        }
+        binding.textViewPhoneNumber.text = Cans.destinationUsername
 
         outgoingViewModel.isCallEnd.observe(this) {
             finish()
@@ -51,7 +33,7 @@ class OutgoingActivity : AppCompatActivity() {
 
         binding.micro.setOnClickListener {
             Cans.toggleMuteMicrophone()
-            if (Cans.isMicrophoneMuted) {
+            if (Cans.isMicState) {
                 binding.micro.setImageResource(R.drawable.ongoing_mute_select)
             } else {
                 binding.micro.setImageResource(R.drawable.ongoing_mute_default)
@@ -60,7 +42,7 @@ class OutgoingActivity : AppCompatActivity() {
 
         binding.speaker.setOnClickListener {
             Cans.toggleSpeaker()
-            if (Cans.isSpeakerSelected) {
+            if (Cans.isSpeakerState) {
                 binding.speaker.setImageResource(R.drawable.ongoing_speaker_selected)
             } else {
                 binding.speaker.setImageResource(R.drawable.ongoing_speaker_default)
