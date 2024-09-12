@@ -32,7 +32,7 @@ class NotificationsManager(private val context: Context) {
     }
 
     private val listener = object : CansListenerStub {
-        override fun onRegistration(state: RegisterState, message: String) {
+        override fun onRegistration(state: RegisterState, message: String?) {
             Log.i("[SharedMainViewModel]","onRegistration ${state}")
         }
 
@@ -40,7 +40,7 @@ class NotificationsManager(private val context: Context) {
             Log.i("[Context]","onUnRegistration")
         }
 
-        override fun onCallState(state: CallState, message: String) {
+        override fun onCallState(state: CallState, message: String?) {
             Log.i("[NotificationsApp] onCallState: ", "$state")
             when (state) {
                 CallState.CallOutgoing -> {}
@@ -121,6 +121,8 @@ class NotificationsManager(private val context: Context) {
             .setContentIntent(pendingIntent)
         // Show the notification
         notificationManager.notify(1, builder.build())
+        context.startForegroundService(incomingCallNotificationIntent)
+
     }
 
     private fun displayMissedCallNotification() {
