@@ -1,7 +1,5 @@
 package cc.cans.canscloud.demoappinsdk
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -10,17 +8,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
-import androidx.lifecycle.ViewModelProvider
+import cc.cans.canscloud.demoappinsdk.core.CoreContext
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityMainBinding
-import cc.cans.canscloud.demoappinsdk.notifaication.NotificationsApp
-import cc.cans.canscloud.demoappinsdk.viewmodel.SharedMainViewModel
-import cc.cans.canscloud.sdk.models.CansTransportType
+import cc.cans.canscloud.demoappinsdk.notifaication.NotificationsManager
+import cc.cans.canscloud.sdk.models.CansTransport
 
 class MainActivity : AppCompatActivity() {
     private val POST_NOTIFICATIONS_REQUEST_CODE = 1001
     private lateinit var binding: ActivityMainBinding
-    private lateinit var sharedViewModel: SharedMainViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, true)
@@ -29,38 +25,42 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        sharedViewModel = ViewModelProvider(this)[SharedMainViewModel::class.java]
+        Cans.config(this, packageManager, packageName)
+        Cans.register(
+            this,
+            "40102",
+            "p40102CANS",
+            "cns.cans.cc",
+            "8446",
+            CansTransport.UDP
+        )
 
-        createNotificationChannel()
-        Cans.config(this, packageManager, packageName) {
-           // Cans.register(this,"line")
-            Cans.registerByUser(this, "40107", "p40107CANS","cns.cans.cc","8446", CansTransportType.UDP)
-            NotificationsApp.onCoreReady()
-        }
+        NotificationsManager(this)
+        CoreContext(this)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
                 // Request permission
-                ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), POST_NOTIFICATIONS_REQUEST_CODE)
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    POST_NOTIFICATIONS_REQUEST_CODE
+                )
             } else {
                 // Permission already granted, proceed with showing notifications
             }
         }
     }
 
-    private fun createNotificationChannel() {
-        val channelId = getString(R.string.cans_incoming_channel)
-        val channelName = getString(R.string.cans_incoming_channel_name)
-        val importance = NotificationManager.IMPORTANCE_HIGH
-        val channel = NotificationChannel(channelId, channelName, importance)
-        channel.description = getString(R.string.cans_incoming_channel_description)
-        channel.setSound(null, null) // Disable sound if required
-
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager.createNotificationChannel(channel)
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
         if (requestCode == POST_NOTIFICATIONS_REQUEST_CODE) {

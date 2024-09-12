@@ -23,37 +23,45 @@ import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import cc.cans.canscloud.sdk.Cans
-import cc.cans.canscloud.sdk.callback.CallCallback
+import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.models.CallState
+import cc.cans.canscloud.sdk.models.RegisterState
 
 class CallsViewModel : ViewModel() {
     val callDuration = MutableLiveData<Int?>()
     var isCallEnd = MutableLiveData<Boolean>()
 
-    private val coreListener = object : CallCallback {
+    private val listener = object : CansListenerStub {
+        override fun onRegistration(state: RegisterState, message: String) {
+            Log.i("[CallsViewModel]","onRegistration ${state}")
+        }
+
+        override fun onUnRegister() {
+        }
+
         override fun onCallState(state: CallState, message: String) {
             Log.i("[CallsViewModel] onCallState: ","$state")
             when (state) {
-                CallState.CAllOUTGOING -> {}
-                CallState.LASTCALLEND ->  isCallEnd.value = true
-                CallState.INCOMINGCALL -> {}
-                CallState.STARTCALL ->  {}
-                CallState.CONNECTED ->  callDuration.value =  Cans.durationTime()
-                CallState.ERROR -> {}
-                CallState.CALLEND -> {}
-                CallState.UNKNOWN -> {}
+                CallState.CallOutgoing -> {}
+                CallState.LastCallEnd ->  isCallEnd.value = true
+                CallState.IncomingCall -> {}
+                CallState.StartCall ->  {}
+                CallState.Connected ->  callDuration.value = Cans.durationTime
+                CallState.Error -> {}
+                CallState.CallEnd -> {}
+                CallState.MissCall -> {}
+                CallState.Unknown -> {}
             }
         }
     }
 
     init {
-        Cans.registerCallListener(coreListener)
-        callDuration.value =  Cans.durationTime()
+        Cans.addListener(listener)
+        callDuration.value = Cans.durationTime
     }
 
     override fun onCleared() {
-        Cans.unCallListener(coreListener)
-
+        Cans.removeListener(listener)
         super.onCleared()
     }
 }

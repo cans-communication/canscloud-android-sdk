@@ -1,12 +1,13 @@
 package cc.cans.canscloud.sdk.models
 
 enum class CallState {
-    CAllOUTGOING,
-    LASTCALLEND,
-    INCOMINGCALL,
-    STARTCALL,
-    CONNECTED,
-    ERROR,
-    CALLEND,
-    UNKNOWN
+    CallOutgoing,
+    LastCallEnd,
+    IncomingCall,
+    StartCall,
+    Connected,
+    Error,
+    CallEnd,
+    MissCall,
+    Unknown
 }

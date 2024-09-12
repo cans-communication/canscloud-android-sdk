@@ -1,6 +1,6 @@
 package cc.cans.canscloud.sdk.models
 
-enum class CansTransportType {
+enum class CansTransport {
     TCP,
     UDP,
     TLS
