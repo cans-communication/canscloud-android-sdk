@@ -254,7 +254,6 @@ class Cans {
         }
 
         fun register(
-            activity: Activity,
             username: String,
             password: String,
             domain: String,
@@ -292,16 +291,6 @@ class Cans {
                 core.defaultAccount = createAccount
                 core.addListener(coreListenerStub)
                 core.start()
-
-                // We will need the RECORD_AUDIO permission for video call
-                if (packageManager?.checkPermission(
-                        Manifest.permission.RECORD_AUDIO,
-                        packageName
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
-                    activity.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 0)
-                    return
-                }
             }
         }
 
