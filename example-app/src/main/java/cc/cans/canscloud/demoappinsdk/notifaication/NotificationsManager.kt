@@ -7,7 +7,9 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -68,6 +70,7 @@ class NotificationsManager(private val context: Context) {
         Cans.addListener(listener)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun showIncomingCallNotification(context: Context) {
         val incomingCallNotificationIntent = Intent(context, IncomingActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION)
@@ -121,8 +124,6 @@ class NotificationsManager(private val context: Context) {
             .setContentIntent(pendingIntent)
         // Show the notification
         notificationManager.notify(1, builder.build())
-        context.startForegroundService(incomingCallNotificationIntent)
-
     }
 
     private fun displayMissedCallNotification() {
@@ -142,8 +143,8 @@ class NotificationsManager(private val context: Context) {
             .setContentTitle(context.getString(R.string.missed_call_notification_title))
             .setContentText(body)
             .setSmallIcon(R.drawable.topbar_missed_call_notification)
+            .setCategory(NotificationCompat.CATEGORY_MISSED_CALL)
             .setAutoCancel(true)
-            // .setCategory(NotificationCompat.CATEGORY_EVENT) No one really matches "missed call"
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setWhen(System.currentTimeMillis())
             .setShowWhen(true)
