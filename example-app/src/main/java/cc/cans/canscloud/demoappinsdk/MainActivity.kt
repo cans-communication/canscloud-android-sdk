@@ -27,7 +27,6 @@ class MainActivity : AppCompatActivity() {
 
         Cans.config(this, packageManager, packageName)
         Cans.register(
-            this,
             "40102",
             "p40102CANS",
             "cns.cans.cc",

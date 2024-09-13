@@ -68,7 +68,6 @@ class DialerFragment : Fragment() {
 
         binding.buttonRegister.setOnClickListener {
             Cans.register(
-                requireActivity(),
                 "40107",
                 "p40107CANS",
                 "cns.cans.cc",
