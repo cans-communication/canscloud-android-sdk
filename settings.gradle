@@ -30,5 +30,5 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "CansCloudAndroidSDK"
-include ':app'
+include ':example-app'
 include ':canscloud-android-sdk'

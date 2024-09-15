@@ -7,19 +7,18 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Vibrator
 import android.widget.Toast
 import androidx.core.app.NotificationManagerCompat
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.core.CorePreferences
 import cc.cans.canscloud.sdk.models.CallState
-import cc.cans.canscloud.sdk.utils.CansUtils
 import cc.cans.canscloud.sdk.models.CansTransport
 import cc.cans.canscloud.sdk.models.RegisterState
-import org.linphone.core.Account
+import cc.cans.canscloud.sdk.utils.CansUtils
 import org.linphone.core.Address
 import org.linphone.core.AudioDevice
 import org.linphone.core.Call
-import org.linphone.core.CallLog
 import org.linphone.core.Core
 import org.linphone.core.CoreListenerStub
 import org.linphone.core.Factory
@@ -28,12 +27,14 @@ import org.linphone.core.ProxyConfig
 import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import org.linphone.core.tools.Log
+import org.linphone.core.tools.compatibility.DeviceUtils
 
 class Cans {
 
     companion object {
         lateinit var core: Core
         lateinit var callCans: Call
+        lateinit var mVibrator: Vibrator
 
         @SuppressLint("StaticFieldLeak")
         lateinit var corePreferences: CorePreferences
@@ -147,6 +148,7 @@ class Cans {
 
                 when (state) {
                     Call.State.IncomingReceived, Call.State.IncomingEarlyMedia -> {
+                        vibrator()
                         listeners.forEach { it.onCallState(CallState.IncomingCall) }
                     }
 
@@ -186,6 +188,7 @@ class Cans {
                     Log.w("[Context] Mic was muted in Core, enabling it back for next call")
                     core.isMicEnabled = true
                 }
+                mVibrator.cancel()
                 listeners.forEach { it.onCallState(CallState.LastCallEnd) }
             }
         }
@@ -211,6 +214,11 @@ class Cans {
             core.start()
             core.addListener(coreListenerStub)
             createNotificationChannels(context, notificationManager)
+
+            core.ring = null
+            core.isVibrationOnIncomingCallEnabled = true
+            core.isNativeRingingEnabled = true
+
         }
 
         private fun createNotificationChannels(
@@ -555,6 +563,13 @@ class Cans {
                 } else {
                     core.inputAudioDevice = audioDevice
                 }
+            }
+        }
+
+        private fun vibrator() {
+            mVibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            if (mVibrator.hasVibrator()) {
+                DeviceUtils.vibrate(mVibrator)
             }
         }
 
