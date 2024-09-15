@@ -1,15 +1,16 @@
-# canscloud-android-sdk
+# canscloud-android-sdk-Tutorial
 
 This tutorial will guide canscloud sdk.
 ```kotlin```
 
 ## Feature
-- Register/UnRegister
+- Register/Unregister
 - Incoming Call
 - Outgoing Call
 - Calling
 - Speaker
 - Mute
+- Listener
 - Notification
 
 # Usage
@@ -18,7 +19,7 @@ Add the dependency to your app's build.gradle:
  implementation 'com.github.cans-communication:canscloud-android-sdk:0.1.39'
 ```
 
-Add the dependency to your app's settings.gradle:
+Add the dependency to your app's settings.gradle: 
 ```
     maven { url 'https://jitpack.io' }
     maven {
@@ -44,8 +45,12 @@ Add the dependency to your app's settings.gradle:
  private val listener = object : CansListenerStub {
         override fun onRegistration(state: RegisterState, message: String?) {
             when (state) {
-                RegisterState.OK -> {}
-                RegisterState.FAIL -> {}
+                RegisterState.OK -> {
+                  Log.i("onRegistration: ", "Register Success")
+                }
+                RegisterState.FAIL -> {
+                  Log.i("onRegistration: ", "Register Fail")
+                }
             }
         }
 
@@ -53,15 +58,33 @@ Add the dependency to your app's settings.gradle:
 
         override fun onCallState(state: CallState, message: String?) {
             when (state) {
-                CallState.CallOutgoing -> {}
-                CallState.LastCallEnd -> {}
-                CallState.IncomingCall -> {}
-                CallState.StartCall -> {}
-                CallState.Connected -> {}
-                CallState.Error -> {}
-                CallState.CallEnd -> {}
-                CallState.MissCall -> {}
-                CallState.Unknown -> {}
+                CallState.CallOutgoing -> {
+                  Log.i("[onCallState: ", "Start outgoing call, You can start outgoing activity and display a notification here.")
+                }
+                CallState.LastCallEnd -> {
+                  Log.i("[onCallState: ", "Last call end")
+                }
+                CallState.IncomingCall -> {
+                  Log.i("[onCallState: ", "Start incoming call, You can start the incoming activity and display a notification here.")
+                }
+                CallState.StartCall -> {
+                 Log.i("[onCallState: ", "Start start call")
+                }
+                CallState.Connected -> {
+                  Log.i("[onCallState: ", "Connected Calling , You can start call activity and display a notification here.")
+                }
+                CallState.Error -> {
+                  Log.i("[onCallState: ", "Call Error $message")
+                }
+                CallState.CallEnd -> {
+                  Log.i("[onCallState: ", "Call End")
+                }
+                CallState.MissCall -> {
+                  Log.i("[onCallState: ", "Miss call, You can display a notification miss call here.")
+                }
+                CallState.Unknown -> {
+                  Log.i("[onCallState: ", "Status Other")
+                }
             }
         }
     }
@@ -70,7 +93,7 @@ Add the dependency to your app's settings.gradle:
  Cans.addListener(listener)
 ```
 
-## UnRegister
+## Unregister
 ```
  Cans.removeAccount()
 ```
@@ -109,12 +132,6 @@ Add the dependency to your app's settings.gradle:
  Cans.durationTime
 ```
 
-```
- binding.activeCallTimer.visibility = View.VISIBLE
- binding.activeCallTimer.base = SystemClock.elapsedRealtime() - (1000 * Cans.durationTime)
- binding.activeCallTimer.start()
-```
-
 ## Mute
 ```
  Cans.toggleMuteMicrophone()
@@ -123,95 +140,6 @@ Add the dependency to your app's settings.gradle:
 ## Speaker
 ```
  Cans.toggleSpeaker()
-```
-
-# Notification
-
-### Incoming call
-```
-    fun showIncomingCallNotification(context: Context) {
-        val incomingCallNotificationIntent = Intent(context, IncomingActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION)
-            putExtra(INTENT_REMOTE_ADDRESS, Cans.destinationRemoteAddress)
-        }
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            0,
-            incomingCallNotificationIntent,
-            PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val notificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        val answerIntent = Intent(context, AnswerCallReceiver::class.java)
-        val answerPendingIntent = PendingIntent.getBroadcast(
-            context,
-            0,
-            answerIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-
-        val declineIntent = Intent(context, DeclineCallReceiver::class.java)
-        val declinePendingIntent = PendingIntent.getBroadcast(
-            context,
-            1,
-            declineIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        
-        val name = Cans.destinationUsername
-
-        val builder = NotificationCompat.Builder(
-            context,
-            context.getString(R.string.notification_channel_incoming_call_id)
-        )
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle(context.getString(R.string.notification_channel_incoming_call_name))
-            .setContentText("$name is calling...")
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(NotificationCompat.CATEGORY_CALL)
-            .setAutoCancel(true)
-            .setOngoing(true)
-            .addAction(R.drawable.call, "Answer", answerPendingIntent)
-            .addAction(R.drawable.hang_up, "Decline", declinePendingIntent)
-            .setFullScreenIntent(pendingIntent, true)
-            .setContentIntent(pendingIntent)
-        notificationManager.notify(1, builder.build())
-        context.startForegroundService(incomingCallNotificationIntent)
-
-    }
-```
-
-### Miss Call
-```
-   private fun displayMissedCallNotification() {
-        val missedCallCount: Int = Cans.missedCallsCount
-
-        val body: String
-        if (missedCallCount > 1) {
-            body = context.getString(R.string.missed_call_notification_body).format(missedCallCount)
-        } else {
-            body = Cans.destinationUsername
-        }
-
-        val builder = NotificationCompat.Builder(
-            context,
-            context.getString(R.string.notification_channel_missed_call_id)
-        )
-            .setContentTitle(context.getString(R.string.missed_call_notification_title))
-            .setContentText(body)
-            .setSmallIcon(R.drawable.topbar_missed_call_notification)
-            .setAutoCancel(true)
-            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
-            .setWhen(System.currentTimeMillis())
-            .setShowWhen(true)
-            .setNumber(missedCallCount)
-            .setColor(ContextCompat.getColor(context, R.color.notification_led_color))
-
-        val notification = builder.build()
-        notify(MISSED_CALLS_NOTIF_ID, notification, MISSED_CALL_TAG)
-    }
 ```
 
 # Permission (Request)
@@ -223,4 +151,11 @@ Add the dependency to your app's settings.gradle:
 ```
     Manifest.permission.RECORD_AUDIO
 ```
+
+### License
+
+Copyright © Belledonne Communications
+
+
+
 
