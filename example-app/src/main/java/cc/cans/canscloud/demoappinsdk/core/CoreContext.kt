@@ -15,6 +15,7 @@ import cc.cans.canscloud.demoappinsdk.notifaication.NotificationsManager
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.Cans.Companion.corePreferences
 import cc.cans.canscloud.sdk.callback.CansListenerStub
+import cc.cans.canscloud.sdk.models.AudioState
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
 
@@ -45,16 +46,26 @@ class CoreContext(
         override fun onCallState(state: CallState, message: String?) {
             Log.i("[Context] onCallState: ","$state")
             when (state) {
-                CallState.CallOutgoing -> onOutgoingStarted()
-                CallState.LastCallEnd -> {}
                 CallState.IncomingCall -> onIncomingReceived()
                 CallState.StartCall -> {}
+                CallState.CallOutgoing -> {
+                    onOutgoingStarted()
+                    Cans.startAudio()
+                }
+                CallState.StreamsRunning -> {
+                    Cans.startAudio()
+                }
                 CallState.Connected -> onCallStarted()
                 CallState.Error -> {}
                 CallState.CallEnd -> {}
+                CallState.LastCallEnd -> {}
                 CallState.MissCall -> {}
                 CallState.Unknown -> {}
             }
+        }
+
+        override fun onAudioUpdate(state: AudioState) {
+            Log.i("[Context onAudioUpdate]", "Audio devices $state")
         }
     }
 

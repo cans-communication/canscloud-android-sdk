@@ -18,6 +18,7 @@ import cc.cans.canscloud.sdk.R
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.demoappinsdk.call.IncomingActivity
+import cc.cans.canscloud.sdk.models.AudioState
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
 
@@ -35,23 +36,24 @@ class NotificationsManager(private val context: Context) {
 
     private val listener = object : CansListenerStub {
         override fun onRegistration(state: RegisterState, message: String?) {
-            Log.i("[SharedMainViewModel]","onRegistration ${state}")
+            Log.i("[NotificationsManager]","onRegistration ${state}")
         }
 
         override fun onUnRegister() {
-            Log.i("[Context]","onUnRegistration")
+            Log.i("[NotificationsManager]","onUnRegistration")
         }
 
         override fun onCallState(state: CallState, message: String?) {
-            Log.i("[NotificationsApp] onCallState: ", "$state")
+            Log.i("[NotificationsManager] onCallState: ", "$state")
             when (state) {
-                CallState.CallOutgoing -> {}
-                CallState.LastCallEnd -> dismissCallNotification()
                 CallState.IncomingCall -> showIncomingCallNotification(context)
                 CallState.StartCall -> {}
+                CallState.CallOutgoing -> {}
+                CallState.StreamsRunning -> {}
                 CallState.Connected -> {}
                 CallState.Error -> {}
                 CallState.CallEnd -> {}
+                CallState.LastCallEnd -> dismissCallNotification()
                 CallState.MissCall -> {
                     if (Cans.isCallLogMissed()) {
                         displayMissedCallNotification()
@@ -59,6 +61,10 @@ class NotificationsManager(private val context: Context) {
                 }
                 CallState.Unknown -> dismissCallNotification()
             }
+        }
+
+        override fun onAudioUpdate(state: AudioState) {
+            Log.i("[NotificationsManager onAudioUpdate]", "Audio devices $state")
         }
     }
 

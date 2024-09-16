@@ -4,6 +4,7 @@
     <color name="white">#FFFFFFFF</color>
     <color name="white_gray">#e8e8e8</color>
     <color name="red_color">#ff0000</color>
+    <color name="dark_tertiary_black">#AAAAAA</color>
 
 
 </resources>

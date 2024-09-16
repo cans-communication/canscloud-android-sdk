@@ -43,6 +43,12 @@ class CallFragment : Fragment() {
 
         binding.textViewPhoneNumber.text = Cans.destinationUsername
 
+        if (Cans.isBluetoothAudioRouteAvailable()) {
+            binding.bluetooth.visibility = View.VISIBLE
+        } else {
+            binding.bluetooth.visibility = View.GONE
+        }
+
         callsViewModel.isCallEnd.observe(viewLifecycleOwner) {
             requireActivity().finish()
         }
@@ -53,6 +59,14 @@ class CallFragment : Fragment() {
                 binding.activeCallTimer.base =
                     SystemClock.elapsedRealtime() - (1000 * duration)
                 binding.activeCallTimer.start()
+            }
+        }
+
+        callsViewModel.isBluetooth.observe(viewLifecycleOwner) {
+            if (it) {
+                binding.bluetooth.visibility = View.VISIBLE
+            } else {
+                binding.bluetooth.visibility = View.GONE
             }
         }
 
@@ -78,6 +92,10 @@ class CallFragment : Fragment() {
             } else {
                 binding.speaker.setImageResource(R.drawable.ongoing_speaker_default)
             }
+        }
+
+        binding.bluetooth.setOnClickListener {
+            Cans.forceBluetoothAudioRoute()
         }
     }
 }
