@@ -36,7 +36,7 @@ class OutgoingActivity : AppCompatActivity() {
         }
 
         binding.micro.setOnClickListener {
-            Cans.toggleMuteMicrophone()
+            outgoingViewModel.toggleMuteMicrophone()
             if (Cans.isMicState) {
                 binding.micro.setImageResource(R.drawable.ongoing_mute_select)
             } else {

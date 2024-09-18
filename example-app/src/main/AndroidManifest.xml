@@ -7,7 +7,15 @@
     <!-- Needed for auto start at boot and to ensure the service won't be killed by OS while in call -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- Needed for Telecom Manager -->
+    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
+    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
+
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
     <application
+        android:name=".CansApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -67,6 +75,13 @@
 
         <!-- Receivers -->
 
+<!--        <service-->
+<!--            android:name=".core.CoreService"-->
+<!--            android:exported="false"-->
+<!--            android:foregroundServiceType="phoneCall|camera|microphone|dataSync"-->
+<!--            android:stopWithTask="false"-->
+<!--            android:label="@string/app_name" />-->
+
         <receiver android:name=".core.BootReceiver"
             android:exported="true">
             <intent-filter>
@@ -74,6 +89,15 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+
+        <service
+            android:name=".telecom.TelecomConnectionService"
+            android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.telecom.ConnectionService" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

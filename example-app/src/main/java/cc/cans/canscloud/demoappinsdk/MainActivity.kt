@@ -1,5 +1,7 @@
 package cc.cans.canscloud.demoappinsdk
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -8,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import cc.cans.canscloud.demoappinsdk.compatibility.Compatibility
 import cc.cans.canscloud.demoappinsdk.core.CoreContext
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityMainBinding
@@ -26,7 +29,6 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        Cans.config(this, packageManager, packageName)
         Cans.register(
             "40102",
             "p40102CANS",
@@ -35,24 +37,33 @@ class MainActivity : AppCompatActivity() {
             CansTransport.UDP
         )
 
-        NotificationsManager(this)
-        CoreContext(this, corePreferences.config)
+        val permissionsRequiredList = arrayListOf<String>()
+        if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            permissionsRequiredList.add(Compatibility.BLUETOOTH_CONNECT)
+        }
+
+        if (checkSelfPermission(Manifest.permission.READ_PHONE_NUMBERS) != PackageManager.PERMISSION_GRANTED) {
+            permissionsRequiredList.add(Manifest.permission.READ_PHONE_NUMBERS)
+        }
+
+        if (checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+            permissionsRequiredList.add(Manifest.permission.READ_PHONE_STATE)
+        }
+
+        if (checkSelfPermission(Manifest.permission.MANAGE_OWN_CALLS) != PackageManager.PERMISSION_GRANTED) {
+            permissionsRequiredList.add(Manifest.permission.MANAGE_OWN_CALLS)
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                // Request permission
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
-                    POST_NOTIFICATIONS_REQUEST_CODE
-                )
-            } else {
-                // Permission already granted, proceed with showing notifications
+            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                permissionsRequiredList.add(Manifest.permission.POST_NOTIFICATIONS)
             }
+        }
+
+        if (permissionsRequiredList.isNotEmpty()) {
+            val permissionsRequired = arrayOfNulls<String>(permissionsRequiredList.size)
+            permissionsRequiredList.toArray(permissionsRequired)
+            requestPermissions(permissionsRequired, 0)
         }
     }
 

@@ -103,19 +103,5 @@ class CallFragment : Fragment() {
         binding.bluetooth.setOnClickListener {
             callsViewModel.forceBluetoothAudioRoute()
         }
-
-        if (Version.sdkAboveOrEqual(Version.API23_MARSHMALLOW_60)) {
-            if (requireContext().packageManager.checkPermission(Manifest.permission.BLUETOOTH_CONNECT, requireContext().packageName) == PackageManager.PERMISSION_GRANTED) {
-
-            } else {
-                val permissionsRequiredList = arrayListOf<String>()
-                permissionsRequiredList.add(Compatibility.BLUETOOTH_CONNECT)
-                if (permissionsRequiredList.isNotEmpty()) {
-                    val permissionsRequired = arrayOfNulls<String>(permissionsRequiredList.size)
-                    permissionsRequiredList.toArray(permissionsRequired)
-                    requestPermissions(permissionsRequired, 0)
-                }
-            }
-        }
     }
 }

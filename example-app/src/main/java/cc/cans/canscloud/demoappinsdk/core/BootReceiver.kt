@@ -24,6 +24,7 @@ import android.content.Context
 import android.content.Intent
 import cc.cans.canscloud.demoappinsdk.compatibility.Compatibility
 import androidx.core.app.NotificationManagerCompat
+import cc.cans.canscloud.demoappinsdk.CansApplication.Companion.coreContext
 import cc.cans.canscloud.sdk.Cans.Companion.corePreferences
 import cc.cans.canscloud.sdk.R
 import cc.cans.canscloud.sdk.core.CoreService
@@ -35,13 +36,17 @@ class BootReceiver : BroadcastReceiver() {
             val autoStart = corePreferences.autoStart
             Log.i("[Boot Receiver] Device is starting, autoStart is $autoStart")
             if (autoStart) {
-                startService(context)
+                //startService(context)
+            } else {
+                //stopService()
             }
         } else if (intent.action.equals(Intent.ACTION_MY_PACKAGE_REPLACED, ignoreCase = true)) {
             val autoStart = corePreferences.autoStart
             Log.i("[Boot Receiver] App has been updated, autoStart is $autoStart")
             if (autoStart) {
-                startService(context)
+               // startService(context)
+            } else {
+               // stopService()
             }
         }
     }
@@ -57,5 +62,11 @@ class BootReceiver : BroadcastReceiver() {
         val serviceIntent = Intent(Intent.ACTION_MAIN).setClass(context, CoreService::class.java)
         serviceIntent.putExtra("StartForeground", true)
         Compatibility.startForegroundService(context, serviceIntent)
+    }
+
+    private fun stopService() {
+        Log.i("[Boot Receiver] Auto start setting is disabled, stopping foreground service")
+      //  coreContext.notificationsManager.stopForegroundNotification()
+        coreContext.stop()
     }
 }

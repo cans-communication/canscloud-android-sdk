@@ -28,6 +28,8 @@ import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import android.util.Log
 import cc.cans.canscloud.sdk.models.AudioState
+import org.linphone.core.LogCollectionState
+import org.linphone.core.LogLevel
 import org.linphone.core.tools.compatibility.DeviceUtils
 
 class Cans {
@@ -47,8 +49,6 @@ class Cans {
             NotificationManagerCompat.from(context)
         }
 
-        private var packageManager: PackageManager? = null
-        private var packageName: String = ""
         private var listeners = mutableListOf<CansListenerStub>()
 
         val account: String
@@ -214,23 +214,28 @@ class Cans {
         }
 
         fun config(
-            activity: Activity,
-            packageManager: PackageManager,
-            packageName: String
+            context: Context,
         ) {
-            Companion.packageManager = packageManager
-            Companion.packageName = packageName
-            context = activity
 
-            corePreferences = CorePreferences(activity)
+            this.context = context
+
+            Factory.instance().setLogCollectionPath(context.filesDir.absolutePath)
+            Factory.instance().enableLogCollection(LogCollectionState.Enabled)
+
+            corePreferences = CorePreferences(context)
             corePreferences.copyAssetsFromPackage()
 
-            val config = Factory.instance().createConfigWithFactory(
-                corePreferences.configPath,
-                corePreferences.factoryConfigPath
-            )
+            val config = Factory.instance().createConfigWithFactory(corePreferences.configPath, corePreferences.factoryConfigPath)
             corePreferences.config = config
-            core = Factory.instance().createCoreWithConfig(config, activity)
+
+            val appName = context.getString(R.string.app_name)
+            Factory.instance().setLoggerDomain(appName)
+            Factory.instance().enableLogcatLogs(corePreferences.logcatLogsOutput)
+            if (corePreferences.debugLogs) {
+                Factory.instance().loggingService.setLogLevel(LogLevel.Message)
+            }
+
+            core = Factory.instance().createCoreWithConfig(config, context)
             core.start()
             core.addListener(coreListenerStub)
             createNotificationChannels(context, notificationManager)
@@ -393,25 +398,6 @@ class Cans {
                 params?.isLowBandwidthEnabled = true
             }
             call.acceptWithParams(params)
-        }
-
-        fun toggleMuteMicrophone() {
-            if (packageManager?.checkPermission(
-                    Manifest.permission.RECORD_AUDIO,
-                    packageName
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                return
-            }
-
-            val call = core.currentCall
-            if (call != null && call.conference != null) {
-                val micMuted = call.conference?.microphoneMuted ?: false
-                call.conference?.microphoneMuted = !micMuted
-            } else {
-                val micMuted = call?.microphoneMuted ?: false
-                call?.microphoneMuted = !micMuted
-            }
         }
 
         private fun isSpeakerAudio(call: Call? = null): Boolean {

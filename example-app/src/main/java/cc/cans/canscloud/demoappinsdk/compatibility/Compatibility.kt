@@ -260,7 +260,7 @@ class Compatibility {
             if (Version.sdkAboveOrEqual(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)) {
                 Api34Compatibility.startCallForegroundService(service, notifId, notif, isCallActive)
             } else {
-                startForegroundService(service, notifId, notif)
+               // startForegroundService(service, notifId, notif)
             }
         }
 
@@ -278,7 +278,7 @@ class Compatibility {
                     isCallActive,
                 )
             } else {
-                startForegroundService(service, notifId, notif)
+                //startForegroundService(service, notifId, notif)
             }
         }
 

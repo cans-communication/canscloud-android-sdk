@@ -107,6 +107,8 @@ class AudioRouteUtils {
             skipTelecom: Boolean = false,
         ) {
             val currentCall = call ?: core.currentCall ?: core.calls.firstOrNull()
+//            val currentCall = call ?: coreContext.core.currentCall ?: coreContext.core.calls.firstOrNull()
+
             if (currentCall != null && !skipTelecom && TelecomHelper.exists()) {
                 Log.i("[Audio Route Helper] Call provided & Telecom Helper exists, trying to dispatch audio route change through Telecom API")
                 val connection = TelecomHelper.get().findConnectionForCallId(currentCall.callLog.callId.orEmpty())

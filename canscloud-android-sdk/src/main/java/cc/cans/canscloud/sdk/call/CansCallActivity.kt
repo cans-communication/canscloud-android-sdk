@@ -35,13 +35,13 @@ class CansCallActivity : ComponentActivity() {
 //            }
 //        }
 
-        binding.buttonMute.setOnClickListener {
-            Cans.toggleMuteMicrophone()
-            if (Cans.isMicState) {
-                binding.buttonMute.text = "On Mute"
-            } else {
-                binding.buttonMute.text = "Off Mute"
-            }
-        }
+//        binding.buttonMute.setOnClickListener {
+//            Cans.toggleMuteMicrophone()
+//            if (Cans.isMicState) {
+//                binding.buttonMute.text = "On Mute"
+//            } else {
+//                binding.buttonMute.text = "Off Mute"
+//            }
+//        }
     }
 }

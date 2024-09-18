@@ -1,15 +1,20 @@
 package cc.cans.canscloud.demoappinsdk.viewmodel
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import cc.cans.canscloud.demoappinsdk.utils.AudioRouteUtils
+import cc.cans.canscloud.demoappinsdk.utils.PermissionHelper
 import cc.cans.canscloud.sdk.Cans
+import cc.cans.canscloud.sdk.Cans.Companion.core
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
 import org.linphone.core.Call
 import org.linphone.core.Core
+import org.linphone.core.Event
 
 class CallsViewModel : ViewModel() {
     val callDuration = MutableLiveData<Int?>()
@@ -74,6 +79,21 @@ class CallsViewModel : ViewModel() {
             forceEarpieceAudioRoute()
         } else {
             forceSpeakerAudioRoute()
+        }
+    }
+
+    fun toggleMuteMicrophone() {
+        if (!PermissionHelper.get().hasRecordAudioPermission()) {
+            return
+        }
+
+        val call = core.currentCall
+        if (call != null && call.conference != null) {
+            val micMuted = call.conference?.microphoneMuted ?: false
+            call.conference?.microphoneMuted = !micMuted
+        } else {
+            val micMuted = call?.microphoneMuted ?: false
+            call?.microphoneMuted = !micMuted
         }
     }
 

@@ -36,12 +36,8 @@ import org.linphone.core.tools.Log
 @TargetApi(29)
 class NativeCallWrapper(var callId: String) : Connection() {
     init {
-        val properties = connectionProperties or PROPERTY_SELF_MANAGED
-        connectionProperties = properties
-
         val capabilities = connectionCapabilities or CAPABILITY_MUTE or CAPABILITY_SUPPORT_HOLD or CAPABILITY_HOLD
         connectionCapabilities = capabilities
-
         audioModeIsVoip = true
         statusHints = StatusHints(
             "",
@@ -51,9 +47,7 @@ class NativeCallWrapper(var callId: String) : Connection() {
     }
 
     override fun onStateChanged(state: Int) {
-        Log.i(
-            "[Connection] Telecom state changed [${intStateToString(state)}] for call with id: $callId"
-        )
+        Log.i("[Connection] Telecom state changed [$state] for call with id: $callId")
         super.onStateChanged(state)
     }
 
@@ -64,25 +58,13 @@ class NativeCallWrapper(var callId: String) : Connection() {
 
     override fun onHold() {
         Log.i("[Connection] Pausing telecom call with id: $callId")
-        getCall()?.let { call ->
-            if (call.conference != null) {
-                call.conference?.leave()
-            } else {
-                call.pause()
-            }
-        } ?: selfDestroy()
+        getCall()?.pause() ?: selfDestroy()
         setOnHold()
     }
 
     override fun onUnhold() {
         Log.i("[Connection] Resuming telecom call with id: $callId")
-        getCall()?.let { call ->
-            if (call.conference != null) {
-                call.conference?.enter()
-            } else {
-                call.resume()
-            }
-        } ?: selfDestroy()
+        getCall()?.resume() ?: selfDestroy()
         setActive()
     }
 
@@ -91,31 +73,12 @@ class NativeCallWrapper(var callId: String) : Connection() {
 
         val call = getCall()
         if (call != null) {
-            if (getState() != STATE_ACTIVE && getState() != STATE_DIALING) {
-                Log.w(
-                    "[Connection] Call state isn't STATE_ACTIVE or STATE_DIALING, ignoring mute mic & audio route directive from TelecomManager"
-                )
-                return
-            }
-
-            if (state.isMuted != call.microphoneMuted) {
-                Log.w(
-                    "[Connection] Connection audio state asks for changing in mute: ${state.isMuted}, currently is ${call.microphoneMuted}"
-                )
-                if (state.isMuted) {
-                    Log.w("[Connection] Muting microphone")
-                    call.microphoneMuted = true
-                }
-            }
-
+            call.microphoneMuted = state.isMuted
             when (state.route) {
                 CallAudioState.ROUTE_EARPIECE -> AudioRouteUtils.routeAudioToEarpiece(call, true)
                 CallAudioState.ROUTE_SPEAKER -> AudioRouteUtils.routeAudioToSpeaker(call, true)
                 CallAudioState.ROUTE_BLUETOOTH -> AudioRouteUtils.routeAudioToBluetooth(call, true)
-                CallAudioState.ROUTE_WIRED_HEADSET -> AudioRouteUtils.routeAudioToHeadset(
-                    call,
-                    true
-                )
+                CallAudioState.ROUTE_WIRED_HEADSET -> AudioRouteUtils.routeAudioToHeadset(call, true)
             }
         } else {
             selfDestroy()
@@ -147,10 +110,6 @@ class NativeCallWrapper(var callId: String) : Connection() {
         core.stopRinging()
     }
 
-    fun stateAsString(): String {
-        return stateToString(state)
-    }
-
     private fun getCall(): Call? {
         return core.getCallByCallid(callId)
     }
@@ -160,20 +119,6 @@ class NativeCallWrapper(var callId: String) : Connection() {
             Log.e("[Connection] No call in Core, destroy connection")
             setDisconnected(DisconnectCause(DisconnectCause.LOCAL))
             destroy()
-        }
-    }
-
-    private fun intStateToString(state: Int): String {
-        return when (state) {
-            STATE_INITIALIZING -> "STATE_INITIALIZING"
-            STATE_NEW -> "STATE_NEW"
-            STATE_RINGING -> "STATE_RINGING"
-            STATE_DIALING -> "STATE_DIALING"
-            STATE_ACTIVE -> "STATE_ACTIVE"
-            STATE_HOLDING -> "STATE_HOLDING"
-            STATE_DISCONNECTED -> "STATE_DISCONNECTED"
-            STATE_PULLING_CALL -> "STATE_PULLING_CALL"
-            else -> "STATE_UNKNOWN"
         }
     }
 }
