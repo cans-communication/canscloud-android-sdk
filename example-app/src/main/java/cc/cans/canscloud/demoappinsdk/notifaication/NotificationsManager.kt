@@ -21,6 +21,7 @@ import cc.cans.canscloud.demoappinsdk.call.IncomingActivity
 import cc.cans.canscloud.sdk.models.AudioState
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
+import org.linphone.core.Call
 
 class NotificationsManager(private val context: Context) {
 
@@ -43,9 +44,10 @@ class NotificationsManager(private val context: Context) {
             Log.i("[NotificationsManager]","onUnRegistration")
         }
 
-        override fun onCallState(state: CallState, message: String?) {
+        override fun onCallState(call: Call, state: CallState, message: String?) {
             Log.i("[NotificationsManager] onCallState: ", "$state")
             when (state) {
+                CallState.Idle -> {}
                 CallState.IncomingCall -> showIncomingCallNotification(context)
                 CallState.StartCall -> {}
                 CallState.CallOutgoing -> {}
@@ -53,7 +55,6 @@ class NotificationsManager(private val context: Context) {
                 CallState.Connected -> {}
                 CallState.Error -> {}
                 CallState.CallEnd -> {}
-                CallState.LastCallEnd -> dismissCallNotification()
                 CallState.MissCall -> {
                     if (Cans.isCallLogMissed()) {
                         displayMissedCallNotification()
@@ -63,8 +64,17 @@ class NotificationsManager(private val context: Context) {
             }
         }
 
-        override fun onAudioUpdate(state: AudioState) {
-            Log.i("[NotificationsManager onAudioUpdate]", "Audio devices $state")
+        override fun onLastCallEnded() {
+            Log.i("[NotificationsManager]", "onLastCallEnded")
+            dismissCallNotification()
+        }
+
+        override fun onAudioDeviceChanged() {
+            Log.i("[Context onAudioUpdate]", "onAudioDeviceChanged")
+        }
+
+        override fun onAudioDevicesListUpdated() {
+            Log.i("[Context onAudioUpdate]", "onAudioDevicesListUpdated")
         }
     }
 

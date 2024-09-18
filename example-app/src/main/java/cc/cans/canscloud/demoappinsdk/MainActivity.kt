@@ -12,6 +12,7 @@ import cc.cans.canscloud.demoappinsdk.core.CoreContext
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityMainBinding
 import cc.cans.canscloud.demoappinsdk.notifaication.NotificationsManager
+import cc.cans.canscloud.sdk.Cans.Companion.corePreferences
 import cc.cans.canscloud.sdk.models.CansTransport
 
 class MainActivity : AppCompatActivity() {
@@ -35,7 +36,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         NotificationsManager(this)
-        CoreContext(this)
+        CoreContext(this, corePreferences.config)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(

@@ -19,6 +19,24 @@ class CorePreferences constructor(private val context: Context) {
     val preventInterfaceFromShowingUp: Boolean
         get() = config.getBool("app", "keep_app_invisible", false)
 
+    var routeAudioToBluetoothIfAvailable: Boolean
+        get() = config.getBool("app", "route_audio_to_bluetooth_if_available", true)
+        set(value) {
+            config.setBool("app", "route_audio_to_bluetooth_if_available", value)
+        }
+
+    var autoStart: Boolean
+        get() = config.getBool("app", "auto_start", true)
+        set(value) {
+            config.setBool("app", "auto_start", value)
+        }
+
+    var keepServiceAlive: Boolean
+        get() = config.getBool("app", "keep_service_alive", false)
+        set(value) {
+            config.setBool("app", "keep_service_alive", value)
+        }
+
     /* Assets stuff */
 
     val configPath: String

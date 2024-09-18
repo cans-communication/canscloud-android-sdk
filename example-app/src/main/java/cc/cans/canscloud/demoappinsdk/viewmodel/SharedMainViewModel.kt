@@ -9,6 +9,7 @@ import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.models.AudioState
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
+import org.linphone.core.Call
 
 class SharedMainViewModel : ViewModel() {
     val missedCallsCount = MutableLiveData<Int>()
@@ -37,9 +38,10 @@ class SharedMainViewModel : ViewModel() {
             }
         }
 
-        override fun onCallState(state: CallState, message: String?) {
+        override fun onCallState(call: Call, state: CallState, message: String?) {
             Log.i("[SharedMainViewModel] onCallState: ","$state")
             when (state) {
+                CallState.Idle -> {}
                 CallState.IncomingCall -> {}
                 CallState.StartCall -> {}
                 CallState.CallOutgoing -> {}
@@ -47,14 +49,21 @@ class SharedMainViewModel : ViewModel() {
                 CallState.Connected -> {}
                 CallState.Error -> updateMissedCallCount()
                 CallState.CallEnd -> updateMissedCallCount()
-                CallState.LastCallEnd -> {}
                 CallState.MissCall -> {}
                 CallState.Unknown -> {}
             }
         }
 
-        override fun onAudioUpdate(state: AudioState) {
-            Log.i("[SharedMainViewModel onAudioUpdate]", "Audio devices $state")
+        override fun onLastCallEnded() {
+            Log.i("[SharedMainViewModel]", "onLastCallEnded")
+        }
+
+        override fun onAudioDeviceChanged() {
+            Log.i("[SharedMainViewModel onAudioUpdate]", "onAudioDeviceChanged")
+        }
+
+        override fun onAudioDevicesListUpdated() {
+            Log.i("[SharedMainViewModel onAudioUpdate]", "onAudioDevicesListUpdated")
         }
     }
 

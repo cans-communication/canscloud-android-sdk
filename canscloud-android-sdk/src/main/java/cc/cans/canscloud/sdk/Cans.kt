@@ -122,10 +122,10 @@ class Cans {
                 return isSpeakerAudio()
             }
 
-        val isBluetoothState: Boolean
-            get() {
-                return isBluetoothAudioRouteAvailable()
-            }
+//        val isBluetoothState: Boolean
+//            get() {
+//                return AudioRouteUtils.isBluetoothAudioRouteAvailable()
+//            }
 
         private var coreListenerStub = object : CoreListenerStub() {
             override fun onRegistrationStateChanged(
@@ -156,39 +156,39 @@ class Cans {
                 when (state) {
                     Call.State.IncomingReceived, Call.State.IncomingEarlyMedia -> {
                         vibrator()
-                        listeners.forEach { it.onCallState(CallState.IncomingCall) }
+                        listeners.forEach { it.onCallState(call, CallState.IncomingCall) }
                     }
 
                     Call.State.OutgoingInit -> {
-                        listeners.forEach { it.onCallState(CallState.StartCall) }
+                        listeners.forEach { it.onCallState(call, CallState.StartCall) }
                     }
 
                     Call.State.OutgoingProgress -> {
-                        listeners.forEach { it.onCallState(CallState.CallOutgoing) }
+                        listeners.forEach { it.onCallState(call, CallState.CallOutgoing) }
                     }
 
                     Call.State.StreamsRunning -> {
-                        listeners.forEach { it.onCallState(CallState.StreamsRunning) }
+                        listeners.forEach { it.onCallState(call, CallState.StreamsRunning) }
                     }
 
                     Call.State.Connected -> {
-                        listeners.forEach { it.onCallState(CallState.Connected) }
+                        listeners.forEach { it.onCallState(call, CallState.Connected) }
                     }
 
                     Call.State.Error -> {
-                        listeners.forEach { it.onCallState(CallState.Error) }
+                        listeners.forEach { it.onCallState(call, CallState.Error) }
                     }
 
                     Call.State.End -> {
-                        listeners.forEach { it.onCallState(CallState.CallEnd) }
+                        listeners.forEach { it.onCallState(call, CallState.CallEnd) }
                     }
 
                     Call.State.Released -> {
-                        listeners.forEach { it.onCallState(CallState.MissCall) }
+                        listeners.forEach { it.onCallState(call, CallState.MissCall) }
                     }
 
                     else -> {
-                        listeners.forEach { it.onCallState(CallState.Unknown) }
+                        listeners.forEach { it.onCallState(call, CallState.Unknown) }
                     }
                 }
             }
@@ -200,22 +200,16 @@ class Cans {
                     core.isMicEnabled = true
                 }
                 mVibrator.cancel()
-                listeners.forEach { it.onCallState(CallState.LastCallEnd) }
+                listeners.forEach { it.onLastCallEnded() }
+            }
+
+            override fun onAudioDeviceChanged(core: Core, audioDevice: AudioDevice) {
+                listeners.forEach { it.onAudioDeviceChanged() }
             }
 
             override fun onAudioDevicesListUpdated(core: Core) {
                 Log.i("[CansSDK Controls]", "Audio devices list updated")
-                if (isHeadsetAudioRouteAvailable()) {
-                    listeners.forEach { it.onAudioUpdate(AudioState.Headset) }
-                    routeAudioToHeadset()
-                } else {
-                    if (isBluetoothAudioRouteAvailable()) {
-                        listeners.forEach { it.onAudioUpdate(AudioState.Bluetooth) }
-                        routeAudioToBluetooth()
-                    } else {
-                        listeners.forEach { it.onAudioUpdate(AudioState.Normal) }
-                    }
-                }
+                listeners.forEach { it.onAudioDevicesListUpdated() }
             }
         }
 
@@ -421,13 +415,13 @@ class Cans {
         }
 
 
-        fun toggleSpeaker() {
+       /* fun toggleSpeaker() {
             if (isSpeakerAudio()) {
                 forceEarpieceAudioRoute()
             } else {
                 forceSpeakerAudioRoute()
             }
-        }
+        }*/
 
         private fun isSpeakerAudio(call: Call? = null): Boolean {
             val currentCall = if (core.callsNb > 0) {
@@ -452,7 +446,7 @@ class Cans {
             return audioDevice.type == AudioDevice.Type.Speaker
         }
 
-        private fun isHeadsetAudioRouteAvailable(): Boolean {
+        fun isHeadsetAudioRouteAvailable(): Boolean {
             for (audioDevice in core.audioDevices) {
                 if ((audioDevice.type == AudioDevice.Type.Headset || audioDevice.type == AudioDevice.Type.Headphones) &&
                     audioDevice.hasCapability(AudioDevice.Capabilities.CapabilityPlay)
@@ -465,41 +459,41 @@ class Cans {
             }
             return false
         }
-
+/*
         private fun forceEarpieceAudioRoute() {
             if (isHeadsetAudioRouteAvailable()) {
                 Log.i("[CansSDK Controls]", "Headset found, route audio to it instead of earpiece")
-                routeAudioToHeadset()
+                AudioRouteUtils.routeAudioToHeadset()
             } else {
-                routeAudioToEarpiece()
+                AudioRouteUtils.routeAudioToEarpiece()
             }
         }
 
         fun forceSpeakerAudioRoute() {
-            routeAudioToSpeaker()
+            AudioRouteUtils.routeAudioToSpeaker()
         }
 
         fun forceBluetoothAudioRoute() {
-            if (isBluetoothAudioRouteAvailable()) {
-                routeAudioToBluetooth()
+            if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
+                AudioRouteUtils.routeAudioToBluetooth()
             }
         }
 
-        fun startAudio() {
+        fun startAudio(call : Call) {
             if (countCalls == 1) {
                 if (isHeadsetAudioRouteAvailable()) {
-                    routeAudioToHeadset()
-                } else if (isBluetoothAudioRouteAvailable()) {
-                    routeAudioToBluetooth()
+                    AudioRouteUtils.routeAudioToHeadset(call)
+                } else if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
+                    AudioRouteUtils.routeAudioToBluetooth(call)
                 }
             }
-        }
+        }*/
 
-        private fun routeAudioToSpeaker(call: Call? = null, skipTelecom: Boolean = false) {
+       /* private fun routeAudioToSpeaker(call: Call? = null, skipTelecom: Boolean = false) {
             routeAudioTo(call, arrayListOf(AudioDevice.Type.Speaker), skipTelecom)
         }
 
-        private fun routeAudioToHeadset(call: Call? = null, skipTelecom: Boolean = false) {
+        fun routeAudioToHeadset(call: Call? = null, skipTelecom: Boolean = false) {
             routeAudioTo(call, arrayListOf(AudioDevice.Type.Headphones, AudioDevice.Type.Headset), skipTelecom)
         }
 
@@ -507,11 +501,11 @@ class Cans {
             routeAudioTo(call, arrayListOf(AudioDevice.Type.Earpiece), skipTelecom)
         }
 
-        private fun routeAudioToBluetooth(call: Call? = null, skipTelecom: Boolean = false) {
+        fun routeAudioToBluetooth(call: Call? = null, skipTelecom: Boolean = false) {
             routeAudioTo(call, arrayListOf(AudioDevice.Type.Bluetooth), skipTelecom)
-        }
+        }*/
 
-        fun isBluetoothAudioRouteAvailable(): Boolean {
+        /*fun isBluetoothAudioRouteAvailable(): Boolean {
             for (audioDevice in core.audioDevices) {
                 if ((audioDevice.type == AudioDevice.Type.Bluetooth || audioDevice.type == AudioDevice.Type.HearingAid) &&
                     audioDevice.hasCapability(AudioDevice.Capabilities.CapabilityPlay)
@@ -525,7 +519,49 @@ class Cans {
             return false
         }
 
-        private fun routeAudioTo(
+        fun isBluetoothAudioRouteCurrentlyUsed(call: Call? = null): Boolean {
+            if (core.callsNb == 0) {
+                org.linphone.core.tools.Log.w("[Audio Route Helper] No call found, so bluetooth audio route isn't used")
+                return false
+            }
+            val currentCall = call ?: core.currentCall ?: core.calls[0]
+            val conference = core.conference
+
+            val audioDevice = if (conference != null && conference.isIn) {
+                conference.outputAudioDevice
+            } else {
+                currentCall.outputAudioDevice
+            }
+
+            if (audioDevice == null) return false
+            return audioDevice.type == AudioDevice.Type.Bluetooth || audioDevice.type == AudioDevice.Type.HearingAid
+        }
+
+        fun isSpeakerAudioRouteCurrentlyUsed(call: Call? = null): Boolean {
+            val currentCall = if (core.callsNb > 0) {
+                call ?: core.currentCall ?: core.calls[0]
+            } else {
+                org.linphone.core.tools.Log.w("[Audio Route Helper] No call found, checking audio route on Core")
+                null
+            }
+            val conference = core.conference
+
+            val audioDevice = if (conference != null && conference.isIn) {
+                conference.outputAudioDevice
+            } else if (currentCall != null) {
+                currentCall.outputAudioDevice
+            } else {
+                core.outputAudioDevice
+            }
+
+            if (audioDevice == null) return false
+            org.linphone.core.tools.Log.i(
+                "[Audio Route Helper] Playback audio device currently in use is [${audioDevice.deviceName} (${audioDevice.driverName}) ${audioDevice.type}]"
+            )
+            return audioDevice.type == AudioDevice.Type.Speaker
+        }*/
+
+       /* private fun routeAudioTo(
             call: Call?,
             types: List<AudioDevice.Type>,
             skipTelecom: Boolean = false
@@ -592,7 +628,10 @@ class Cans {
                 )
                 if (output) {
                     currentCall.outputAudioDevice = audioDevice
-                    Log.i("audioDeviceError:","${currentCall.outputAudioDevice?.type}  ${audioDevice.type}")
+                    Log.i(
+                        "audioDeviceError:",
+                        "${currentCall.outputAudioDevice?.type}  ${audioDevice.type}"
+                    )
                 } else {
                     currentCall.inputAudioDevice = audioDevice
                 }
@@ -606,7 +645,7 @@ class Cans {
                     core.inputAudioDevice = audioDevice
                 }
             }
-        }
+        }*/
 
         private fun vibrator() {
             if (mVibrator.hasVibrator()) {

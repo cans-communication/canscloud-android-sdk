@@ -45,7 +45,7 @@ class OutgoingActivity : AppCompatActivity() {
         }
 
         binding.speaker.setOnClickListener {
-            Cans.toggleSpeaker()
+            outgoingViewModel.toggleSpeaker()
             if (Cans.isSpeakerState) {
                 binding.speaker.setImageResource(R.drawable.ongoing_speaker_selected)
             } else {

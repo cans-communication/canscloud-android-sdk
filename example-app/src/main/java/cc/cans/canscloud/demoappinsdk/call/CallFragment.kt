@@ -1,5 +1,7 @@
 package cc.cans.canscloud.demoappinsdk.call
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.SystemClock
 import androidx.fragment.app.Fragment
@@ -9,8 +11,12 @@ import android.view.ViewGroup
 import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.demoappinsdk.databinding.FragmentCallBinding
+import cc.cans.canscloud.demoappinsdk.utils.AudioRouteUtils
 import cc.cans.canscloud.demoappinsdk.viewmodel.CallsViewModel
 import cc.cans.canscloud.sdk.Cans
+import cc.cans.canscloud.demoappinsdk.compatibility.Compatibility
+import org.linphone.core.tools.Log
+import org.linphone.mediastream.Version
 
 /**
  * A simple [Fragment] subclass.
@@ -43,7 +49,7 @@ class CallFragment : Fragment() {
 
         binding.textViewPhoneNumber.text = Cans.destinationUsername
 
-        if (Cans.isBluetoothAudioRouteAvailable()) {
+        if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
             binding.bluetooth.visibility = View.VISIBLE
         } else {
             binding.bluetooth.visibility = View.GONE
@@ -86,7 +92,7 @@ class CallFragment : Fragment() {
         }
 
         binding.speaker.setOnClickListener {
-            Cans.toggleSpeaker()
+            callsViewModel.toggleSpeaker()
             if (Cans.isSpeakerState) {
                 binding.speaker.setImageResource(R.drawable.ongoing_speaker_selected)
             } else {
@@ -95,7 +101,21 @@ class CallFragment : Fragment() {
         }
 
         binding.bluetooth.setOnClickListener {
-            Cans.forceBluetoothAudioRoute()
+            callsViewModel.forceBluetoothAudioRoute()
+        }
+
+        if (Version.sdkAboveOrEqual(Version.API23_MARSHMALLOW_60)) {
+            if (requireContext().packageManager.checkPermission(Manifest.permission.BLUETOOTH_CONNECT, requireContext().packageName) == PackageManager.PERMISSION_GRANTED) {
+
+            } else {
+                val permissionsRequiredList = arrayListOf<String>()
+                permissionsRequiredList.add(Compatibility.BLUETOOTH_CONNECT)
+                if (permissionsRequiredList.isNotEmpty()) {
+                    val permissionsRequired = arrayOfNulls<String>(permissionsRequiredList.size)
+                    permissionsRequiredList.toArray(permissionsRequired)
+                    requestPermissions(permissionsRequired, 0)
+                }
+            }
         }
     }
 }

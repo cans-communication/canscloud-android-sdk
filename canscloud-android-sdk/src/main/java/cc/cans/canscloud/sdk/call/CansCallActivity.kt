@@ -26,14 +26,14 @@ class CansCallActivity : ComponentActivity() {
             finish()
         }
 
-        binding.buttonSpeaker.setOnClickListener {
-            Cans.toggleSpeaker()
-            if (Cans.isSpeakerState) {
-                binding.buttonSpeaker.text = "Off Speaker"
-            } else {
-                binding.buttonSpeaker.text = "on Speaker"
-            }
-        }
+//        binding.buttonSpeaker.setOnClickListener {
+//            Cans.toggleSpeaker()
+//            if (Cans.isSpeakerState) {
+//                binding.buttonSpeaker.text = "Off Speaker"
+//            } else {
+//                binding.buttonSpeaker.text = "on Speaker"
+//            }
+//        }
 
         binding.buttonMute.setOnClickListener {
             Cans.toggleMuteMicrophone()

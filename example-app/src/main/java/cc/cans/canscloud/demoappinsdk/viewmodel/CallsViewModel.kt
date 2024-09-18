@@ -3,11 +3,13 @@ package cc.cans.canscloud.demoappinsdk.viewmodel
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import cc.cans.canscloud.demoappinsdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.Cans
+import cc.cans.canscloud.sdk.Cans.Companion.isHeadsetAudioRouteAvailable
 import cc.cans.canscloud.sdk.callback.CansListenerStub
-import cc.cans.canscloud.sdk.models.AudioState
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
+import org.linphone.core.Call
 
 class CallsViewModel : ViewModel() {
     val callDuration = MutableLiveData<Int?>()
@@ -22,9 +24,10 @@ class CallsViewModel : ViewModel() {
         override fun onUnRegister() {
         }
 
-        override fun onCallState(state: CallState, message: String?) {
+        override fun onCallState(call: Call, state: CallState, message: String?) {
             Log.i("[CallsViewModel] onCallState: ","$state")
             when (state) {
+                CallState.Idle -> {}
                 CallState.IncomingCall -> {}
                 CallState.StartCall ->  {}
                 CallState.CallOutgoing -> {}
@@ -32,21 +35,65 @@ class CallsViewModel : ViewModel() {
                 CallState.Connected ->  callDuration.value = Cans.durationTime
                 CallState.Error -> {}
                 CallState.CallEnd -> {}
-                CallState.LastCallEnd ->  isCallEnd.value = true
                 CallState.MissCall -> {}
                 CallState.Unknown -> {}
             }
         }
 
-        override fun onAudioUpdate(state: AudioState) {
-            Log.i("[CallsViewModel onAudioUpdate]", "Audio devices $state")
-            isBluetooth.value = state == AudioState.Bluetooth
+        override fun onLastCallEnded() {
+            Log.i("[CallsViewModel]", "onLastCallEnded")
+            isCallEnd.value = true
+        }
+
+        override fun onAudioDeviceChanged() {
+            AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
+        }
+
+        override fun onAudioDevicesListUpdated() {
+            Log.i("[CallsViewModel onAudioUpdate]", "Audio devices")
+
+            isBluetooth.value = false
+            if (isHeadsetAudioRouteAvailable()) {
+                AudioRouteUtils.routeAudioToHeadset()
+            } else {
+                if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
+                    AudioRouteUtils.routeAudioToBluetooth()
+                    isBluetooth.value = true
+                }
+            }
         }
     }
 
     init {
         Cans.addListener(listener)
         callDuration.value = Cans.durationTime
+    }
+
+    fun toggleSpeaker() {
+        if (AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()) {
+            forceEarpieceAudioRoute()
+        } else {
+            forceSpeakerAudioRoute()
+        }
+    }
+
+    private fun forceEarpieceAudioRoute() {
+        if (isHeadsetAudioRouteAvailable()) {
+            Log.i("[CansSDK Controls]", "Headset found, route audio to it instead of earpiece")
+            AudioRouteUtils.routeAudioToHeadset()
+        } else {
+            AudioRouteUtils.routeAudioToEarpiece()
+        }
+    }
+
+    fun forceSpeakerAudioRoute() {
+        AudioRouteUtils.routeAudioToSpeaker()
+    }
+
+    fun forceBluetoothAudioRoute() {
+        if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
+            AudioRouteUtils.routeAudioToBluetooth()
+        }
     }
 
     override fun onCleared() {
