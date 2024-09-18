@@ -5,11 +5,11 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import cc.cans.canscloud.demoappinsdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.Cans
-import cc.cans.canscloud.sdk.Cans.Companion.isHeadsetAudioRouteAvailable
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
 import org.linphone.core.Call
+import org.linphone.core.Core
 
 class CallsViewModel : ViewModel() {
     val callDuration = MutableLiveData<Int?>()
@@ -24,7 +24,7 @@ class CallsViewModel : ViewModel() {
         override fun onUnRegister() {
         }
 
-        override fun onCallState(call: Call, state: CallState, message: String?) {
+        override fun onCallState(core: Core, call: Call, state: CallState, message: String?) {
             Log.i("[CallsViewModel] onCallState: ","$state")
             when (state) {
                 CallState.Idle -> {}
@@ -53,7 +53,7 @@ class CallsViewModel : ViewModel() {
             Log.i("[CallsViewModel onAudioUpdate]", "Audio devices")
 
             isBluetooth.value = false
-            if (isHeadsetAudioRouteAvailable()) {
+            if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
                 AudioRouteUtils.routeAudioToHeadset()
             } else {
                 if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
@@ -78,7 +78,7 @@ class CallsViewModel : ViewModel() {
     }
 
     private fun forceEarpieceAudioRoute() {
-        if (isHeadsetAudioRouteAvailable()) {
+        if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
             Log.i("[CansSDK Controls]", "Headset found, route audio to it instead of earpiece")
             AudioRouteUtils.routeAudioToHeadset()
         } else {

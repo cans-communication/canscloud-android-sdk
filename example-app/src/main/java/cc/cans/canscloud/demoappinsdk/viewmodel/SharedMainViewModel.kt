@@ -10,6 +10,7 @@ import cc.cans.canscloud.sdk.models.AudioState
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
 import org.linphone.core.Call
+import org.linphone.core.Core
 
 class SharedMainViewModel : ViewModel() {
     val missedCallsCount = MutableLiveData<Int>()
@@ -38,7 +39,7 @@ class SharedMainViewModel : ViewModel() {
             }
         }
 
-        override fun onCallState(call: Call, state: CallState, message: String?) {
+        override fun onCallState(core: Core, call: Call, state: CallState, message: String?) {
             Log.i("[SharedMainViewModel] onCallState: ","$state")
             when (state) {
                 CallState.Idle -> {}

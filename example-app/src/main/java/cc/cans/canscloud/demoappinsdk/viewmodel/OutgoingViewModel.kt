@@ -5,12 +5,11 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import cc.cans.canscloud.demoappinsdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.Cans
-import cc.cans.canscloud.sdk.Cans.Companion.isHeadsetAudioRouteAvailable
 import cc.cans.canscloud.sdk.callback.CansListenerStub
-import cc.cans.canscloud.sdk.models.AudioState
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
 import org.linphone.core.Call
+import org.linphone.core.Core
 
 class OutgoingViewModel : ViewModel() {
     var isCallEnd = MutableLiveData<Boolean>()
@@ -23,7 +22,7 @@ class OutgoingViewModel : ViewModel() {
         override fun onUnRegister() {
         }
 
-        override fun onCallState(call: Call, state: CallState, message: String?) {
+        override fun onCallState(core: Core, call: Call, state: CallState, message: String?) {
             Log.i("[OutgoingViewModel] onCallState: ", "$state")
             when (state) {
                 CallState.Idle -> {}
@@ -66,7 +65,7 @@ class OutgoingViewModel : ViewModel() {
     }
 
     private fun forceEarpieceAudioRoute() {
-        if (isHeadsetAudioRouteAvailable()) {
+        if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
             Log.i("[CansSDK Controls]", "Headset found, route audio to it instead of earpiece")
             AudioRouteUtils.routeAudioToHeadset()
         } else {

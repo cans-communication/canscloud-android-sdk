@@ -15,10 +15,7 @@ import cc.cans.canscloud.demoappinsdk.notifaication.NotificationsManager
 import cc.cans.canscloud.demoappinsdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.Cans.Companion.corePreferences
-import cc.cans.canscloud.sdk.Cans.Companion.countCalls
-import cc.cans.canscloud.sdk.Cans.Companion.isHeadsetAudioRouteAvailable
 import cc.cans.canscloud.sdk.callback.CansListenerStub
-import cc.cans.canscloud.sdk.models.AudioState
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
 import org.linphone.core.Call
@@ -53,7 +50,7 @@ class CoreContext(
             Log.i("[Context]","onUnRegistration")
         }
 
-        override fun onCallState(call: Call,state: CallState, message: String?) {
+        override fun onCallState(core: Core, call: Call,state: CallState, message: String?) {
             Log.i("[Context] onCallState: ","$state")
             when (state) {
                 CallState.Idle -> {}
@@ -61,14 +58,14 @@ class CoreContext(
                 CallState.StartCall -> {}
                 CallState.CallOutgoing -> {
                     onOutgoingStarted()
-                    if (countCalls == 1 && corePreferences.routeAudioToBluetoothIfAvailable) {
+                    if (core.callsNb == 1 && corePreferences.routeAudioToBluetoothIfAvailable) {
                         AudioRouteUtils.routeAudioToBluetooth(call)
                     }
                 }
                 CallState.Connected -> onCallStarted()
                 CallState.StreamsRunning -> {
-                    if (countCalls == 1 && previousCallState == CallState.Connected) {
-                        if (isHeadsetAudioRouteAvailable()) {
+                    if (core.callsNb == 1 && previousCallState == CallState.Connected) {
+                        if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
                             AudioRouteUtils.routeAudioToHeadset(call)
                         } else if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
                             AudioRouteUtils.routeAudioToBluetooth(call)
