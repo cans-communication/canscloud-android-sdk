@@ -1,6 +1,7 @@
 package cc.cans.canscloud.demoappinsdk.call
 
 import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import androidx.fragment.app.Fragment
@@ -16,7 +17,6 @@ import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.utils.PermissionHelper
 import org.linphone.core.tools.Log
-import org.linphone.mediastream.Version
 
 /**
  * A simple [Fragment] subclass.
@@ -24,7 +24,7 @@ import org.linphone.mediastream.Version
  * create an instance of this fragment.
  */
 class CallFragment : Fragment() {
-
+    val TAG = "CallFragment"
     private lateinit var callsViewModel: CallsViewModel
     private var _binding: FragmentCallBinding? = null
 
@@ -82,7 +82,7 @@ class CallFragment : Fragment() {
         }
 
         binding.micro.setOnClickListener {
-            callsViewModel.toggleMuteMicrophone()
+            Cans.toggleMuteMicrophone()
 
             if (Cans.isMicState) {
                 binding.micro.setImageResource(R.drawable.ongoing_mute_select)
@@ -92,7 +92,7 @@ class CallFragment : Fragment() {
         }
 
         binding.speaker.setOnClickListener {
-            callsViewModel.toggleSpeaker()
+            Cans.toggleSpeaker()
             if (Cans.isSpeakerState) {
                 binding.speaker.setImageResource(R.drawable.ongoing_speaker_selected)
             } else {
@@ -101,7 +101,7 @@ class CallFragment : Fragment() {
         }
 
         binding.bluetooth.setOnClickListener {
-            callsViewModel.forceBluetoothAudioRoute()
+            Cans.forceBluetoothAudioRoute()
         }
 
         checkPermissions()
@@ -111,12 +111,12 @@ class CallFragment : Fragment() {
         val permissionsRequiredList = arrayListOf<String>()
 
         if (!PermissionHelper.get().hasRecordAudioPermission()) {
-            Log.i("[OutgoingActivity] Asking for RECORD_AUDIO permission")
+            Log.i("[$TAG]","Asking for RECORD_AUDIO permission")
             permissionsRequiredList.add(Manifest.permission.RECORD_AUDIO)
         }
 
-        if (Version.sdkAboveOrEqual(Version.API31_ANDROID_12) && !PermissionHelper.get().hasBluetoothConnectPermission()) {
-            Log.i("[OutgoingActivity] Asking for BLUETOOTH_CONNECT permission")
+        if (Build.VERSION.SDK_INT >= (Build.VERSION_CODES.S) && !PermissionHelper.get().hasBluetoothConnectPermission()) {
+            Log.i("[$TAG]","Asking for BLUETOOTH_CONNECT permission")
             permissionsRequiredList.add(Compatibility.BLUETOOTH_CONNECT)
         }
 
