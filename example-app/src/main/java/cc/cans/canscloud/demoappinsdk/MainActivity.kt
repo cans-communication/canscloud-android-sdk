@@ -6,11 +6,11 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import cc.cans.canscloud.demoappinsdk.CansApplication.Companion.coreContext
-import cc.cans.canscloud.demoappinsdk.compatibility.Compatibility
+import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityMainBinding
-import cc.cans.canscloud.demoappinsdk.telecom.TelecomHelper
-import cc.cans.canscloud.demoappinsdk.utils.PermissionHelper
+import cc.cans.canscloud.sdk.telecom.TelecomHelper
+import cc.cans.canscloud.sdk.utils.PermissionHelper
 import cc.cans.canscloud.sdk.Cans.Companion.corePreferences
 import cc.cans.canscloud.sdk.models.CansTransport
 import org.linphone.core.tools.Log
@@ -129,7 +129,6 @@ class MainActivity : AppCompatActivity() {
                 Log.e(
                     "[$TAG] Telecom Helper can't be created, device doesn't support connection service!"
                 )
-                return
             }
         } else {
             Log.e("[$TAG] Telecom Manager was already created ?!")

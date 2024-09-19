@@ -13,10 +13,10 @@ import cc.cans.canscloud.demoappinsdk.call.CallActivity
 import cc.cans.canscloud.demoappinsdk.call.IncomingActivity
 import cc.cans.canscloud.demoappinsdk.call.OutgoingActivity
 import cc.cans.canscloud.demoappinsdk.notifaication.NotificationsManager
-import cc.cans.canscloud.demoappinsdk.utils.AudioRouteUtils
-import cc.cans.canscloud.demoappinsdk.utils.PermissionHelper
-import cc.cans.canscloud.demoappinsdk.compatibility.Compatibility
-import cc.cans.canscloud.demoappinsdk.telecom.TelecomHelper
+import cc.cans.canscloud.sdk.utils.AudioRouteUtils
+import cc.cans.canscloud.sdk.utils.PermissionHelper
+import cc.cans.canscloud.sdk.compatibility.Compatibility
+import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.Cans.Companion.core
 import cc.cans.canscloud.sdk.Cans.Companion.corePreferences
@@ -29,7 +29,7 @@ import org.linphone.core.Core
 import org.linphone.core.R
 import org.linphone.mediastream.Version
 import java.io.File
-import cc.cans.canscloud.demoappinsdk.compatibility.PhoneStateInterface
+import cc.cans.canscloud.sdk.compatibility.PhoneStateInterface
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -286,16 +286,7 @@ class CoreContext(
         core.userCertificatesPath = userCertsPath
     }
 
-    fun fetchContacts() {
-        if (PermissionHelper.required(context).hasReadContactsPermission()) {
-//            org.linphone.core.tools.Log.i("[Context] Init contacts loader")
-//            val manager = LoaderManager.getInstance(this@CoreContext)
-//            manager.restartLoader(0, null, contactLoader)
-        }
-    }
-
     /* Call related functions */
-
     fun initPhoneStateListener() {
         if (PermissionHelper.required(context).hasReadPhoneStatePermission()) {
             try {

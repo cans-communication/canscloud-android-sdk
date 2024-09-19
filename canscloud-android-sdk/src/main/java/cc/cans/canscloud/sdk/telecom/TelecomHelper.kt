@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package cc.cans.canscloud.demoappinsdk.telecom
+package cc.cans.canscloud.sdk.telecom
 
 import android.annotation.SuppressLint
 import android.content.ComponentName
@@ -29,10 +29,10 @@ import android.telecom.PhoneAccount
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
 import android.telecom.TelecomManager.*
-import cc.cans.canscloud.demoappinsdk.utils.PermissionHelper
-import cc.cans.canscloud.demoappinsdk.utils.SingletonHolder
 import cc.cans.canscloud.sdk.Cans.Companion.core
 import cc.cans.canscloud.sdk.R
+import cc.cans.canscloud.sdk.utils.SingletonHolder
+import cc.cans.canscloud.sdk.utils.PermissionHelper
 import org.linphone.core.Call
 import org.linphone.core.Core
 import org.linphone.core.CoreListenerStub

@@ -17,14 +17,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package cc.cans.canscloud.demoappinsdk.telecom
+package cc.cans.canscloud.sdk.telecom
 
 import android.annotation.TargetApi
 import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
 import android.telecom.*
-import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.Cans.Companion.core
 import org.linphone.core.Call
 import org.linphone.core.Core

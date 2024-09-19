@@ -17,16 +17,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package cc.cans.canscloud.sdk.core
+package cc.cans.canscloud.sdk.compatibility
 
-import android.content.BroadcastReceiver
+import android.Manifest
+import android.annotation.TargetApi
 import android.content.Context
-import android.content.Intent
-import org.linphone.core.tools.Log
+import android.content.pm.PackageManager
+import android.provider.Settings
+import androidx.fragment.app.Fragment
 
-class CorePushReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) {
-      //  ensureCoreExists(context.applicationContext, true)
-        Log.i("[Push Notification] Push notification has been received in broadcast receiver")
+class Api23Compatibility {
+    companion object {
+        fun hasPermission(context: Context, permission: String): Boolean {
+            return context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
+        }
+
+        fun requestReadPhoneStatePermission(fragment: Fragment, code: Int) {
+            fragment.requestPermissions(arrayOf(Manifest.permission.READ_PHONE_STATE), code)
+        }
     }
 }

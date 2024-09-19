@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020 Belledonne Communications SARL.
+ * Copyright (c) 2010-2021 Belledonne Communications SARL.
  *
  * This file is part of linphone-android
  * (see https://www.linphone.org).
@@ -17,23 +17,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package cc.cans.canscloud.demoappinsdk.compatibility
+package cc.cans.canscloud.sdk.compatibility
 
 import android.Manifest
 import android.annotation.TargetApi
 import android.content.Context
-import android.content.pm.PackageManager
-import android.provider.Settings
-import androidx.fragment.app.Fragment
 
-class Api23Compatibility {
+@TargetApi(31)
+class Api31Compatibility {
     companion object {
-        fun hasPermission(context: Context, permission: String): Boolean {
-            return context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
-        }
-
-        fun requestReadPhoneStatePermission(fragment: Fragment, code: Int) {
-            fragment.requestPermissions(arrayOf(Manifest.permission.READ_PHONE_STATE), code)
+        fun hasBluetoothConnectPermission(context: Context): Boolean {
+            return Compatibility.hasPermission(context, Manifest.permission.BLUETOOTH_CONNECT)
         }
     }
 }

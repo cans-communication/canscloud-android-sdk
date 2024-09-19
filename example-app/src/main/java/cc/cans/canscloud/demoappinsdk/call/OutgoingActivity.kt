@@ -1,7 +1,6 @@
 package cc.cans.canscloud.demoappinsdk.call
 
 import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
@@ -9,6 +8,10 @@ import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityOutgoinglBinding
 import cc.cans.canscloud.demoappinsdk.viewmodel.OutgoingViewModel
 import cc.cans.canscloud.sdk.Cans
+import cc.cans.canscloud.sdk.compatibility.Compatibility
+import org.linphone.core.tools.Log
+import org.linphone.mediastream.Version
+import cc.cans.canscloud.sdk.utils.PermissionHelper
 
 class OutgoingActivity : AppCompatActivity() {
 
@@ -51,13 +54,26 @@ class OutgoingActivity : AppCompatActivity() {
             }
         }
 
-        if (packageManager?.checkPermission(
-                Manifest.permission.RECORD_AUDIO,
-                packageName
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            this.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 0)
-            return
+        checkPermissions()
+    }
+
+    private fun checkPermissions() {
+        val permissionsRequiredList = arrayListOf<String>()
+
+        if (!PermissionHelper.get().hasRecordAudioPermission()) {
+            Log.i("[OutgoingActivity] Asking for RECORD_AUDIO permission")
+            permissionsRequiredList.add(Manifest.permission.RECORD_AUDIO)
+        }
+
+        if (Version.sdkAboveOrEqual(Version.API31_ANDROID_12) && !PermissionHelper.get().hasBluetoothConnectPermission()) {
+            Log.i("[OutgoingActivity] Asking for BLUETOOTH_CONNECT permission")
+            permissionsRequiredList.add(Compatibility.BLUETOOTH_CONNECT)
+        }
+
+        if (permissionsRequiredList.isNotEmpty()) {
+            val permissionsRequired = arrayOfNulls<String>(permissionsRequiredList.size)
+            permissionsRequiredList.toArray(permissionsRequired)
+            requestPermissions(permissionsRequired, 0)
         }
     }
 }

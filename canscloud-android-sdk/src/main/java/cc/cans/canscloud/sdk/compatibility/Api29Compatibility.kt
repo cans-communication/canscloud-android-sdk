@@ -17,16 +17,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package cc.cans.canscloud.demoappinsdk.compatibility
+package cc.cans.canscloud.sdk.compatibility
 
 import android.Manifest
 import android.annotation.TargetApi
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Context
-import android.content.Intent
-import androidx.core.app.NotificationManagerCompat
-import cc.cans.canscloud.sdk.R
+import cc.cans.canscloud.sdk.compatibility.Compatibility
 import org.linphone.core.tools.Log
 
 @TargetApi(29)

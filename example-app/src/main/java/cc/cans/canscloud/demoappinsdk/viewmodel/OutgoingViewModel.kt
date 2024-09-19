@@ -3,13 +3,13 @@ package cc.cans.canscloud.demoappinsdk.viewmodel
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import cc.cans.canscloud.demoappinsdk.utils.AudioRouteUtils
-import cc.cans.canscloud.demoappinsdk.utils.PermissionHelper
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.Cans.Companion.core
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
+import cc.cans.canscloud.sdk.utils.AudioRouteUtils
+import cc.cans.canscloud.sdk.utils.PermissionHelper
 import org.linphone.core.Call
 import org.linphone.core.Core
 

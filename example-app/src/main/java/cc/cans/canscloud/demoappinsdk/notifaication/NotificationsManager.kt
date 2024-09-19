@@ -50,7 +50,9 @@ class NotificationsManager(private val context: Context) {
                 CallState.StartCall -> {}
                 CallState.CallOutgoing -> {}
                 CallState.StreamsRunning -> {}
-                CallState.Connected -> {}
+                CallState.Connected -> {
+                    dismissIncomingCallNotification()
+                }
                 CallState.Error -> {}
                 CallState.CallEnd -> {}
                 CallState.MissCall -> {
@@ -58,13 +60,13 @@ class NotificationsManager(private val context: Context) {
                         displayMissedCallNotification()
                     }
                 }
-                CallState.Unknown -> dismissCallNotification()
+                CallState.Unknown -> dismissIncomingCallNotification()
             }
         }
 
         override fun onLastCallEnded() {
             Log.i("[NotificationsManager]", "onLastCallEnded")
-            dismissCallNotification()
+            dismissIncomingCallNotification()
         }
 
         override fun onAudioDeviceChanged() {
@@ -179,7 +181,7 @@ class NotificationsManager(private val context: Context) {
         notificationManager.notify(tag, id, notification)
     }
 
-    fun dismissCallNotification() {
+    fun dismissIncomingCallNotification() {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(1)
     }

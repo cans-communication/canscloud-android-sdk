@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package cc.cans.canscloud.demoappinsdk.telecom
+package cc.cans.canscloud.sdk.telecom
 
 import android.annotation.TargetApi
 import android.graphics.drawable.Icon
@@ -26,10 +26,10 @@ import android.telecom.CallAudioState
 import android.telecom.Connection
 import android.telecom.DisconnectCause
 import android.telecom.StatusHints
-import cc.cans.canscloud.demoappinsdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.Cans.Companion.context
 import cc.cans.canscloud.sdk.Cans.Companion.core
 import cc.cans.canscloud.sdk.R
+import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import org.linphone.core.Call
 import org.linphone.core.tools.Log
 

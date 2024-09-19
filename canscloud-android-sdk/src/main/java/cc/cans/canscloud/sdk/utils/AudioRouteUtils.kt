@@ -17,15 +17,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package cc.cans.canscloud.demoappinsdk.utils
+package cc.cans.canscloud.sdk.utils
 
 import android.telecom.CallAudioState
 import cc.cans.canscloud.sdk.Cans.Companion.core
-import cc.cans.canscloud.demoappinsdk.compatibility.Compatibility
+import cc.cans.canscloud.sdk.compatibility.Compatibility
 import org.linphone.core.AudioDevice
 import org.linphone.core.Call
 import org.linphone.core.tools.Log
-import cc.cans.canscloud.demoappinsdk.telecom.TelecomHelper
+import cc.cans.canscloud.sdk.telecom.TelecomHelper
 
 class AudioRouteUtils {
     companion object {
@@ -114,6 +114,26 @@ class AudioRouteUtils {
             }
         }
 
+        private fun changeCaptureDeviceToMatchAudioRoute(call: Call?, types: List<AudioDevice.Type>) {
+            when (types.first()) {
+                AudioDevice.Type.Bluetooth -> {
+                    if (isBluetoothAudioRecorderAvailable()) {
+                        Log.i("[Audio Route Helper] Bluetooth device is able to record audio, also change input audio device")
+                        applyAudioRouteChange(call, arrayListOf(AudioDevice.Type.Bluetooth), false)
+                    }
+                }
+                AudioDevice.Type.Headset, AudioDevice.Type.Headphones -> {
+                    if (isHeadsetAudioRecorderAvailable()) {
+                        Log.i("[Audio Route Helper] Headphones/headset device is able to record audio, also change input audio device")
+                        applyAudioRouteChange(call, (arrayListOf(AudioDevice.Type.Headphones, AudioDevice.Type.Headset)), false)
+                    }
+                }
+                else -> {
+                    Log.e("[AudioDevice] No type audio device")
+                }
+            }
+        }
+
         private fun routeAudioTo(
             call: Call?,
             types: List<AudioDevice.Type>,
@@ -145,13 +165,16 @@ class AudioRouteUtils {
                             "[Audio Route Helper] Connection is already using this route internally, make the change!"
                         )
                         applyAudioRouteChange(currentCall, types)
+                        changeCaptureDeviceToMatchAudioRoute(currentCall, types)
                     }
                 } else {
                     Log.w("[Audio Route Helper] Telecom Helper found but no matching connection!")
                     applyAudioRouteChange(currentCall, types)
+                    changeCaptureDeviceToMatchAudioRoute(currentCall, types)
                 }
             } else {
                 applyAudioRouteChange(call, types)
+                changeCaptureDeviceToMatchAudioRoute(call, types)
             }
         }
 

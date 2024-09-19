@@ -17,58 +17,63 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package cc.cans.canscloud.demoappinsdk.compatibility
+package cc.cans.canscloud.sdk.compatibility
 
 import android.Manifest
-import android.annotation.TargetApi
-import android.app.Activity
+import android.app.*
 import android.content.Context
+import android.content.pm.PackageManager
 import androidx.fragment.app.Fragment
+import cc.cans.canscloud.sdk.telecom.NativeCallWrapper
 import org.linphone.core.tools.Log
 
-@TargetApi(30)
-class Api30Compatibility {
+class Api26Compatibility {
     companion object {
-        fun hasReadPhoneNumbersPermission(context: Context): Boolean {
-            val granted = Compatibility.hasPermission(context, Manifest.permission.READ_PHONE_NUMBERS)
-            if (granted) {
-                Log.d("[Permission Helper] Permission READ_PHONE_NUMBERS is granted")
-            } else {
-                Log.w("[Permission Helper] Permission READ_PHONE_NUMBERS is denied")
-            }
-            return granted
-        }
+        fun changeAudioRouteForTelecomManager(connection: NativeCallWrapper, route: Int): Boolean {
+            Log.i("[Telecom Helper] Changing audio route [$route] on connection ${connection.callId}")
 
-        fun requestReadPhoneNumbersPermission(fragment: Fragment, code: Int) {
-            fragment.requestPermissions(arrayOf(Manifest.permission.READ_PHONE_NUMBERS), code)
+            val audioState = connection.callAudioState
+            if (audioState != null && audioState.route == route) {
+                Log.w("[Telecom Helper] Connection is already using this route")
+                return false
+            } else if (audioState == null) {
+                Log.w("[Telecom Helper] Failed to retrieve connection's call audio state!")
+                return false
+            }
+
+            connection.setAudioRoute(route)
+            return true
         }
 
         fun requestTelecomManagerPermission(activity: Activity, code: Int) {
             activity.requestPermissions(
                 arrayOf(
-                    Manifest.permission.READ_PHONE_NUMBERS,
                     Manifest.permission.READ_PHONE_STATE,
-                    Manifest.permission.MANAGE_OWN_CALLS
+                    Manifest.permission.MANAGE_OWN_CALLS,
                 ),
-                code
+                code,
             )
         }
 
         fun requestTelecomManagerPermissionFragment(fragment: Fragment, code: Int) {
             fragment.requestPermissions(
                 arrayOf(
-                    Manifest.permission.READ_PHONE_NUMBERS,
                     Manifest.permission.READ_PHONE_STATE,
-                    Manifest.permission.MANAGE_OWN_CALLS
+                    Manifest.permission.MANAGE_OWN_CALLS,
                 ),
-                code
+                code,
             )
         }
 
         fun hasTelecomManagerPermission(context: Context): Boolean {
-            return Compatibility.hasPermission(context, Manifest.permission.READ_PHONE_NUMBERS) &&
-                Compatibility.hasPermission(context, Manifest.permission.READ_PHONE_STATE) &&
+            return Compatibility.hasPermission(context, Manifest.permission.READ_PHONE_STATE) &&
                 Compatibility.hasPermission(context, Manifest.permission.MANAGE_OWN_CALLS)
+        }
+
+        fun hasTelecomManagerFeature(context: Context): Boolean {
+            return context.packageManager.hasSystemFeature(
+                PackageManager.FEATURE_CONNECTION_SERVICE
+            )
         }
     }
 }

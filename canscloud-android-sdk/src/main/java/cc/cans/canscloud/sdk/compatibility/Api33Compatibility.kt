@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package cc.cans.canscloud.demoappinsdk.compatibility
+package cc.cans.canscloud.sdk.compatibility
 
 import android.Manifest
 import android.annotation.TargetApi
@@ -25,6 +25,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.fragment.app.Fragment
+import cc.cans.canscloud.sdk.compatibility.Compatibility
 
 @TargetApi(33)
 class Api33Compatibility {

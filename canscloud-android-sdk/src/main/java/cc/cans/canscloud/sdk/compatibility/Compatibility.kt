@@ -17,19 +17,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package cc.cans.canscloud.demoappinsdk.compatibility
+package cc.cans.canscloud.sdk.compatibility
 
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.telephony.TelephonyManager
 import androidx.fragment.app.Fragment
-import cc.cans.canscloud.demoappinsdk.telecom.NativeCallWrapper
+import cc.cans.canscloud.sdk.telecom.NativeCallWrapper
 import org.linphone.mediastream.Version
 
 @Suppress("DEPRECATION")
 class Compatibility {
     companion object {
+        const val BLUETOOTH_CONNECT = "android.permission.BLUETOOTH_CONNECT"
+
         fun hasPermission(context: Context, permission: String): Boolean {
             return when (Version.sdkAboveOrEqual(Version.API23_MARSHMALLOW_60)) {
                 true -> Api23Compatibility.hasPermission(context, permission)
@@ -99,6 +101,13 @@ class Compatibility {
             } else {
                 true
             }
+        }
+
+        fun hasBluetoothConnectPermission(context: Context): Boolean {
+            if (Version.sdkAboveOrEqual(Version.API31_ANDROID_12)) {
+                return Api31Compatibility.hasBluetoothConnectPermission(context)
+            }
+            return true
         }
 
         fun hasFullScreenIntentPermission(context: Context): Boolean {

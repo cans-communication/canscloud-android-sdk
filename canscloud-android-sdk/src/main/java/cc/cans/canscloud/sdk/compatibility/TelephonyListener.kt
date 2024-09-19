@@ -17,16 +17,29 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package cc.cans.canscloud.demoappinsdk.compatibility
+package cc.cans.canscloud.sdk.compatibility
 
-import android.telephony.PhoneStateListener
+import android.annotation.TargetApi
+import android.os.Handler
+import android.os.Looper
+import android.telephony.TelephonyCallback
 import android.telephony.TelephonyManager
+import java.util.concurrent.Executor
 import org.linphone.core.tools.Log
 
-class PhoneStateListener(private val telephonyManager: TelephonyManager) : PhoneStateInterface {
+@TargetApi(31)
+class TelephonyListener(private val telephonyManager: TelephonyManager) : PhoneStateInterface {
     private var gsmCallActive = false
-    private val phoneStateListener = object : PhoneStateListener() {
-        override fun onCallStateChanged(state: Int, phoneNumber: String?) {
+
+    private fun runOnUiThreadExecutor(): Executor {
+        val handler = Handler(Looper.getMainLooper())
+        return Executor {
+            handler.post(it)
+        }
+    }
+
+    inner class TelephonyListener : TelephonyCallback(), TelephonyCallback.CallStateListener {
+        override fun onCallStateChanged(state: Int) {
             gsmCallActive = when (state) {
                 TelephonyManager.CALL_STATE_OFFHOOK -> {
                     Log.i("[Context] Phone state is off hook")
@@ -47,15 +60,16 @@ class PhoneStateListener(private val telephonyManager: TelephonyManager) : Phone
             }
         }
     }
+    private val telephonyListener = TelephonyListener()
 
     init {
-        Log.i("[Phone State Listener] Registering phone state listener")
-        telephonyManager.listen(phoneStateListener, PhoneStateListener.LISTEN_CALL_STATE)
+        Log.i("[Telephony Listener] Registering telephony callback")
+        telephonyManager.registerTelephonyCallback(runOnUiThreadExecutor(), telephonyListener)
     }
 
     override fun destroy() {
-        Log.i("[Phone State Listener] Unregistering phone state listener")
-        telephonyManager.listen(phoneStateListener, PhoneStateListener.LISTEN_NONE)
+        Log.i("[Telephony Listener] Unregistering telephony callback")
+        telephonyManager.unregisterTelephonyCallback(telephonyListener)
     }
 
     override fun isInCall(): Boolean {

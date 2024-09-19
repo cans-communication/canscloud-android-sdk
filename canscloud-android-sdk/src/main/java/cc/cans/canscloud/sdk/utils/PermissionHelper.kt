@@ -17,11 +17,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package cc.cans.canscloud.demoappinsdk.utils
+package cc.cans.canscloud.sdk.utils
 
 import android.Manifest
 import android.content.Context
-import cc.cans.canscloud.demoappinsdk.compatibility.Compatibility
+import cc.cans.canscloud.sdk.compatibility.Compatibility
 import org.linphone.core.tools.Log
 
 /**
@@ -76,5 +76,9 @@ class PermissionHelper private constructor(private val context: Context) {
 
     fun hasPostNotificationsPermission(): Boolean {
         return Compatibility.hasPostNotificationsPermission(context)
+    }
+
+    fun hasBluetoothConnectPermission(): Boolean {
+        return Compatibility.hasBluetoothConnectPermission(context)
     }
 }
