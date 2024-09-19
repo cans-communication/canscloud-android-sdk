@@ -1,18 +1,14 @@
 package cc.cans.canscloud.demoappinsdk.core
 
-import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.telephony.TelephonyManager
 import android.util.Log
-import androidx.core.content.PermissionChecker.checkSelfPermission
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
-import androidx.loader.app.LoaderManager
 import cc.cans.canscloud.demoappinsdk.call.CallActivity
 import cc.cans.canscloud.demoappinsdk.call.IncomingActivity
 import cc.cans.canscloud.demoappinsdk.call.OutgoingActivity
@@ -33,21 +29,15 @@ import org.linphone.core.Core
 import org.linphone.core.R
 import org.linphone.mediastream.Version
 import java.io.File
-import java.text.Collator
 import cc.cans.canscloud.demoappinsdk.compatibility.PhoneStateInterface
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.linphone.core.Factory
-import org.linphone.core.GlobalState
 import org.linphone.core.LogLevel
 import org.linphone.core.LoggingService
 import org.linphone.core.LoggingServiceListenerStub
 import org.linphone.core.Reason
-import org.linphone.core.RegistrationState
 
 class CoreContext(
     val context: Context,
@@ -71,9 +61,6 @@ class CoreContext(
     private val loggingService = Factory.instance().loggingService
 
     private val listener = object : CansListenerStub {
-        override fun onGlobalStateChanged() {
-        }
-
         override fun onRegistration(state: RegisterState, message: String?) {
             Log.i("[SharedMainViewModel]","onRegistration ${state}")
         }
@@ -196,11 +183,6 @@ class CoreContext(
         initPhoneStateListener()
 
         notificationsManager.onCoreReady()
-
-        if (corePreferences.keepServiceAlive) {
-            org.linphone.core.tools.Log.i("[Context] Background mode setting is enabled, starting Service")
-           // notificationsManager.startForeground()
-        }
 
         _lifecycleRegistry.currentState = Lifecycle.State.RESUMED
         Log.i("[Context]"," Started")

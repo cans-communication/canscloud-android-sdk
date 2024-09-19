@@ -23,9 +23,7 @@ import android.Manifest
 import android.annotation.TargetApi
 import android.app.Activity
 import android.content.Context
-import android.content.pm.ShortcutManager
 import androidx.fragment.app.Fragment
-import org.linphone.core.ChatRoom
 import org.linphone.core.tools.Log
 
 @TargetApi(30)

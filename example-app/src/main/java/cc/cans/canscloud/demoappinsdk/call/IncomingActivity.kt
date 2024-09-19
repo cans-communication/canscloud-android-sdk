@@ -1,17 +1,11 @@
 package cc.cans.canscloud.demoappinsdk.call
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityIncomingBinding
-import cc.cans.canscloud.demoappinsdk.utils.PermissionHelper
 import cc.cans.canscloud.demoappinsdk.viewmodel.CallsViewModel
 import cc.cans.canscloud.sdk.Cans
-import org.linphone.core.tools.Log
-import org.linphone.mediastream.Version
-import cc.cans.canscloud.demoappinsdk.compatibility.Compatibility
 
 class IncomingActivity : AppCompatActivity() {
 

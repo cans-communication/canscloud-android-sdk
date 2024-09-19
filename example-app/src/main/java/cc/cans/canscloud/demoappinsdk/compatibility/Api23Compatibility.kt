@@ -35,9 +35,5 @@ class Api23Compatibility {
         fun requestReadPhoneStatePermission(fragment: Fragment, code: Int) {
             fragment.requestPermissions(arrayOf(Manifest.permission.READ_PHONE_STATE), code)
         }
-
-        fun canDrawOverlay(context: Context): Boolean {
-            return Settings.canDrawOverlays(context)
-        }
     }
 }

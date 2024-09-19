@@ -1,7 +1,6 @@
 package cc.cans.canscloud.demoappinsdk.call
 
 import android.Manifest
-import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -10,7 +9,6 @@ import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityOutgoinglBinding
 import cc.cans.canscloud.demoappinsdk.viewmodel.OutgoingViewModel
 import cc.cans.canscloud.sdk.Cans
-import cc.cans.canscloud.sdk.Cans.Companion
 
 class OutgoingActivity : AppCompatActivity() {
 
