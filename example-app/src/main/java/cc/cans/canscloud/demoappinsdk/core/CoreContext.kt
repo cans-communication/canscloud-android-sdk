@@ -47,7 +47,7 @@ class CoreContext(
             Log.i("[Context]","onUnRegistration")
         }
 
-        override fun onCallState(core: Core, call: Call,state: CallState, message: String?) {
+        override fun onCallState(state: CallState, message: String?) {
             Log.i("[Context] onCallState: ","$state")
             when (state) {
                 CallState.Idle -> {}
