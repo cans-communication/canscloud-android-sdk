@@ -23,8 +23,3 @@
 -keepclasseswithmembernames class * {
     native <methods>;
 }
-
--keep class cc.cans.canscloud.sdk.Cans {
-    *;
-}
-

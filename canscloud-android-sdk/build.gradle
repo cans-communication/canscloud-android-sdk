@@ -26,11 +26,11 @@ project.tasks['preBuild'].dependsOn 'linphoneSdkSource'
 
 android {
     namespace 'cc.cans.canscloud.sdk'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         minSdk 28
-        targetSdk 33
+        targetSdk 34
         versionCode 1
         versionName "1.0"
 
@@ -133,7 +133,7 @@ publishing {
         release(MavenPublication) {
             groupId = 'com.github.cans-communication'
             artifactId = 'canscloud-android-sdk'
-            version = '0.1.40'
+            version = '0.1.41'
 
             afterEvaluate {
                 from components.release
