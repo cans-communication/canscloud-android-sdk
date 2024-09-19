@@ -42,7 +42,7 @@ class NotificationsManager(private val context: Context) {
             Log.i("[NotificationsManager]","onUnRegistration")
         }
 
-        override fun onCallState(core: Core, call: Call, state: CallState, message: String?) {
+        override fun onCallState(state: CallState, message: String?) {
             Log.i("[NotificationsManager] onCallState: ", "$state")
             when (state) {
                 CallState.Idle -> {}

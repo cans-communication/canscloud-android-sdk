@@ -1,6 +1,5 @@
 package cc.cans.canscloud.sdk
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -25,7 +24,7 @@ import org.linphone.core.ProxyConfig
 import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import android.util.Log
-import org.linphone.core.GlobalState
+import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import org.linphone.core.LogCollectionState
 import org.linphone.core.LogLevel
 import org.linphone.core.tools.compatibility.DeviceUtils
@@ -84,12 +83,12 @@ class Cans {
 
         val destinationRemoteAddress: String
             get() {
-                return callCans.remoteAddress.asStringUriOnly()
+                return core.currentCall?.remoteAddress?.asStringUriOnly() ?: ""
             }
 
         val destinationUsername: String
             get() {
-                return callCans.remoteAddress.username ?: ""
+                return core.currentCall?.remoteAddress?.username ?: ""
             }
 
         val durationTime: Int?
@@ -120,10 +119,10 @@ class Cans {
                 return isSpeakerAudio()
             }
 
-//        val isBluetoothState: Boolean
-//            get() {
-//                return AudioRouteUtils.isBluetoothAudioRouteAvailable()
-//            }
+        val isBluetoothState: Boolean
+            get() {
+                return AudioRouteUtils.isBluetoothAudioRouteAvailable()
+            }
 
         private var coreListenerStub = object : CoreListenerStub() {
             override fun onRegistrationStateChanged(
@@ -154,39 +153,39 @@ class Cans {
                 when (state) {
                     Call.State.IncomingReceived, Call.State.IncomingEarlyMedia -> {
                         vibrator()
-                        listeners.forEach { it.onCallState(core, call, CallState.IncomingCall) }
+                        listeners.forEach { it.onCallState(CallState.IncomingCall) }
                     }
 
                     Call.State.OutgoingInit -> {
-                        listeners.forEach { it.onCallState(core, call, CallState.StartCall) }
+                        listeners.forEach { it.onCallState(CallState.StartCall) }
                     }
 
                     Call.State.OutgoingProgress -> {
-                        listeners.forEach { it.onCallState(core, call, CallState.CallOutgoing) }
+                        listeners.forEach { it.onCallState(CallState.CallOutgoing) }
                     }
 
                     Call.State.StreamsRunning -> {
-                        listeners.forEach { it.onCallState(core, call, CallState.StreamsRunning) }
+                        listeners.forEach { it.onCallState(CallState.StreamsRunning) }
                     }
 
                     Call.State.Connected -> {
-                        listeners.forEach { it.onCallState(core, call, CallState.Connected) }
+                        listeners.forEach { it.onCallState(CallState.Connected) }
                     }
 
                     Call.State.Error -> {
-                        listeners.forEach { it.onCallState(core, call, CallState.Error) }
+                        listeners.forEach { it.onCallState(CallState.Error) }
                     }
 
                     Call.State.End -> {
-                        listeners.forEach { it.onCallState(core, call, CallState.CallEnd) }
+                        listeners.forEach { it.onCallState(CallState.CallEnd) }
                     }
 
                     Call.State.Released -> {
-                        listeners.forEach { it.onCallState(core, call, CallState.MissCall) }
+                        listeners.forEach { it.onCallState(CallState.MissCall) }
                     }
 
                     else -> {
-                        listeners.forEach { it.onCallState(core, call, CallState.Unknown) }
+                        listeners.forEach { it.onCallState(CallState.Unknown) }
                     }
                 }
             }

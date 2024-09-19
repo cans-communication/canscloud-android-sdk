@@ -24,7 +24,7 @@ class OutgoingViewModel : ViewModel() {
         override fun onUnRegister() {
         }
 
-        override fun onCallState(core: Core, call: Call, state: CallState, message: String?) {
+        override fun onCallState(state: CallState, message: String?) {
             Log.i("[OutgoingViewModel] onCallState: ", "$state")
             when (state) {
                 CallState.Idle -> {}
