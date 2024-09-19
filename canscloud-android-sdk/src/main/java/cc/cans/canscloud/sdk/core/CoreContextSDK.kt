@@ -60,29 +60,29 @@ class CoreContextSDK(
             Log.i("[Context]","onUnRegistration")
         }
 
-        override fun onCallState(core: Core, call: Call,state: CallState, message: String?) {
+        override fun onCallState(state: CallState, message: String?) {
             Log.i("[Context] onCallState: ","$state")
             when (state) {
                 CallState.Idle -> {}
                 CallState.IncomingCall -> {
                     if (declineCallDueToGsmActiveCall()) {
-                        call.decline(Reason.Busy)
+                        Cans.callCans.decline(Reason.Busy)
                         return
                     }
                 }
                 CallState.StartCall -> {}
                 CallState.CallOutgoing -> {
                     if (core.callsNb == 1 && corePreferences.routeAudioToBluetoothIfAvailable) {
-                        AudioRouteUtils.routeAudioToBluetooth(call)
+                        AudioRouteUtils.routeAudioToBluetooth(Cans.callCans)
                     }
                 }
                 CallState.Connected -> {}
                 CallState.StreamsRunning -> {
                     if (core.callsNb == 1 && previousCallState == CallState.Connected) {
                         if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
-                            AudioRouteUtils.routeAudioToHeadset(call)
+                            AudioRouteUtils.routeAudioToHeadset(Cans.callCans)
                         } else if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
-                            AudioRouteUtils.routeAudioToBluetooth(call)
+                            AudioRouteUtils.routeAudioToBluetooth(Cans.callCans)
                         }
                     }
                 }

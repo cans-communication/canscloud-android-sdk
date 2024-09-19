@@ -8,7 +8,7 @@ import org.linphone.core.Core
 interface CansListenerStub {
    fun onRegistration(state : RegisterState, message: String? = null)
    fun onUnRegister()
-   fun onCallState(core: Core, call: Call, state : CallState, message: String? = null)
+   fun onCallState(state : CallState, message: String? = null)
    fun onLastCallEnded()
    fun onAudioDeviceChanged()
    fun onAudioDevicesListUpdated()

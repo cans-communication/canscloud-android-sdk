@@ -38,7 +38,7 @@ class SharedMainViewModel : ViewModel() {
             }
         }
 
-        override fun onCallState(core: Core, call: Call, state: CallState, message: String?) {
+        override fun onCallState(state: CallState, message: String?) {
             Log.i("[SharedMainViewModel] onCallState: ","$state")
             when (state) {
                 CallState.Idle -> {}
