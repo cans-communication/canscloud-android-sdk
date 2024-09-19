@@ -18,8 +18,6 @@ import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.demoappinsdk.call.IncomingActivity
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
-import org.linphone.core.Call
-import org.linphone.core.Core
 
 class NotificationsManager(private val context: Context) {
 

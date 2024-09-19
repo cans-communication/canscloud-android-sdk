@@ -8,8 +8,6 @@ import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
-import org.linphone.core.Call
-import org.linphone.core.Core
 
 class SharedMainViewModel : ViewModel() {
     val missedCallsCount = MutableLiveData<Int>()

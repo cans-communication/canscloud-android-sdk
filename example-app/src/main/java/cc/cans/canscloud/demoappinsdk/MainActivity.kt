@@ -2,6 +2,7 @@ package cc.cans.canscloud.demoappinsdk
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
@@ -46,7 +47,7 @@ class MainActivity : AppCompatActivity() {
     ) {
         if (requestCode == 0) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.i("[Dialer] READ_PHONE_STATE permission has been granted")
+                android.util.Log.i("[MainActivity]","READ_PHONE_STATE permission has been granted")
                 coreContext.initPhoneStateListener()
                 // If first permission has been granted, continue to ask for permissions,
                 // otherwise don't do it or it will loop indefinitely
@@ -60,14 +61,14 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             if (allGranted) {
-                Log.i("[Dialer] Telecom Manager permission have been granted")
+                android.util.Log.i("[MainActivity]","Telecom Manager permission have been granted")
                 enableTelecomManager()
             } else {
-                Log.w("[Dialer] Telecom Manager permission have been denied (at least one of them)")
+                android.util.Log.w("[MainActivity]","Telecom Manager permission have been denied (at least one of them)")
             }
         } else if (requestCode == 2) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.i("[Dialer] POST_NOTIFICATIONS permission has been granted")
+                android.util.Log.i("[MainActivity]","POST_NOTIFICATIONS permission has been granted")
             }
             checkTelecomManagerPermissions()
         }
@@ -76,24 +77,23 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkPermissions() {
         if (!PermissionHelper.get().hasReadPhoneStatePermission()) {
-            Log.i("[$TAG] Asking for READ_PHONE_STATE permission")
+            android.util.Log.i("[$TAG]","Asking for READ_PHONE_STATE permission")
             requestPermissions(arrayOf(Manifest.permission.READ_PHONE_STATE), 0)
         } else if (!PermissionHelper.get().hasPostNotificationsPermission()) {
             // Don't check the following the previous permission is being asked
-            Log.i("[$TAG] Asking for POST_NOTIFICATIONS permission")
+            android.util.Log.i("[$TAG]","Asking for POST_NOTIFICATIONS permission")
             Compatibility.requestPostNotificationsPermission(this, 2)
-        } else if (Version.sdkAboveOrEqual(Version.API26_O_80)) {
+        } else {
             // Don't check the following the previous permissions are being asked
             checkTelecomManagerPermissions()
         }
 
         // See https://developer.android.com/about/versions/14/behavior-changes-14#fgs-types
-        if (Version.sdkAboveOrEqual(Version.API34_ANDROID_14_UPSIDE_DOWN_CAKE)) {
+        if (Build.VERSION.SDK_INT >= (Build.VERSION_CODES.UPSIDE_DOWN_CAKE)) {
             val fullScreenIntentPermission = Compatibility.hasFullScreenIntentPermission(
                 this
             )
-            Log.i(
-                "[$TAG] Android 14 or above detected: full-screen intent permission is ${if (fullScreenIntentPermission) "granted" else "not granted"}"
+            android.util.Log.i("[$TAG]"," Android 14 or above detected: full-screen intent permission is ${if (fullScreenIntentPermission) "granted" else "not granted"}"
             )
             if (!fullScreenIntentPermission) {
                 Compatibility.requestFullScreenIntentPermission(this)
@@ -103,35 +103,35 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkTelecomManagerPermissions() {
         if (!corePreferences.useTelecomManager) {
-            Log.i("[$TAG] Telecom Manager feature is disabled")
+            android.util.Log.i("[$TAG]","Telecom Manager feature is disabled")
             if (corePreferences.manuallyDisabledTelecomManager) {
-                Log.w("[$TAG] User has manually disabled Telecom Manager feature")
+                android.util.Log.w("[$TAG]"," User has manually disabled Telecom Manager feature")
             } else {
                 if (Compatibility.hasTelecomManagerPermissions(this)) {
                     enableTelecomManager()
                 } else {
-                    Log.i("[$TAG] Asking for Telecom Manager permissions")
+                    android.util.Log.i("[$TAG]"," Asking for Telecom Manager permissions")
                     Compatibility.requestTelecomManagerPermissions(this, 1)
                 }
             }
         } else {
-            Log.i("[$TAG] Telecom Manager feature is already enabled")
+            android.util.Log.i("[$TAG]"," Telecom Manager feature is already enabled")
         }
     }
 
     private fun enableTelecomManager() {
-        Log.i("[$TAG] Telecom Manager permissions granted")
+        android.util.Log.i("[$TAG]"," Telecom Manager permissions granted")
         if (!TelecomHelper.exists()) {
-            Log.i("[$TAG] Creating Telecom Helper")
+            android.util.Log.i("[$TAG]"," Creating Telecom Helper")
             if (Compatibility.hasTelecomManagerFeature(this)) {
                 TelecomHelper.create(this)
             } else {
-                Log.e(
-                    "[$TAG] Telecom Helper can't be created, device doesn't support connection service!"
+                android.util.Log.e(
+                    "[$TAG]"," Telecom Helper can't be created, device doesn't support connection service!"
                 )
             }
         } else {
-            Log.e("[$TAG] Telecom Manager was already created ?!")
+            android.util.Log.e("[$TAG]"," Telecom Manager was already created ?!")
         }
         corePreferences.useTelecomManager = true
     }
