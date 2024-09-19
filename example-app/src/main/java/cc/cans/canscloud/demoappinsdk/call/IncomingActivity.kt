@@ -1,6 +1,7 @@
 package cc.cans.canscloud.demoappinsdk.call
 
 import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
@@ -9,11 +10,9 @@ import cc.cans.canscloud.demoappinsdk.viewmodel.CallsViewModel
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.utils.PermissionHelper
-import org.linphone.core.tools.Log
-import org.linphone.mediastream.Version
 
 class IncomingActivity : AppCompatActivity() {
-
+    val TAG = "IncomingActivity"
     private lateinit var binding: ActivityIncomingBinding
     private lateinit var callsViewModel: CallsViewModel
 
@@ -49,12 +48,12 @@ class IncomingActivity : AppCompatActivity() {
         val permissionsRequiredList = arrayListOf<String>()
 
         if (!PermissionHelper.get().hasRecordAudioPermission()) {
-            Log.i("[IncomingActivity] Asking for RECORD_AUDIO permission")
+            android.util.Log.i("[$TAG]","Asking for RECORD_AUDIO permission")
             permissionsRequiredList.add(Manifest.permission.RECORD_AUDIO)
         }
 
-        if (Version.sdkAboveOrEqual(Version.API31_ANDROID_12) && !PermissionHelper.get().hasBluetoothConnectPermission()) {
-            Log.i("[IncomingActivity] Asking for BLUETOOTH_CONNECT permission")
+        if (Build.VERSION.SDK_INT >= (Build.VERSION_CODES.S) && !PermissionHelper.get().hasBluetoothConnectPermission()) {
+            android.util.Log.i("[$TAG]","Asking for BLUETOOTH_CONNECT permission")
             permissionsRequiredList.add(Compatibility.BLUETOOTH_CONNECT)
         }
 

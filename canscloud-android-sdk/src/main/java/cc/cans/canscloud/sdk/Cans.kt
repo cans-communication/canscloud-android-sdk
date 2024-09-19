@@ -25,6 +25,7 @@ import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import android.util.Log
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
+import cc.cans.canscloud.sdk.utils.PermissionHelper
 import org.linphone.core.LogCollectionState
 import org.linphone.core.LogLevel
 import org.linphone.core.tools.compatibility.DeviceUtils
@@ -418,6 +419,52 @@ class Cans {
             Log.i("[CansSDK Audio]","Playback audio device currently in use is [${audioDevice.deviceName} (${audioDevice.driverName}) ${audioDevice.type}]"
             )
             return audioDevice.type == AudioDevice.Type.Speaker
+        }
+
+        fun toggleSpeaker() {
+            if (AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()) {
+                forceEarpieceAudioRoute()
+            } else {
+                forceSpeakerAudioRoute()
+            }
+        }
+
+        fun toggleMuteMicrophone() {
+            if (!PermissionHelper.get().hasRecordAudioPermission()) {
+                return
+            }
+
+            val call = core.currentCall
+            if (call != null && call.conference != null) {
+                val micMuted = call.conference?.microphoneMuted ?: false
+                call.conference?.microphoneMuted = !micMuted
+            } else {
+                val micMuted = call?.microphoneMuted ?: false
+                call?.microphoneMuted = !micMuted
+            }
+        }
+
+        private fun forceEarpieceAudioRoute() {
+            if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
+                Log.i("[CansSDK Controls]", "Headset found, route audio to it instead of earpiece")
+                AudioRouteUtils.routeAudioToHeadset()
+            } else {
+                AudioRouteUtils.routeAudioToEarpiece()
+            }
+            AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
+            AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
+        }
+
+        fun forceSpeakerAudioRoute() {
+            AudioRouteUtils.routeAudioToSpeaker()
+            AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
+            AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
+        }
+
+        fun forceBluetoothAudioRoute() {
+            AudioRouteUtils.routeAudioToBluetooth()
+            AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
+            AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
         }
 
         private fun vibrator() {
