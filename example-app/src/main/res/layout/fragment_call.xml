@@ -38,7 +38,6 @@
                 android:id="@+id/micro"
                 android:layout_width="70dp"
                 android:layout_height="80dp"
-                android:layout_marginEnd="24dp"
                 android:contentDescription="@{controlsViewModel.isMicrophoneMuted ? @string/content_description_disable_mic_mute : @string/content_description_enable_mic_mute}"
                 android:src="@drawable/selector_ongoing_micro" />
 
@@ -49,6 +48,14 @@
                 android:layout_marginStart="24dp"
                 android:contentDescription="@string/content_description_toggle_speaker"
                 android:src="@drawable/selector_ongoing_speaker" />
+
+            <ImageView
+                android:id="@+id/bluetooth"
+                android:layout_width="70dp"
+                android:layout_height="80dp"
+                android:layout_marginStart="24dp"
+                android:contentDescription="@string/content_description_bluetooth"
+                android:src="@drawable/ongoing_route_bluetooth" />
         </LinearLayout>
 
         <Chronometer

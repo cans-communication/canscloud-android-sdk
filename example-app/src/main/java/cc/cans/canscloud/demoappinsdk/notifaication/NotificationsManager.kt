@@ -7,9 +7,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -20,6 +18,8 @@ import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.demoappinsdk.call.IncomingActivity
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
+import org.linphone.core.Call
+import org.linphone.core.Core
 
 class NotificationsManager(private val context: Context) {
 
@@ -35,21 +35,24 @@ class NotificationsManager(private val context: Context) {
 
     private val listener = object : CansListenerStub {
         override fun onRegistration(state: RegisterState, message: String?) {
-            Log.i("[SharedMainViewModel]","onRegistration ${state}")
+            Log.i("[NotificationsManager]","onRegistration ${state}")
         }
 
         override fun onUnRegister() {
-            Log.i("[Context]","onUnRegistration")
+            Log.i("[NotificationsManager]","onUnRegistration")
         }
 
-        override fun onCallState(state: CallState, message: String?) {
-            Log.i("[NotificationsApp] onCallState: ", "$state")
+        override fun onCallState(core: Core, call: Call, state: CallState, message: String?) {
+            Log.i("[NotificationsManager] onCallState: ", "$state")
             when (state) {
-                CallState.CallOutgoing -> {}
-                CallState.LastCallEnd -> dismissCallNotification()
+                CallState.Idle -> {}
                 CallState.IncomingCall -> showIncomingCallNotification(context)
                 CallState.StartCall -> {}
-                CallState.Connected -> {}
+                CallState.CallOutgoing -> {}
+                CallState.StreamsRunning -> {}
+                CallState.Connected -> {
+                    dismissIncomingCallNotification()
+                }
                 CallState.Error -> {}
                 CallState.CallEnd -> {}
                 CallState.MissCall -> {
@@ -57,8 +60,21 @@ class NotificationsManager(private val context: Context) {
                         displayMissedCallNotification()
                     }
                 }
-                CallState.Unknown -> dismissCallNotification()
+                CallState.Unknown -> dismissIncomingCallNotification()
             }
+        }
+
+        override fun onLastCallEnded() {
+            Log.i("[NotificationsManager]", "onLastCallEnded")
+            dismissIncomingCallNotification()
+        }
+
+        override fun onAudioDeviceChanged() {
+            Log.i("[Context onAudioUpdate]", "onAudioDeviceChanged")
+        }
+
+        override fun onAudioDevicesListUpdated() {
+            Log.i("[Context onAudioUpdate]", "onAudioDevicesListUpdated")
         }
     }
 
@@ -70,7 +86,6 @@ class NotificationsManager(private val context: Context) {
         Cans.addListener(listener)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     fun showIncomingCallNotification(context: Context) {
         val incomingCallNotificationIntent = Intent(context, IncomingActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION)
@@ -166,7 +181,7 @@ class NotificationsManager(private val context: Context) {
         notificationManager.notify(tag, id, notification)
     }
 
-    fun dismissCallNotification() {
+    fun dismissIncomingCallNotification() {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(1)
     }
