@@ -12,6 +12,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.loader.app.LoaderManager
 import cc.cans.canscloud.demoappinsdk.call.CallActivity
 import cc.cans.canscloud.demoappinsdk.call.IncomingActivity
 import cc.cans.canscloud.demoappinsdk.call.OutgoingActivity
@@ -34,7 +35,6 @@ import org.linphone.mediastream.Version
 import java.io.File
 import java.text.Collator
 import cc.cans.canscloud.demoappinsdk.compatibility.PhoneStateInterface
-import cc.cans.canscloud.demoappinsdk.utils.FileUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -42,6 +42,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.linphone.core.Factory
+import org.linphone.core.GlobalState
 import org.linphone.core.LogLevel
 import org.linphone.core.LoggingService
 import org.linphone.core.LoggingServiceListenerStub
@@ -50,7 +51,6 @@ import org.linphone.core.RegistrationState
 
 class CoreContext(
     val context: Context,
-    service: CoreService? = null,
     ) : LifecycleOwner, ViewModelStoreOwner {
     private val _lifecycleRegistry = LifecycleRegistry(this)
     override val lifecycle: Lifecycle
@@ -71,6 +71,9 @@ class CoreContext(
     private val loggingService = Factory.instance().loggingService
 
     private val listener = object : CansListenerStub {
+        override fun onGlobalStateChanged() {
+        }
+
         override fun onRegistration(state: RegisterState, message: String?) {
             Log.i("[SharedMainViewModel]","onRegistration ${state}")
         }
@@ -146,10 +149,9 @@ class CoreContext(
                     LogLevel.Warning -> Log.w(domain, message)
                     LogLevel.Message -> Log.i(domain, message)
                     LogLevel.Fatal -> Log.wtf(domain, message)
-                    else -> android.util.Log.d(domain, message)
+                    else -> Log.d(domain, message)
                 }
             }
-           // FirebaseCrashlytics.getInstance().log("[$domain] [${level.name}] $message")
         }
     }
 
@@ -166,12 +168,16 @@ class CoreContext(
         // CoreContext listener must be added first!
         if (Version.sdkAboveOrEqual(Version.API26_O_80) && corePreferences.useTelecomManager) {
             if (Compatibility.hasTelecomManagerPermissions(context)) {
-                org.linphone.core.tools.Log.i("[Context] Creating Telecom Helper, disabling audio focus requests in AudioHelper")
+                Log.i(
+                    "[Context]","Creating Telecom Helper, disabling audio focus requests in AudioHelper"
+                )
                 core.config.setBool("audio", "android_disable_audio_focus_requests", true)
                 val telecomHelper = TelecomHelper.required(context)
-                Log.i("[Context]", "Telecom Helper created, account is ${if (telecomHelper.isAccountEnabled()) "enabled" else "disabled"}")
+                Log.i(
+                    "[Context]","Telecom Helper created, account is ${if (telecomHelper.isAccountEnabled()) "enabled" else "disabled"}"
+                )
             } else {
-                Log.w("[Context]","Can't create Telecom Helper, permissions have been revoked")
+                Log.i("[Context]","Can't create Telecom Helper, permissions have been revoked")
                 corePreferences.useTelecomManager = false
             }
         }
@@ -191,33 +197,25 @@ class CoreContext(
 
         notificationsManager.onCoreReady()
 
-//        EmojiCompat.init(BundledEmojiCompatConfig(context))
-//        collator.strength = Collator.NO_DECOMPOSITION
-
-        if (corePreferences.vfsEnabled) {
-            FileUtils.clearExistingPlainFiles()
-        }
-
         if (corePreferences.keepServiceAlive) {
             org.linphone.core.tools.Log.i("[Context] Background mode setting is enabled, starting Service")
            // notificationsManager.startForeground()
         }
 
         _lifecycleRegistry.currentState = Lifecycle.State.RESUMED
-        org.linphone.core.tools.Log.i("[Context] Started")
+        Log.i("[Context]"," Started")
     }
 
     fun stop() {
-        org.linphone.core.tools.Log.i("[Context] Stopping")
+        Log.i("[Context]"," Stopping")
         coroutineScope.cancel()
 
         if (::phoneStateListener.isInitialized) {
             phoneStateListener.destroy()
         }
-        //notificationsManager.destroy()
-       // contactsManager.destroy()
+
         if (TelecomHelper.exists()) {
-            org.linphone.core.tools.Log.i("[Context] Destroying telecom helper")
+            Log.i("[Context]"," Destroying telecom helper")
             TelecomHelper.get().destroy()
             TelecomHelper.destroy()
         }
@@ -231,7 +229,7 @@ class CoreContext(
     }
 
     private fun configureCore() {
-        org.linphone.core.tools.Log.i("[Context] Configuring Core")
+        Log.i("[Context]"," Configuring Core")
 
         core.staticPicture = corePreferences.staticPicturePath
 
@@ -283,7 +281,7 @@ class CoreContext(
             }
         }
 
-        org.linphone.core.tools.Log.i("[Context] Core configured")
+        Log.i("[Context]", "Core configured")
     }
 
     private fun computeUserAgent() {
@@ -306,10 +304,18 @@ class CoreContext(
         core.userCertificatesPath = userCertsPath
     }
 
+    fun fetchContacts() {
+        if (PermissionHelper.required(context).hasReadContactsPermission()) {
+//            org.linphone.core.tools.Log.i("[Context] Init contacts loader")
+//            val manager = LoaderManager.getInstance(this@CoreContext)
+//            manager.restartLoader(0, null, contactLoader)
+        }
+    }
+
     /* Call related functions */
 
     fun initPhoneStateListener() {
-        if (context.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+        if (PermissionHelper.required(context).hasReadPhoneStatePermission()) {
             try {
                 phoneStateListener =
                     Compatibility.createPhoneListener(context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager)
@@ -347,34 +353,6 @@ class CoreContext(
             }
         }
         return false
-    }
-
-    fun answerCallVideoUpdateRequest(call: Call, accept: Boolean) {
-        val params = core.createCallParams(call)
-
-        if (accept) {
-            params?.isVideoEnabled = true
-            core.isVideoCaptureEnabled = true
-            core.isVideoDisplayEnabled = true
-        } else {
-            params?.isVideoEnabled = false
-        }
-
-        call.acceptUpdate(params)
-    }
-
-    fun checkIfForegroundServiceNotificationCanBeRemovedAfterDelay(delayInMs: Long) {
-        coroutineScope.launch {
-            withContext(Dispatchers.Default) {
-                delay(delayInMs)
-                withContext(Dispatchers.Main) {
-                    if (core.defaultAccount != null && core.defaultAccount?.state == RegistrationState.Ok) {
-                        org.linphone.core.tools.Log.i("[Context] Default account is registered, cancel foreground service notification if possible")
-                     //   notificationsManager.stopForegroundNotificationIfPossible()
-                    }
-                }
-            }
-        }
     }
 
     /* Start call related activities */

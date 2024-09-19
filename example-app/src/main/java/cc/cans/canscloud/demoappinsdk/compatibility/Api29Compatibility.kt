@@ -21,6 +21,7 @@ package cc.cans.canscloud.demoappinsdk.compatibility
 
 import android.Manifest
 import android.annotation.TargetApi
+import android.app.Activity
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ContentValues
@@ -43,6 +44,11 @@ import org.linphone.core.tools.Log
 @TargetApi(29)
 class Api29Compatibility {
     companion object {
+        fun hasTelecomManagerPermission(context: Context): Boolean {
+            return Compatibility.hasPermission(context, Manifest.permission.READ_PHONE_STATE) &&
+                    Compatibility.hasPermission(context, Manifest.permission.MANAGE_OWN_CALLS)
+        }
+
         fun hasReadPhoneStatePermission(context: Context): Boolean {
             val granted = Compatibility.hasPermission(context, Manifest.permission.READ_PHONE_STATE)
             if (granted) {

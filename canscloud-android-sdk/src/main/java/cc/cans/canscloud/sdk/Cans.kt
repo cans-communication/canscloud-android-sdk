@@ -2,11 +2,9 @@ package cc.cans.canscloud.sdk
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Vibrator
 import android.widget.Toast
 import androidx.core.app.NotificationManagerCompat
@@ -27,7 +25,7 @@ import org.linphone.core.ProxyConfig
 import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import android.util.Log
-import cc.cans.canscloud.sdk.models.AudioState
+import org.linphone.core.GlobalState
 import org.linphone.core.LogCollectionState
 import org.linphone.core.LogLevel
 import org.linphone.core.tools.compatibility.DeviceUtils

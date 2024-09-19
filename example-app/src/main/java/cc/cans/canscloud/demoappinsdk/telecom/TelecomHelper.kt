@@ -124,20 +124,6 @@ class TelecomHelper private constructor(context: Context) {
         return null
     }
 
-    fun updateAccount(newAccount: PhoneAccount) {
-        Log.i("[Telecom Helper] Updating account object: $newAccount")
-        account = newAccount
-    }
-
-    fun removeAccount() {
-        if (account.isEnabled) {
-            Log.w("[Telecom Helper] Unregistering phone account handler from telecom manager")
-            telecomManager.unregisterPhoneAccount(account.accountHandle)
-        } else {
-            Log.w("[Telecom Helper] Account wasn't enabled, skipping...")
-        }
-    }
-
     fun findConnectionForCallId(callId: String): NativeCallWrapper? {
         return connections.find { connection ->
             connection.callId == callId
@@ -221,9 +207,6 @@ class TelecomHelper private constructor(context: Context) {
         }
 
         extras.putString("Call-ID", call.callLog.callId)
-
-//        val contact = contactsManager.findContactByAddress(call.remoteAddress)
-//        val displayName = contact?.name ?: LinphoneUtils.getDisplayName(call.remoteAddress)
         extras.putString("DisplayName", call.remoteAddress.username)
 
         return extras

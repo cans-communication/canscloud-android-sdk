@@ -6,7 +6,6 @@ import androidx.lifecycle.ViewModel
 import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.callback.CansListenerStub
-import cc.cans.canscloud.sdk.models.AudioState
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
 import org.linphone.core.Call

@@ -328,7 +328,7 @@ class CorePreferences constructor(private val context: Context) {
 
     var useTelecomManager: Boolean
         // Some permissions are required, so keep it to false so user has to manually enable it and give permissions
-        get() = config.getBool("app", "use_self_managed_telecom_manager", true)
+        get() = config.getBool("app", "use_self_managed_telecom_manager", false)
         set(value) {
             config.setBool("app", "use_self_managed_telecom_manager", value)
             // We need to disable audio focus requests when enabling telecom manager, otherwise it creates conflicts

@@ -71,11 +71,14 @@ class Compatibility {
         }
 
         // See https://developer.android.com/about/versions/11/privacy/permissions#phone-numbers
+
         fun hasTelecomManagerPermissions(context: Context): Boolean {
             return if (Version.sdkAboveOrEqual(Version.API30_ANDROID_11)) {
                 Api30Compatibility.hasTelecomManagerPermission(context)
+            } else if (Version.sdkAboveOrEqual(Version.API29_ANDROID_10)) {
+                Api29Compatibility.hasTelecomManagerPermission(context)
             } else {
-                Api26Compatibility.hasTelecomManagerPermission(context)
+                false
             }
         }
 
@@ -93,6 +96,50 @@ class Compatibility {
             } else {
                 Api26Compatibility.requestTelecomManagerPermissionFragment(fragment, code)
             }
+        }
+
+        fun hasTelecomManagerFeature(context: Context): Boolean {
+            if (Version.sdkAboveOrEqual(Version.API33_ANDROID_13_TIRAMISU)) {
+                return Api33Compatibility.hasTelecomManagerFeature(context)
+            } else if (Version.sdkAboveOrEqual(Version.API26_O_80)) {
+                return Api26Compatibility.hasTelecomManagerFeature(context)
+            }
+            return false
+        }
+
+        fun requestPostNotificationsPermission(activity: Activity, code: Int) {
+            if (Version.sdkAboveOrEqual(Version.API33_ANDROID_13_TIRAMISU)) {
+                Api33Compatibility.requestPostNotificationsPermission(activity, code)
+            }
+        }
+
+        fun requestPostNotificationsPermission(fragment: Fragment, code: Int) {
+            if (Version.sdkAboveOrEqual(Version.API33_ANDROID_13_TIRAMISU)) {
+                Api33Compatibility.requestPostNotificationsPermission(fragment, code)
+            }
+        }
+
+        fun hasPostNotificationsPermission(context: Context): Boolean {
+            return if (Version.sdkAboveOrEqual(Version.API33_ANDROID_13_TIRAMISU)) {
+                Api33Compatibility.hasPostNotificationsPermission(context)
+            } else {
+                true
+            }
+        }
+
+        fun hasFullScreenIntentPermission(context: Context): Boolean {
+            if (Version.sdkAboveOrEqual(Version.API34_ANDROID_14_UPSIDE_DOWN_CAKE)) {
+                return Api34Compatibility.hasFullScreenIntentPermission(context)
+            }
+            return true
+        }
+
+        fun requestFullScreenIntentPermission(context: Context): Boolean {
+            if (Version.sdkAboveOrEqual(Version.API34_ANDROID_14_UPSIDE_DOWN_CAKE)) {
+                Api34Compatibility.requestFullScreenIntentPermission(context)
+                return true
+            }
+            return false
         }
 
 //        fun getDeviceName(context: Context): String {

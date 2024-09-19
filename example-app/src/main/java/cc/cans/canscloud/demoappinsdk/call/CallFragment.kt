@@ -1,7 +1,5 @@
 package cc.cans.canscloud.demoappinsdk.call
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.SystemClock
 import androidx.fragment.app.Fragment
@@ -14,9 +12,6 @@ import cc.cans.canscloud.demoappinsdk.databinding.FragmentCallBinding
 import cc.cans.canscloud.demoappinsdk.utils.AudioRouteUtils
 import cc.cans.canscloud.demoappinsdk.viewmodel.CallsViewModel
 import cc.cans.canscloud.sdk.Cans
-import cc.cans.canscloud.demoappinsdk.compatibility.Compatibility
-import org.linphone.core.tools.Log
-import org.linphone.mediastream.Version
 
 /**
  * A simple [Fragment] subclass.
@@ -82,7 +77,7 @@ class CallFragment : Fragment() {
         }
 
         binding.micro.setOnClickListener {
-            Cans.toggleMuteMicrophone()
+            callsViewModel.toggleMuteMicrophone()
 
             if (Cans.isMicState) {
                 binding.micro.setImageResource(R.drawable.ongoing_mute_select)

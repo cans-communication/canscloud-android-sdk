@@ -92,12 +92,8 @@ class OutgoingViewModel : ViewModel() {
 
     fun forceSpeakerAudioRoute() {
         AudioRouteUtils.routeAudioToSpeaker()
-    }
-
-    fun forceBluetoothAudioRoute() {
-        if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
-            AudioRouteUtils.routeAudioToBluetooth()
-        }
+        AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
+        AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
     }
 
     override fun onCleared() {

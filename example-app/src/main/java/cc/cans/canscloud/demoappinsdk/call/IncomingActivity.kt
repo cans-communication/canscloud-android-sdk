@@ -42,29 +42,5 @@ class IncomingActivity : AppCompatActivity() {
             Cans.terminateCall()
             finish()
         }
-
-        val permissionsRequiredList = arrayListOf<String>()
-        if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-            permissionsRequiredList.add(Compatibility.BLUETOOTH_CONNECT)
-        }
-
-        if (checkSelfPermission(Manifest.permission.READ_PHONE_NUMBERS) != PackageManager.PERMISSION_GRANTED) {
-            permissionsRequiredList.add(Manifest.permission.READ_PHONE_NUMBERS)
-        }
-
-        if (checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
-            permissionsRequiredList.add(Manifest.permission.READ_PHONE_STATE)
-        }
-
-        if (checkSelfPermission(Manifest.permission.MANAGE_OWN_CALLS) != PackageManager.PERMISSION_GRANTED) {
-            permissionsRequiredList.add(Manifest.permission.MANAGE_OWN_CALLS)
-        }
-
-        if (permissionsRequiredList.isNotEmpty()) {
-            val permissionsRequired = arrayOfNulls<String>(permissionsRequiredList.size)
-            permissionsRequiredList.toArray(permissionsRequired)
-            requestPermissions(permissionsRequired, 0)
-        }
-
     }
 }

@@ -1,7 +1,5 @@
 package cc.cans.canscloud.demoappinsdk.viewmodel
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -9,12 +7,12 @@ import cc.cans.canscloud.demoappinsdk.utils.AudioRouteUtils
 import cc.cans.canscloud.demoappinsdk.utils.PermissionHelper
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.Cans.Companion.core
+import cc.cans.canscloud.sdk.Cans.Companion.corePreferences
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
 import org.linphone.core.Call
 import org.linphone.core.Core
-import org.linphone.core.Event
 
 class CallsViewModel : ViewModel() {
     val callDuration = MutableLiveData<Int?>()
@@ -51,6 +49,7 @@ class CallsViewModel : ViewModel() {
         }
 
         override fun onAudioDeviceChanged() {
+            AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
             AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
         }
 
@@ -58,9 +57,10 @@ class CallsViewModel : ViewModel() {
             Log.i("[CallsViewModel onAudioUpdate]", "Audio devices")
 
             isBluetooth.value = false
+            AudioRouteUtils.isBluetoothAudioRouteAvailable()
             if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
                 AudioRouteUtils.routeAudioToHeadset()
-            } else {
+            } else if (corePreferences.routeAudioToBluetoothIfAvailable) {
                 if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
                     AudioRouteUtils.routeAudioToBluetooth()
                     isBluetooth.value = true
@@ -104,16 +104,20 @@ class CallsViewModel : ViewModel() {
         } else {
             AudioRouteUtils.routeAudioToEarpiece()
         }
+        AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
+        AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
     }
 
     fun forceSpeakerAudioRoute() {
         AudioRouteUtils.routeAudioToSpeaker()
+        AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
+        AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
     }
 
     fun forceBluetoothAudioRoute() {
-        if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
-            AudioRouteUtils.routeAudioToBluetooth()
-        }
+        AudioRouteUtils.routeAudioToBluetooth()
+        AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
+        AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
     }
 
     override fun onCleared() {

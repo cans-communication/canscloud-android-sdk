@@ -297,6 +297,12 @@ class Api26Compatibility {
                 Compatibility.hasPermission(context, Manifest.permission.MANAGE_OWN_CALLS)
         }
 
+        fun hasTelecomManagerFeature(context: Context): Boolean {
+            return context.packageManager.hasSystemFeature(
+                PackageManager.FEATURE_CONNECTION_SERVICE
+            )
+        }
+
         fun getImeFlagsForSecureChatRoom(): Int {
             return EditorInfo.IME_FLAG_NO_EXTRACT_UI or EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
         }
