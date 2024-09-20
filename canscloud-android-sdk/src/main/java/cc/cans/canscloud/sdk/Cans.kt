@@ -36,6 +36,7 @@ class Cans {
         lateinit var core: Core
         lateinit var callCans: Call
         lateinit var mVibrator: Vibrator
+        var appName: String? = null
 
         @SuppressLint("StaticFieldLeak")
         lateinit var corePreferences: CorePreferences
@@ -89,7 +90,7 @@ class Cans {
 
         val destinationUsername: String
             get() {
-                return core.currentCall?.remoteAddress?.username ?: ""
+                return callCans.remoteAddress.username ?: ""
             }
 
         val durationTime: Int?
@@ -213,9 +214,11 @@ class Cans {
 
         fun config(
             context: Context,
+            appName: String
         ) {
 
             this.context = context
+            this.appName = appName
 
             Factory.instance().setLogCollectionPath(context.filesDir.absolutePath)
             Factory.instance().enableLogCollection(LogCollectionState.Enabled)
@@ -226,7 +229,6 @@ class Cans {
             val config = Factory.instance().createConfigWithFactory(corePreferences.configPath, corePreferences.factoryConfigPath)
             corePreferences.config = config
 
-            val appName = context.getString(R.string.app_name)
             Factory.instance().setLoggerDomain(appName)
             Factory.instance().enableLogcatLogs(corePreferences.logcatLogsOutput)
             if (corePreferences.debugLogs) {
@@ -257,9 +259,9 @@ class Cans {
             context: Context,
             notificationManager: NotificationManagerCompat,
         ) {
-            val id = context.getString(R.string.notification_channel_missed_call_id)
-            val name = context.getString(R.string.notification_channel_missed_call_name)
-            val description = context.getString(R.string.notification_channel_missed_call_name)
+            val id = "$appName ${context.getString(R.string.notification_channel_missed_call_id)}"
+            val name = "$appName ${context.getString(R.string.notification_channel_missed_call_name)}"
+            val description = "$appName ${context.getString(R.string.notification_channel_missed_call_name)}"
             val channel = NotificationChannel(id, name, NotificationManager.IMPORTANCE_LOW)
             channel.description = description
             channel.lightColor = context.getColor(R.color.notification_led_color)
@@ -273,9 +275,9 @@ class Cans {
             context: Context,
             notificationManager: NotificationManagerCompat,
         ) {
-            val id = context.getString(R.string.notification_channel_incoming_call_id)
-            val name = context.getString(R.string.notification_channel_incoming_call_name)
-            val description = context.getString(R.string.notification_channel_incoming_call_name)
+            val id = "$appName ${context.getString(R.string.notification_channel_incoming_call_id)}"
+            val name = "$appName ${context.getString(R.string.notification_channel_incoming_call_name)}"
+            val description = "$appName ${context.getString(R.string.notification_channel_incoming_call_name)}"
             val channel = NotificationChannel(id, name, NotificationManager.IMPORTANCE_HIGH)
             channel.description = description
             channel.lightColor = context.getColor(R.color.notification_led_color)

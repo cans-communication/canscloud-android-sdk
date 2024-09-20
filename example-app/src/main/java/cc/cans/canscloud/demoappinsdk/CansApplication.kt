@@ -39,7 +39,7 @@ class CansApplication : Application(), LifecycleObserver {
 
         val appName = getString(R.string.app_name)
         android.util.Log.i("[$appName]", "Application is being created")
-        Cans.config(applicationContext)
+        Cans.config(applicationContext, appName)
         CoreContext(this)
         coreContext = CoreContextSDK(this)
         coreContext.start()

@@ -28,17 +28,20 @@
             android:name=".call.CallActivity"
             android:launchMode="singleTask"
             android:resizeableActivity="true"
-            android:supportsPictureInPicture="true"/>
+            android:supportsPictureInPicture="true"
+            android:theme="@style/Theme.CansCloudAndroidSDK"/>
 
         <activity
             android:name=".call.IncomingActivity"
             android:launchMode="singleTask"
-            android:noHistory="true"/>
+            android:noHistory="true"
+            android:theme="@style/Theme.CansCloudAndroidSDK"/>
 
         <activity
             android:name=".call.OutgoingActivity"
             android:launchMode="singleTask"
-            android:noHistory="true"/>
+            android:noHistory="true"
+            android:theme="@style/Theme.CansCloudAndroidSDK"/>
 
         <receiver
             android:name=".notifaication.AnswerCallReceiver"
