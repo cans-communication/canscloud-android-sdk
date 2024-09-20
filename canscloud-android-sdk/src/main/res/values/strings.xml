@@ -261,10 +261,10 @@
     <string name="notification_channel_missed_call_id" translatable="false">cans_notification_missed_call_id</string>
     <string name="notification_channel_incoming_call_id" translatable="false">cans_notification_call_id</string>
     <string name="notification_channel_chat_id" translatable="false">cans_notification_chat_id</string>
-    <string name="notification_channel_service_name">&appName; service notification</string>
-    <string name="notification_channel_missed_call_name">&appName; missed calls notifications</string>
-    <string name="notification_channel_incoming_call_name">&appName; incoming calls notifications</string>
-    <string name="notification_channel_chat_name">&appName; instant messages notifications</string>
+    <string name="notification_channel_service_name">service notification</string>
+    <string name="notification_channel_missed_call_name">missed calls notifications</string>
+    <string name="notification_channel_incoming_call_name">incoming calls notifications</string>
+    <string name="notification_channel_chat_name">instant messages notifications</string>
     <string name="incoming_call_notification_title">Call incoming</string>
     <string name="incoming_call_notification_hangup_action_label">Hangup</string>
     <string name="incoming_call_notification_answer_action_label">Answer</string>

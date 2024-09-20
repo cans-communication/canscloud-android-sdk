@@ -12,7 +12,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import cc.cans.canscloud.sdk.R
+import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.demoappinsdk.call.IncomingActivity
@@ -122,10 +122,10 @@ class NotificationsManager(private val context: Context) {
         // Build the notification
         val builder = NotificationCompat.Builder(
             context,
-            context.getString(R.string.notification_channel_incoming_call_id)
+            "${context.getString(R.string.app_name)} ${context.getString(cc.cans.canscloud.sdk.R.string.notification_channel_incoming_call_id)}"
         )
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle(context.getString(R.string.notification_channel_incoming_call_name))
+            .setSmallIcon(cc.cans.canscloud.sdk.R.drawable.topbar_call_notification)
+            .setContentTitle("${context.getString(R.string.app_name)} ${context.getString(cc.cans.canscloud.sdk.R.string.notification_channel_incoming_call_name)}")
             .setContentText("$name is calling...")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_CALL)
@@ -144,25 +144,24 @@ class NotificationsManager(private val context: Context) {
 
         val body: String
         if (missedCallCount > 1) {
-            body = context.getString(R.string.missed_call_notification_body).format(missedCallCount)
+            body = context.getString(cc.cans.canscloud.sdk.R.string.missed_call_notification_body).format(missedCallCount)
         } else {
-            body = Cans.destinationUsername
+            body = context.getString(cc.cans.canscloud.sdk.R.string.missed_call_notification_body).format(Cans.destinationUsername)
         }
 
         val builder = NotificationCompat.Builder(
             context,
-            context.getString(R.string.notification_channel_missed_call_id)
-        )
-            .setContentTitle(context.getString(R.string.missed_call_notification_title))
+            "${context.getString(R.string.app_name)} ${context.getString(cc.cans.canscloud.sdk.R.string.notification_channel_missed_call_id)}")
+            .setContentTitle("${context.getString(R.string.app_name)} ${context.getString(cc.cans.canscloud.sdk.R.string.missed_call_notification_title)}")
             .setContentText(body)
-            .setSmallIcon(R.drawable.topbar_missed_call_notification)
+            .setSmallIcon(cc.cans.canscloud.sdk.R.drawable.topbar_missed_call_notification)
             .setCategory(NotificationCompat.CATEGORY_MISSED_CALL)
             .setAutoCancel(true)
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setWhen(System.currentTimeMillis())
             .setShowWhen(true)
             .setNumber(missedCallCount)
-            .setColor(ContextCompat.getColor(context, R.color.notification_led_color))
+            .setColor(ContextCompat.getColor(context, cc.cans.canscloud.sdk.R.color.notification_led_color))
 
         val notification = builder.build()
         notify(MISSED_CALLS_NOTIF_ID, notification, MISSED_CALL_TAG)
