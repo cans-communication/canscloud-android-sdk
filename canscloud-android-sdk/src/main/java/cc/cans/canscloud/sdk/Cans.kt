@@ -118,7 +118,7 @@ class Cans {
 
         val isSpeakerState: Boolean
             get() {
-                return isSpeakerAudio()
+                return AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
             }
 
         val isBluetoothState: Boolean
@@ -398,29 +398,6 @@ class Cans {
                 params?.isLowBandwidthEnabled = true
             }
             call.acceptWithParams(params)
-        }
-
-        private fun isSpeakerAudio(call: Call? = null): Boolean {
-            val currentCall = if (core.callsNb > 0) {
-                call ?: core.currentCall ?: core.calls[0]
-            } else {
-                Log.w("[CansSDK Audio Route Helper]","No call found, checking audio route on Core")
-                null
-            }
-            val conference = core.conference
-
-            val audioDevice = if (conference != null && conference.isIn) {
-                conference.outputAudioDevice
-            } else if (currentCall != null) {
-                currentCall.outputAudioDevice
-            } else {
-                core.outputAudioDevice
-            }
-
-            if (audioDevice == null) return false
-            Log.i("[CansSDK Audio]","Playback audio device currently in use is [${audioDevice.deviceName} (${audioDevice.driverName}) ${audioDevice.type}]"
-            )
-            return audioDevice.type == AudioDevice.Type.Speaker
         }
 
         fun toggleSpeaker() {
