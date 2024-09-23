@@ -49,12 +49,6 @@ class CallFragment : Fragment() {
 
         binding.textViewPhoneNumber.text = Cans.destinationUsername
 
-        if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
-            binding.bluetooth.visibility = View.VISIBLE
-        } else {
-            binding.bluetooth.visibility = View.GONE
-        }
-
         callsViewModel.isCallEnd.observe(viewLifecycleOwner) {
             requireActivity().finish()
         }
@@ -68,11 +62,22 @@ class CallFragment : Fragment() {
             }
         }
 
+        callsViewModel.setAudio()
         callsViewModel.isBluetooth.observe(viewLifecycleOwner) {
             if (it) {
                 binding.bluetooth.visibility = View.VISIBLE
+                binding.speaker.visibility = View.GONE
             } else {
                 binding.bluetooth.visibility = View.GONE
+                binding.speaker.visibility = View.VISIBLE
+            }
+        }
+
+        callsViewModel.isSpeaker.observe(viewLifecycleOwner) {
+            if (it) {
+                binding.speaker.setImageResource(R.drawable.ongoing_speaker_selected)
+            } else {
+                binding.speaker.setImageResource(R.drawable.ongoing_speaker_default)
             }
         }
 
@@ -93,11 +98,6 @@ class CallFragment : Fragment() {
 
         binding.speaker.setOnClickListener {
             Cans.toggleSpeaker()
-            if (Cans.isSpeakerState) {
-                binding.speaker.setImageResource(R.drawable.ongoing_speaker_selected)
-            } else {
-                binding.speaker.setImageResource(R.drawable.ongoing_speaker_default)
-            }
         }
 
         binding.bluetooth.setOnClickListener {
