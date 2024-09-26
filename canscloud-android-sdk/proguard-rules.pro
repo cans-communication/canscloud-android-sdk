@@ -33,8 +33,8 @@
 #    public static *;
 #}
 
--keepclassmembers class cc.cans.canscloud.sdk.Cans {
-    public static ** Companion;
+-keep class cc.cans.canscloud.sdk.Cans {
+    public static cc.cans.canscloud.sdk.Cans$Companion Companion;
 }
 
 -keep class cc.cans.canscloud.sdk.callback.CansListenerStub {
