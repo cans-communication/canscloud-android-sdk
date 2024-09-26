@@ -1,0 +1,61 @@
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+group = GROUP_ID
+version = VERSION
+
+// Optional: If you really need this task elsewhere, keep it, but don't add it to the publication
+task androidSourcesJar(type: Jar) {
+    archiveClassifier.set('sources')
+    from android.sourceSets.main.java.srcDirs
+    from android.sourceSets.main.kotlin.srcDirs
+}
+
+// Remove this block to prevent the duplicate sources JAR
+// artifacts {
+//     archives androidSourcesJar
+// }
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                groupId GROUP_ID
+                artifactId ARTIFACT_ID
+                version VERSION_NAME
+
+                // This should already include sources if the plugin is configured correctly
+                from components.release
+
+                pom {
+                    name = ARTIFACT_ID
+                    description = 'An android library that Canscloud'
+                    url = SITE_URL
+                    licenses {
+                        license {
+                            name = 'The Apache Software License, Version 2.0'
+                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'cans'
+                            name = 'cans'
+                            email = 'koi@canscloud.com'
+                        }
+                    }
+                    scm {
+                        connection = GIT_URL
+                        developerConnection = GIT_URL
+                        url = SITE_URL
+                    }
+                }
+            }
+        }
+    }
+}
+
+signing {
+    useInMemoryPgpKeys(signingKeyID, signingKey, signingPassword)
+    sign publishing.publications
+}

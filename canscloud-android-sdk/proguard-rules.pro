@@ -20,9 +20,9 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
-#-keepclasseswithmembernames class * {
-#    native <methods>;
-#}
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
 
 -keepnames class ** { *; }
 
