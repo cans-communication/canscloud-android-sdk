@@ -5,10 +5,11 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import cc.cans.canscloud.sdk.Cans
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
 
 class AnswerCallReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        Cans.startAnswerCall()
+        cans.startAnswerCall()
         Toast.makeText(context, "AnswerCallReceiver", Toast.LENGTH_SHORT).show()
     }
 }

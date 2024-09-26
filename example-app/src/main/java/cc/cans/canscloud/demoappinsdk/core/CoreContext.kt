@@ -13,8 +13,9 @@ import cc.cans.canscloud.demoappinsdk.call.IncomingActivity
 import cc.cans.canscloud.demoappinsdk.call.OutgoingActivity
 import cc.cans.canscloud.demoappinsdk.notifaication.NotificationsManager
 import cc.cans.canscloud.sdk.Cans
-import cc.cans.canscloud.sdk.Cans.Companion.corePreferences
+import cc.cans.canscloud.sdk.CansCloud
 import cc.cans.canscloud.sdk.callback.CansListenerStub
+import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
 
@@ -35,6 +36,10 @@ class CoreContext(
     var stopped = false
 
     private var previousCallState = CallState.Idle
+
+    companion object {
+        var cans: CansCloud = Cans()
+    }
 
     private val listener = object : CansListenerStub {
         override fun onRegistration(state: RegisterState, message: String?) {
@@ -83,7 +88,7 @@ class CoreContext(
     }
 
     init {
-        Cans.addListener(listener)
+        CoreContextSDK.cans.addListener(listener)
         stopped = false
         _lifecycleRegistry.currentState = Lifecycle.State.INITIALIZED
         notificationsManager.onCoreReady()
@@ -93,7 +98,7 @@ class CoreContext(
     /* Start call related activities */
 
     private fun onIncomingReceived() {
-        if (corePreferences.preventInterfaceFromShowingUp) {
+        if (cans.corePreferences.preventInterfaceFromShowingUp) {
             Log.w("[Context]","We were asked to not show the incoming call screen")
             return
         }
@@ -106,7 +111,7 @@ class CoreContext(
     }
 
     private fun onOutgoingStarted() {
-        if (corePreferences.preventInterfaceFromShowingUp) {
+        if (cans.corePreferences.preventInterfaceFromShowingUp) {
             Log.w("[Context]","We were asked to not show the outgoing call screen")
             return
         }
@@ -119,7 +124,7 @@ class CoreContext(
     }
 
     fun onCallStarted() {
-        if (corePreferences.preventInterfaceFromShowingUp) {
+        if (cans.corePreferences.preventInterfaceFromShowingUp) {
             Log.w("[Context]","We were asked to not show the call screen")
             return
         }

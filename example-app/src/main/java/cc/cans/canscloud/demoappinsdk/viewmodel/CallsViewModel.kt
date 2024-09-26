@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.callback.CansListenerStub
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
 
@@ -32,7 +33,7 @@ class CallsViewModel : ViewModel() {
                 CallState.CallOutgoing -> {}
                 CallState.IncomingCall -> {}
                 CallState.StartCall ->  {}
-                CallState.Connected ->  callDuration.value = Cans.durationTime
+                CallState.Connected ->  callDuration.value = cans.durationTime
                 CallState.Error -> {}
                 CallState.CallEnd -> {}
                 CallState.MissCall -> {}
@@ -55,12 +56,12 @@ class CallsViewModel : ViewModel() {
     }
 
     init {
-        Cans.addListener(listener)
-        callDuration.value = Cans.durationTime
+        cans.addListener(listener)
+        callDuration.value = cans.durationTime
     }
 
     fun setAudio() {
-        if (Cans.isBluetoothState) {
+        if (cans.isBluetoothState) {
             isBluetooth.value = true
         } else {
             isBluetooth.value = false
@@ -69,7 +70,7 @@ class CallsViewModel : ViewModel() {
     }
 
     fun setSpeaker() {
-        if (Cans.isSpeakerState) {
+        if (cans.isSpeakerState) {
             isSpeaker.value = true
         } else {
             isSpeaker.value = false
@@ -77,7 +78,7 @@ class CallsViewModel : ViewModel() {
     }
 
     override fun onCleared() {
-        Cans.removeListener(listener)
+        cans.removeListener(listener)
         super.onCleared()
     }
 }

@@ -15,6 +15,7 @@ import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.demoappinsdk.viewmodel.CallsViewModel
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.compatibility.Compatibility
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
 import cc.cans.canscloud.sdk.utils.PermissionHelper
 import org.linphone.core.tools.Log
 
@@ -47,7 +48,7 @@ class CallFragment : Fragment() {
             ViewModelProvider(this)[CallsViewModel::class.java]
         }
 
-        binding.textViewPhoneNumber.text = Cans.destinationUsername
+        binding.textViewPhoneNumber.text =  cans.destinationUsername
 
         callsViewModel.isCallEnd.observe(viewLifecycleOwner) {
             requireActivity().finish()
@@ -82,14 +83,14 @@ class CallFragment : Fragment() {
         }
 
         binding.buttonHangUp.setOnClickListener {
-            Cans.terminateCall()
+            cans.terminateCall()
             requireActivity().finish()
         }
 
         binding.micro.setOnClickListener {
-            Cans.toggleMuteMicrophone()
+            cans.toggleMuteMicrophone()
 
-            if (Cans.isMicState) {
+            if (cans.isMicState) {
                 binding.micro.setImageResource(R.drawable.ongoing_mute_select)
             } else {
                 binding.micro.setImageResource(R.drawable.ongoing_mute_default)
@@ -97,11 +98,11 @@ class CallFragment : Fragment() {
         }
 
         binding.speaker.setOnClickListener {
-            Cans.toggleSpeaker()
+            cans.toggleSpeaker()
         }
 
         binding.bluetooth.setOnClickListener {
-            Cans.forceBluetoothAudioRoute()
+            cans.forceBluetoothAudioRoute()
         }
 
         checkPermissions()

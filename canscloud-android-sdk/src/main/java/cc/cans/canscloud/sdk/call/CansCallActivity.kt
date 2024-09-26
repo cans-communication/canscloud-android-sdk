@@ -17,12 +17,12 @@ class CansCallActivity : ComponentActivity() {
 
         val phoneNumber: String = intent.getStringExtra("phoneNumber") ?: ""
 
-        Cans.startCall(phoneNumber)
+       // Cans.startCall(phoneNumber)
 
         binding.textViewPhoneNumber.text = phoneNumber
 
         binding.buttonHangUp.setOnClickListener {
-            Cans.terminateCall()
+            //Cans.terminateCall()
             finish()
         }
 
