@@ -25,6 +25,7 @@
 #}
 #-keepnames class ** { *; }
 
+-keep class cc.cans.canscloud.sdk.Cans { *; }
 -keep class cc.cans.canscloud.sdk.Cans$Companion { *; }
 -keep class cc.cans.canscloud.sdk.callback.CansListenerStub{ *; }
 
