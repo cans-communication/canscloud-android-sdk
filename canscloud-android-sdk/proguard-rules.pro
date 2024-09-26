@@ -29,20 +29,33 @@
     public *;
 }
 
--keep class cc.cans.canscloud.sdk.Cans {
-    public static *;
+-keep class cc.cans.canscloud.sdk.callback.CansListenerStub {
+    public *;
 }
 
--keep class cc.cans.canscloud.sdk.callback.CansListenerStub{ *; }
+-keep class cc.cans.canscloud.sdk.compatibility.*{
+    public *;
+}
 
--keep class cc.cans.canscloud.sdk.compatibility.*{ *; }
+-keep class cc.cans.canscloud.sdk.core.CoreContextSDK {
+    public *;
+}
 
--keep class cc.cans.canscloud.sdk.core.CoreContextSDK{ *; }
--keep class cc.cans.canscloud.sdk.core.CorePreferences{ *; }
+-keep class cc.cans.canscloud.sdk.core.CorePreferences {
+   public *;
+}
 
--keep class cc.cans.canscloud.sdk.models.*{ *; }
--keep class cc.cans.canscloud.sdk.telecom.*{ *; }
--keep class cc.cans.canscloud.sdk.utils.*{ *; }
+-keep class cc.cans.canscloud.sdk.models.*{
+    public *;
+}
+
+-keep class cc.cans.canscloud.sdk.telecom.*{
+    public *;
+}
+
+-keep class cc.cans.canscloud.sdk.utils.*{
+    public *;
+}
 
 
 
