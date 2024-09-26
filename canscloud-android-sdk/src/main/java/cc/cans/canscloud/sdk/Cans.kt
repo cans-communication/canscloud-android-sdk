@@ -212,7 +212,6 @@ class Cans {
             }
         }
 
-        @JvmStatic
         fun config(
             context: Context,
             appName: String
