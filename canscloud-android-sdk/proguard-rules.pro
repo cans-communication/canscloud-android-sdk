@@ -33,8 +33,8 @@
 #    public static *;
 #}
 
--keep class cc.cans.canscloud.sdk.Cans {
-    public static cc.cans.canscloud.sdk.Cans$Companion Companion;
+-keep class cc.cans.canscloud.sdk.Cans$Companion{
+    public void config(android.content.Context, java.lang.String);
 }
 
 -keep class cc.cans.canscloud.sdk.callback.CansListenerStub {
