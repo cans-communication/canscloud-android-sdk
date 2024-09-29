@@ -34,17 +34,6 @@
 #}
 
 -keep class cc.cans.canscloud.sdk.Cans$Companion
--keepnames class cc.cans.canscloud.sdk.Cans$Companion
--keep class cc.cans.canscloud.sdk.callback.CansListenerStub
-
--keep class cc.cans.canscloud.sdk.compatibility.*{ *; }
-
--keep class cc.cans.canscloud.sdk.core.CoreContextSDK{ *; }
--keep class cc.cans.canscloud.sdk.core.CorePreferences{ *; }
-
--keep class cc.cans.canscloud.sdk.models.*{ *; }
--keep class cc.cans.canscloud.sdk.telecom.*{ *; }
--keep class cc.cans.canscloud.sdk.utils.*{ *; }
 
 
 

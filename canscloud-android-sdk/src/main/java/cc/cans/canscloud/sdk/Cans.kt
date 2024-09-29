@@ -32,9 +32,11 @@ import org.linphone.core.LogLevel
 import org.linphone.core.tools.compatibility.DeviceUtils
 
 @SuppressLint("StaticFieldLeak")
+@Keep
 class Cans {
 
-    @Keep companion object {
+    @Keep
+    companion object {
         lateinit var core: Core
         lateinit var callCans: Call
         lateinit var mVibrator: Vibrator
