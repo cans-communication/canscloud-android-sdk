@@ -33,9 +33,28 @@
 #    public static *;
 #}
 
--keepnames class cc.cans.canscloud.sdk.Cans$Companion
--keep class cc.cans.canscloud.sdk.Cans$Companion
+# Keep Cans class and its members
+-keep class cc.cans.canscloud.sdk.Cans {
+    public *;
+}
 
+# Keep Cans companion object
+-keep class cc.cans.canscloud.sdk.Cans$Companion {
+    public *;
+}
+
+# Keep public methods in Cans and its companion object
+-keepclassmembers class cc.cans.canscloud.sdk.Cans {
+    public *;
+}
+
+-keepclassmembers class cc.cans.canscloud.sdk.Cans$Companion {
+    public *;
+}
+
+# Keep parameter names
+-keepattributes Signature
+-keepattributes *Annotation
 
 
 
