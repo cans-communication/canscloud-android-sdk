@@ -24,6 +24,7 @@ import org.linphone.core.ProxyConfig
 import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import android.util.Log
+import androidx.annotation.Keep
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
 import org.linphone.core.LogCollectionState
@@ -33,7 +34,7 @@ import org.linphone.core.tools.compatibility.DeviceUtils
 @SuppressLint("StaticFieldLeak")
 class Cans {
 
-    companion object {
+    @Keep companion object {
         lateinit var core: Core
         lateinit var callCans: Call
         lateinit var mVibrator: Vibrator
