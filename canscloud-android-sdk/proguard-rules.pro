@@ -33,6 +33,7 @@
 #    public static *;
 #}
 
+-keepnames class cc.cans.canscloud.sdk.Cans$Companion
 -keep class cc.cans.canscloud.sdk.Cans$Companion
 
 

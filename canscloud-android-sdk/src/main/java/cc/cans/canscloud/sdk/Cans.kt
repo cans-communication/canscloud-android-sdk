@@ -32,7 +32,6 @@ import org.linphone.core.LogLevel
 import org.linphone.core.tools.compatibility.DeviceUtils
 
 @SuppressLint("StaticFieldLeak")
-@Keep
 class Cans {
 
     @Keep
@@ -214,6 +213,7 @@ class Cans {
             }
         }
 
+        @JvmStatic
         fun config(
             context: Context,
             appName: String
@@ -297,6 +297,7 @@ class Cans {
             notificationManager.createNotificationChannel(channel)
         }
 
+        @JvmStatic
         fun register(
             username: String,
             password: String,
@@ -338,6 +339,7 @@ class Cans {
             }
         }
 
+        @JvmStatic
         fun removeAccount() {
             core.defaultAccount?.let { account ->
                 val authInfo = account.findAuthInfo()
@@ -352,6 +354,7 @@ class Cans {
             }
         }
 
+        @JvmStatic
         fun startCall(addressToCall: String) {
             val remoteAddress: Address? = core.interpretUrl(addressToCall)
             remoteAddress
@@ -376,6 +379,7 @@ class Cans {
             // Call process can be followed in onCallStateChanged callback from core listener
         }
 
+        @JvmStatic
         fun terminateCall() {
             if (core.callsNb == 0) return
 
@@ -387,6 +391,7 @@ class Cans {
             call.terminate()
         }
 
+        @JvmStatic
         fun startAnswerCall() {
             val remoteSipAddress = destinationRemoteAddress
             val remoteAddress = core.interpretUrl(remoteSipAddress)
@@ -410,6 +415,7 @@ class Cans {
             call.acceptWithParams(params)
         }
 
+        @JvmStatic
         fun toggleSpeaker() {
             if (AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()) {
                 forceEarpieceAudioRoute()
@@ -418,6 +424,7 @@ class Cans {
             }
         }
 
+        @JvmStatic
         fun toggleMuteMicrophone() {
             if (!PermissionHelper.get().hasRecordAudioPermission()) {
                 return
@@ -444,12 +451,14 @@ class Cans {
             AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
         }
 
+        @JvmStatic
         fun forceSpeakerAudioRoute() {
             AudioRouteUtils.routeAudioToSpeaker()
             AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
             AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
         }
 
+        @JvmStatic
         fun forceBluetoothAudioRoute() {
             AudioRouteUtils.routeAudioToBluetooth()
             AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
@@ -462,6 +471,7 @@ class Cans {
             }
         }
 
+        @JvmStatic
         fun isCallLogMissed(): Boolean {
             return (
                     callCans.callLog.dir == Call.Dir.Incoming &&
@@ -474,10 +484,12 @@ class Cans {
                     )
         }
 
+        @JvmStatic
         fun addListener(listener: CansListenerStub) {
             listeners.add(listener)
         }
 
+        @JvmStatic
         fun removeListener(listener: CansListenerStub) {
             listeners.remove(listener)
         }
