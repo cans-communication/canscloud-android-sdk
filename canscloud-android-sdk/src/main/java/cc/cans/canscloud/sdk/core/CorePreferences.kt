@@ -7,7 +7,7 @@ import androidx.security.crypto.MasterKey
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import cc.cans.canscloud.sdk.Cans.core
+import cc.cans.canscloud.sdk.Cans.Companion.core
 import org.linphone.core.*
 import org.linphone.core.tools.Log
 import java.security.KeyStoreException

@@ -13,7 +13,7 @@ import cc.cans.canscloud.demoappinsdk.call.IncomingActivity
 import cc.cans.canscloud.demoappinsdk.call.OutgoingActivity
 import cc.cans.canscloud.demoappinsdk.notifaication.NotificationsManager
 import cc.cans.canscloud.sdk.Cans
-import cc.cans.canscloud.sdk.Cans.corePreferences
+import cc.cans.canscloud.sdk.Cans.Companion.corePreferences
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState

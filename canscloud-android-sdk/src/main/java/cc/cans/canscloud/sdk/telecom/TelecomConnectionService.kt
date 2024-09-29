@@ -24,7 +24,7 @@ import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
 import android.telecom.*
-import cc.cans.canscloud.sdk.Cans.core
+import cc.cans.canscloud.sdk.Cans.Companion.core
 import org.linphone.core.Call
 import org.linphone.core.Core
 import org.linphone.core.CoreListenerStub

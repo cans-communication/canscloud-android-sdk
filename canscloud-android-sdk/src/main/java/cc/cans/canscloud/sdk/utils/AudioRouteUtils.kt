@@ -20,7 +20,7 @@
 package cc.cans.canscloud.sdk.utils
 
 import android.telecom.CallAudioState
-import cc.cans.canscloud.sdk.Cans.core
+import cc.cans.canscloud.sdk.Cans.Companion.core
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import org.linphone.core.AudioDevice
 import org.linphone.core.Call
