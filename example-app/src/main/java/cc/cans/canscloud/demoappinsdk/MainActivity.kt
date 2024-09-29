@@ -12,7 +12,7 @@ import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityMainBinding
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.utils.PermissionHelper
-import cc.cans.canscloud.sdk.Cans.corePreferences
+import cc.cans.canscloud.sdk.Cans.Companion.corePreferences
 import cc.cans.canscloud.sdk.models.CansTransport
 
 class MainActivity : AppCompatActivity() {

@@ -13,14 +13,12 @@ import cc.cans.canscloud.sdk.utils.PermissionHelper
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.Cans
-import cc.cans.canscloud.sdk.Cans.core
-import cc.cans.canscloud.sdk.Cans.corePreferences
+import cc.cans.canscloud.sdk.Cans.Companion.core
+import cc.cans.canscloud.sdk.Cans.Companion.corePreferences
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
 import kotlinx.coroutines.cancel
-import org.linphone.core.Call
-import org.linphone.core.Core
 import org.linphone.mediastream.Version
 import java.io.File
 import cc.cans.canscloud.sdk.compatibility.PhoneStateInterface

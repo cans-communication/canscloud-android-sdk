@@ -26,8 +26,8 @@ import android.telecom.CallAudioState
 import android.telecom.Connection
 import android.telecom.DisconnectCause
 import android.telecom.StatusHints
-import cc.cans.canscloud.sdk.Cans.context
-import cc.cans.canscloud.sdk.Cans.core
+import cc.cans.canscloud.sdk.Cans.Companion.context
+import cc.cans.canscloud.sdk.Cans.Companion.core
 import cc.cans.canscloud.sdk.R
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import org.linphone.core.Call
