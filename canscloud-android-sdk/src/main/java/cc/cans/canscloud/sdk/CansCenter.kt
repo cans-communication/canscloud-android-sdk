@@ -410,7 +410,7 @@ class CansCenter : Cans {
     }
 
     override fun toggleMuteMicrophone() {
-        if (!PermissionHelper.get().hasRecordAudioPermission()) {
+        if (!PermissionHelper.singletonHolder().get().hasRecordAudioPermission()) {
             return
         }
 
