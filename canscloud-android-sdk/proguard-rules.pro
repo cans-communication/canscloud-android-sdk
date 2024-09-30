@@ -22,28 +22,26 @@
 }
 
 # Keep the names of classes, methods, and fields for your interface and its implementation
--keep class cc.cans.canscloud.sdk.CansCenter {
-    <fields>;
-    <methods>;
-}
+-keepnames class cc.cans.canscloud.sdk.CansCenter { *; }
 
--keep class cc.cans.canscloud.sdk.core.CorePreferences {
-    <fields>;
-    <methods>;
-}
--keep class cc.cans.canscloud.sdk.core.CoreContextSDK {
-    <fields>;
-    <methods>;
-}
+-keepnames class cc.cans.canscloud.sdk.core.CorePreferences { *; }
+-keepnames class cc.cans.canscloud.sdk.core.CoreContextSDK { *; }
+
+# Keep all fields and methods in the companion object
+#-keepclassmembers class cc.cans.canscloud.sdk.core.CoreContextSDK$Companion {
+#    <fields>;
+#    <methods>;
+#}
+
 -keep class cc.cans.canscloud.sdk.models.*{ *;}
--keep class cc.cans.canscloud.sdk.telecom.TelecomHelper
--keep class cc.cans.canscloud.sdk.telecom.TelecomConnectionService
--keep class cc.cans.canscloud.sdk.telecom.NativeCallWrapper
--keep class cc.cans.canscloud.sdk.utils.AudioRouteUtils
--keep class cc.cans.canscloud.sdk.utils.CansUtils
--keep class cc.cans.canscloud.sdk.utils.PermissionHelper
--keep class cc.cans.canscloud.sdk.utils.SingletonHolder
--keep class cc.cans.canscloud.sdk.compatibility.*{*;}
+-keepnames class cc.cans.canscloud.sdk.telecom.TelecomHelper { *; }
+-keepnames class cc.cans.canscloud.sdk.telecom.TelecomConnectionService { *; }
+-keepnames class cc.cans.canscloud.sdk.telecom.NativeCallWrapper { *; }
+-keepnames class cc.cans.canscloud.sdk.utils.AudioRouteUtils { *; }
+-keepnames class cc.cans.canscloud.sdk.utils.CansUtils { *; }
+-keepnames class cc.cans.canscloud.sdk.utils.PermissionHelper { *; }
+-keepnames class cc.cans.canscloud.sdk.utils.SingletonHolder { *; }
+-keepnames class cc.cans.canscloud.sdk.compatibility.*{*;}
 -keep class cc.cans.canscloud.sdk.callback.CansListenerStub { *; }
 
 

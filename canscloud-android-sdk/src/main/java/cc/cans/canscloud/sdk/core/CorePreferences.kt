@@ -4,10 +4,10 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
 import org.linphone.core.*
 import org.linphone.core.tools.Log
 import java.security.KeyStoreException
