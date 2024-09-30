@@ -33,6 +33,11 @@ import org.linphone.core.Reason
 class CoreContextSDK(
     val context: Context,
     ) : LifecycleOwner, ViewModelStoreOwner {
+
+    companion object {
+        var cans: Cans = CansCenter()
+    }
+
     private val _lifecycleRegistry = LifecycleRegistry(this)
     override val lifecycle: Lifecycle
         get() = _lifecycleRegistry
@@ -47,10 +52,6 @@ class CoreContextSDK(
     private var previousCallState = CallState.Idle
     private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val loggingService = Factory.instance().loggingService
-
-    companion object {
-        var cans: Cans = CansCenter()
-    }
 
     private val listener = object : CansListenerStub {
         override fun onRegistration(state: RegisterState, message: String?) {
