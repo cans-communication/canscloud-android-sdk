@@ -23,12 +23,14 @@ import android.Manifest
 import android.annotation.TargetApi
 import android.app.Activity
 import android.content.Context
+import androidx.annotation.Keep
 import androidx.fragment.app.Fragment
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import org.linphone.core.tools.Log
 
 @TargetApi(30)
 class Api30Compatibility {
+    @Keep
     companion object {
         fun hasReadPhoneNumbersPermission(context: Context): Boolean {
             val granted = Compatibility.hasPermission(context, Manifest.permission.READ_PHONE_NUMBERS)

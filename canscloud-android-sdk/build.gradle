@@ -31,8 +31,6 @@ android {
     defaultConfig {
         minSdk 28
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -133,7 +131,7 @@ publishing {
         release(MavenPublication) {
             groupId = 'com.github.cans-communication'
             artifactId = 'canscloud-android-sdk'
-            version = '0.1.68'
+            version = '0.1.110'
 
             afterEvaluate {
                 from components.release

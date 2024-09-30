@@ -22,9 +22,11 @@ package cc.cans.canscloud.sdk.compatibility
 import android.Manifest
 import android.annotation.TargetApi
 import android.content.Context
+import androidx.annotation.Keep
 
 @TargetApi(31)
 class Api31Compatibility {
+    @Keep
     companion object {
         fun hasBluetoothConnectPermission(context: Context): Boolean {
             return Compatibility.hasPermission(context, Manifest.permission.BLUETOOTH_CONNECT)

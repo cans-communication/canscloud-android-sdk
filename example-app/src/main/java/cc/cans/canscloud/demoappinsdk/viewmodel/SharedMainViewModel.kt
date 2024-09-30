@@ -5,7 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.sdk.callback.CansListenerStub
-import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
 
@@ -30,7 +30,7 @@ class SharedMainViewModel : ViewModel() {
         }
 
         override fun onUnRegister() {
-            if (cans.username.isEmpty()) {
+            if (cansCenter().username.isEmpty()) {
                 statusRegister.value = R.string.un_register
                 isRegister.value = false
             }
@@ -66,24 +66,24 @@ class SharedMainViewModel : ViewModel() {
     }
 
     init {
-        cans.addListener(listener)
+        cansCenter().addListener(listener)
     }
 
     override fun onCleared() {
-        cans.removeListener(listener)
+        cansCenter().removeListener(listener)
         super.onCleared()
     }
 
     fun updateMissedCallCount() {
-        missedCallsCount.value = cans.missedCallsCount
+        missedCallsCount.value = cansCenter().missedCallsCount
     }
 
     fun register(){
-        cans.addListener(listener)
+        cansCenter().addListener(listener)
     }
 
     fun unregister(){
-        cans.removeAccount()
-        cans.removeListener(listener)
+        cansCenter().removeAccount()
+        cansCenter().removeListener(listener)
     }
 }

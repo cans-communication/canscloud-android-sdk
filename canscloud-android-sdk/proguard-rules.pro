@@ -12,40 +12,25 @@
 #   public *;
 #}
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Keep class names but obfuscate method bodies
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
 
-#-keepclasseswithmembernames class * {
-#    native <methods>;
-#}
-#-keepnames class ** { *; }
-
-#-keep class cc.cans.canscloud.sdk.Cans$Companion {
-#  public void config(android.content.Context, java.lang.String);
-#}
-#
-#-keep class cc.cans.canscloud.sdk.Cans {
-#    public static *;
-#}
-
-#-keepclassmembers class cc.cans.canscloud.sdk.Cans { *;}
-#
-#-keep class cc.cans.canscloud.sdk.callback.CansListenerStub { *; }
-#-keep class cc.cans.canscloud.sdk.compatibility.*{*;}
-#
-#-keep class cc.cans.canscloud.sdk.core.CoreContextSDK { *;}
-#-keep class cc.cans.canscloud.sdk.core.CorePreferences { *;}
-#-keep class cc.cans.canscloud.sdk.models.*{ *;}
-#-keep class cc.cans.canscloud.sdk.telecom.*{ *;}
-#-keep class cc.cans.canscloud.sdk.utils.*{ *;}
-#
+# Keep all classes and public methods in the closed-source SDK
+-keep class cc.cans.canscloud.sdk.** {
+    <init>();      # Keep constructors
+    public *;      # Keep public methods
+}
 
 
 
+# Keep all annotations
+-keepattributes *Annotation*
 
+# Optionally, keep Kotlin metadata (useful for reflection)
+-keep class kotlin.Metadata { *; }
 
+-dontshrink
+-printseeds
+-verbose
+-useuniqueclassmembernames
+-printmapping mapping.txt

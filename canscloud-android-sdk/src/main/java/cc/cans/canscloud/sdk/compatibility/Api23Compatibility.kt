@@ -24,9 +24,11 @@ import android.annotation.TargetApi
 import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.Settings
+import androidx.annotation.Keep
 import androidx.fragment.app.Fragment
 
 class Api23Compatibility {
+    @Keep
     companion object {
         fun hasPermission(context: Context, permission: String): Boolean {
             return context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED

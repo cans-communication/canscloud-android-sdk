@@ -25,10 +25,12 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import androidx.annotation.Keep
 import androidx.core.content.ContextCompat
 
 @TargetApi(34)
 class Api34Compatibility {
+    @Keep
     companion object {
         fun hasFullScreenIntentPermission(context: Context): Boolean {
             val notificationManager = context.getSystemService(NotificationManager::class.java) as NotificationManager
