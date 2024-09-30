@@ -33,29 +33,17 @@
 #    public static *;
 #}
 
-# Keep Cans class and its members
--keep class cc.cans.canscloud.sdk.Cans {
-    public *;
-}
-
-# Keep Cans companion object
--keep class cc.cans.canscloud.sdk.Cans$Companion {
-    public *;
-}
-
-# Keep public methods in Cans and its companion object
--keepclassmembers class cc.cans.canscloud.sdk.Cans {
-    public *;
-}
-
--keepclassmembers class cc.cans.canscloud.sdk.Cans$Companion {
-    public *;
-}
-
-# Keep parameter names
--keepattributes Signature
--keepattributes *Annotation
-
+#-keepclassmembers class cc.cans.canscloud.sdk.Cans { *;}
+#
+#-keep class cc.cans.canscloud.sdk.callback.CansListenerStub { *; }
+#-keep class cc.cans.canscloud.sdk.compatibility.*{*;}
+#
+#-keep class cc.cans.canscloud.sdk.core.CoreContextSDK { *;}
+#-keep class cc.cans.canscloud.sdk.core.CorePreferences { *;}
+#-keep class cc.cans.canscloud.sdk.models.*{ *;}
+#-keep class cc.cans.canscloud.sdk.telecom.*{ *;}
+#-keep class cc.cans.canscloud.sdk.utils.*{ *;}
+#
 
 
 

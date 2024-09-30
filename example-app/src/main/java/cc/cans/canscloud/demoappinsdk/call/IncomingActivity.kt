@@ -7,8 +7,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityIncomingBinding
 import cc.cans.canscloud.demoappinsdk.viewmodel.CallsViewModel
-import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.compatibility.Compatibility
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
 import cc.cans.canscloud.sdk.utils.PermissionHelper
 
 class IncomingActivity : AppCompatActivity() {
@@ -25,19 +25,19 @@ class IncomingActivity : AppCompatActivity() {
             ViewModelProvider(this)[CallsViewModel::class.java]
         }
 
-        binding.contactName.text = Cans.destinationUsername
+        binding.contactName.text = cans.destinationUsername
 
         callsViewModel.isCallEnd.observe(this) {
             finish()
         }
 
         binding.acceptCall.setOnClickListener {
-            Cans.startAnswerCall()
+            cans.startAnswerCall()
             finish()
         }
 
         binding.hangUp.setOnClickListener {
-            Cans.terminateCall()
+            cans.terminateCall()
             finish()
         }
 

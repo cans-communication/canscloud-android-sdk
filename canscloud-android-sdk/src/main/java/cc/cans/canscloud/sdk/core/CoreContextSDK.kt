@@ -12,9 +12,8 @@ import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
+import cc.cans.canscloud.sdk.CansCenter
 import cc.cans.canscloud.sdk.Cans
-import cc.cans.canscloud.sdk.Cans.Companion.core
-import cc.cans.canscloud.sdk.Cans.Companion.corePreferences
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
@@ -49,6 +48,10 @@ class CoreContextSDK(
     private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val loggingService = Factory.instance().loggingService
 
+    companion object {
+        var cans: Cans = CansCenter()
+    }
+
     private val listener = object : CansListenerStub {
         override fun onRegistration(state: RegisterState, message: String?) {
             Log.i("[SharedMainViewModel]","onRegistration ${state}")
@@ -64,23 +67,23 @@ class CoreContextSDK(
                 CallState.Idle -> {}
                 CallState.IncomingCall -> {
                     if (declineCallDueToGsmActiveCall()) {
-                        Cans.callCans.decline(Reason.Busy)
+                        cans.callCans.decline(Reason.Busy)
                         return
                     }
                 }
                 CallState.StartCall -> {}
                 CallState.CallOutgoing -> {
-                    if (core.callsNb == 1 && corePreferences.routeAudioToBluetoothIfAvailable) {
-                        AudioRouteUtils.routeAudioToBluetooth(Cans.callCans)
+                    if (cans.core.callsNb == 1 && cans.corePreferences.routeAudioToBluetoothIfAvailable) {
+                        AudioRouteUtils.routeAudioToBluetooth(cans.callCans)
                     }
                 }
                 CallState.Connected -> {}
                 CallState.StreamsRunning -> {
-                    if (core.callsNb == 1 && previousCallState == CallState.Connected) {
+                    if (cans.core.callsNb == 1 && previousCallState == CallState.Connected) {
                         if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
-                            AudioRouteUtils.routeAudioToHeadset(Cans.callCans)
+                            AudioRouteUtils.routeAudioToHeadset(cans.callCans)
                         } else if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
-                            AudioRouteUtils.routeAudioToBluetooth(Cans.callCans)
+                            AudioRouteUtils.routeAudioToBluetooth(cans.callCans)
                         }
                     }
                 }
@@ -112,7 +115,7 @@ class CoreContextSDK(
             level: LogLevel,
             message: String,
         ) {
-            if (corePreferences.logcatLogsOutput) {
+            if (cans.corePreferences.logcatLogsOutput) {
                 when (level) {
                     LogLevel.Error -> Log.e(domain, message)
                     LogLevel.Warning -> Log.w(domain, message)
@@ -125,7 +128,7 @@ class CoreContextSDK(
     }
 
     init {
-        Cans.addListener(listener)
+        cans.addListener(listener)
         stopped = false
         _lifecycleRegistry.currentState = Lifecycle.State.INITIALIZED
         Log.i("[Context]","Ready")
@@ -133,33 +136,33 @@ class CoreContextSDK(
 
     fun start(isPush: Boolean = false) {
 
-        Cans.addListener(listener)
+        cans.addListener(listener)
         // CoreContext listener must be added first!
-        if (Version.sdkAboveOrEqual(Version.API26_O_80) && corePreferences.useTelecomManager) {
-            if (Compatibility.hasTelecomManagerPermissions(context)) {
-                Log.i(
-                    "[Context]","Creating Telecom Helper, disabling audio focus requests in AudioHelper"
-                )
-                core.config.setBool("audio", "android_disable_audio_focus_requests", true)
-                val telecomHelper = TelecomHelper.required(context)
-                Log.i(
-                    "[Context]","Telecom Helper created, account is ${if (telecomHelper.isAccountEnabled()) "enabled" else "disabled"}"
-                )
-            } else {
-                Log.i("[Context]","Can't create Telecom Helper, permissions have been revoked")
-                corePreferences.useTelecomManager = false
-            }
-        }
-
-        if (isPush) {
-            org.linphone.core.tools.Log.i("[Context] Push received, assume in background")
-            core.enterBackground()
-        }
+//        if (Version.sdkAboveOrEqual(Version.API26_O_80) && cans.corePreferences.useTelecomManager) {
+//            if (Compatibility.hasTelecomManagerPermissions(context)) {
+//                Log.i(
+//                    "[Context]","Creating Telecom Helper, disabling audio focus requests in AudioHelper"
+//                )
+//                cans.core.config.setBool("audio", "android_disable_audio_focus_requests", true)
+//                val telecomHelper = TelecomHelper.required(context)
+//                Log.i(
+//                    "[Context]","Telecom Helper created, account is ${if (telecomHelper.isAccountEnabled()) "enabled" else "disabled"}"
+//                )
+//            } else {
+//                Log.i("[Context]","Can't create Telecom Helper, permissions have been revoked")
+//                cans.corePreferences.useTelecomManager = false
+//            }
+//        }
+//
+//        if (isPush) {
+//            org.linphone.core.tools.Log.i("[Context] Push received, assume in background")
+//            cans.core.enterBackground()
+//        }
 
         configureCore()
 
         _lifecycleRegistry.currentState = Lifecycle.State.CREATED
-        core.start()
+        cans.core.start()
         _lifecycleRegistry.currentState = Lifecycle.State.STARTED
 
         initPhoneStateListener()
@@ -182,8 +185,8 @@ class CoreContextSDK(
             TelecomHelper.destroy()
         }
 
-        core.stop()
-        Cans.removeListener(listener)
+        cans.core.stop()
+        cans.removeListener(listener)
         stopped = true
         loggingService.removeListener(loggingServiceListener)
 
@@ -193,43 +196,43 @@ class CoreContextSDK(
     private fun configureCore() {
         Log.i("[Context]"," Configuring Core")
 
-        core.staticPicture = corePreferences.staticPicturePath
+        cans.core.staticPicture = cans.corePreferences.staticPicturePath
 
         // Migration code
-        if (core.config.getBool("app", "incoming_call_vibration", true)) {
-            core.isVibrationOnIncomingCallEnabled = true
-            core.config.setBool("app", "incoming_call_vibration", false)
+        if (cans.core.config.getBool("app", "incoming_call_vibration", true)) {
+            cans.core.isVibrationOnIncomingCallEnabled = true
+            cans.core.config.setBool("app", "incoming_call_vibration", false)
         }
 
         // Disable Telecom Manager on Android < 10 to prevent crash due to OS bug in Android 9
         if (Version.sdkStrictlyBelow(Version.API29_ANDROID_10)) {
-            if (corePreferences.useTelecomManager) {
+            if (cans.corePreferences.useTelecomManager) {
                 org.linphone.core.tools.Log.w("[Context] Android < 10 detected, disabling telecom manager to prevent crash due to OS bug")
             }
-            corePreferences.useTelecomManager = false
-            corePreferences.manuallyDisabledTelecomManager = true
+            cans.corePreferences.useTelecomManager = false
+            cans.corePreferences.manuallyDisabledTelecomManager = true
         }
 
         initUserCertificates()
 
-        for (account in core.accountList) {
-            if (account.params.identityAddress?.domain == corePreferences.defaultDomain) {
+        for (account in cans.core.accountList) {
+            if (account.params.identityAddress?.domain == cans.corePreferences.defaultDomain) {
                 // Ensure conference URI is set on sip.linphone.org proxy configs
                 if (account.params.conferenceFactoryUri == null) {
                     val params = account.params.clone()
-                    val uri = corePreferences.conferenceServerUri
+                    val uri = cans.corePreferences.conferenceServerUri
                     org.linphone.core.tools.Log.i("[Context] Setting conference factory on proxy config ${params.identityAddress?.asString()} to default value: $uri")
                     params.conferenceFactoryUri = uri
                     account.params = params
                 }
 
                 // Ensure LIME server URL is set if at least one sip.linphone.org proxy
-                if (core.limeX3DhAvailable()) {
-                    var url: String? = core.limeX3DhServerUrl
+                if (cans.core.limeX3DhAvailable()) {
+                    var url: String? = cans.core.limeX3DhServerUrl
                     if (url == null || url.isEmpty()) {
-                        url = corePreferences.limeX3dhServerUrl
+                        url = cans.corePreferences.limeX3dhServerUrl
                         org.linphone.core.tools.Log.i("[Context] Setting LIME X3Dh server url to default value: $url")
-                        core.limeX3DhServerUrl = url
+                        cans.core.limeX3DhServerUrl = url
                     }
                 }
 
@@ -245,12 +248,12 @@ class CoreContextSDK(
     }
 
     private fun initUserCertificates() {
-        val userCertsPath = corePreferences.userCertificatesPath
+        val userCertsPath = cans.corePreferences.userCertificatesPath
         val f = File(userCertsPath)
         if (!f.exists() && !f.mkdir()) {
             org.linphone.core.tools.Log.e("[Context]", "$userCertsPath can't be created.")
         }
-        core.userCertificatesPath = userCertsPath
+        cans.core.userCertificatesPath = userCertsPath
     }
 
     /* Call related functions */
@@ -270,7 +273,7 @@ class CoreContextSDK(
     }
 
     fun declineCallDueToGsmActiveCall(): Boolean {
-        if (!corePreferences.useTelecomManager) { // Can't use the following call with Telecom Manager API as it will "fake" GSM calls
+        if (!cans.corePreferences.useTelecomManager) { // Can't use the following call with Telecom Manager API as it will "fake" GSM calls
             var gsmCallActive = false
             if (::phoneStateListener.isInitialized) {
                 gsmCallActive = phoneStateListener.isInCall()

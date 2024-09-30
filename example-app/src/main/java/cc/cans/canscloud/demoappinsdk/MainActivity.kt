@@ -8,11 +8,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import cc.cans.canscloud.demoappinsdk.CansApplication.Companion.coreContext
 import cc.cans.canscloud.sdk.compatibility.Compatibility
-import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityMainBinding
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.utils.PermissionHelper
-import cc.cans.canscloud.sdk.Cans.Companion.corePreferences
 import cc.cans.canscloud.sdk.models.CansTransport
 
 class MainActivity : AppCompatActivity() {
@@ -26,7 +25,7 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        Cans.register(
+        cans.register(
             "40102",
             "p40102CANS",
             "cns.cans.cc",
@@ -100,9 +99,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkTelecomManagerPermissions() {
-        if (!corePreferences.useTelecomManager) {
+        if (!cans.corePreferences.useTelecomManager) {
             android.util.Log.i("[$TAG]","Telecom Manager feature is disabled")
-            if (corePreferences.manuallyDisabledTelecomManager) {
+            if (cans.corePreferences.manuallyDisabledTelecomManager) {
                 android.util.Log.w("[$TAG]"," User has manually disabled Telecom Manager feature")
             } else {
                 if (Compatibility.hasTelecomManagerPermissions(this)) {
@@ -131,6 +130,6 @@ class MainActivity : AppCompatActivity() {
         } else {
             android.util.Log.e("[$TAG]"," Telecom Manager was already created ?!")
         }
-        corePreferences.useTelecomManager = true
+        cans.corePreferences.useTelecomManager = true
     }
 }

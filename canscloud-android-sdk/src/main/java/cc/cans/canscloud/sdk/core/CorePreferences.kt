@@ -7,7 +7,7 @@ import androidx.security.crypto.MasterKey
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import cc.cans.canscloud.sdk.Cans.Companion.core
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
 import org.linphone.core.*
 import org.linphone.core.tools.Log
 import java.security.KeyStoreException
@@ -15,7 +15,7 @@ import java.security.KeyStoreException
 class CorePreferences constructor(private val context: Context) {
     private var _config: Config? = null
     var config: Config
-        get() = _config ?: core.config
+        get() = _config ?: cans.core.config
         set(value) {
             _config = value
         }

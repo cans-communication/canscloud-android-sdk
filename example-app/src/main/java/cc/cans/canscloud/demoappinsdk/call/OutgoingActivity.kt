@@ -8,8 +8,8 @@ import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityOutgoinglBinding
 import cc.cans.canscloud.demoappinsdk.viewmodel.OutgoingViewModel
-import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.compatibility.Compatibility
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
 import cc.cans.canscloud.sdk.utils.PermissionHelper
 
 class OutgoingActivity : AppCompatActivity() {
@@ -24,20 +24,20 @@ class OutgoingActivity : AppCompatActivity() {
 
         outgoingViewModel = ViewModelProvider(this)[OutgoingViewModel::class.java]
 
-        binding.textViewPhoneNumber.text = Cans.destinationUsername
+        binding.textViewPhoneNumber.text = cans.destinationUsername
 
         outgoingViewModel.isCallEnd.observe(this) {
             finish()
         }
 
         binding.buttonHangUp.setOnClickListener {
-            Cans.terminateCall()
+            cans.terminateCall()
             finish()
         }
 
         binding.micro.setOnClickListener {
-            Cans.toggleMuteMicrophone()
-            if (Cans.isMicState) {
+            cans.toggleMuteMicrophone()
+            if (cans.isMicState) {
                 binding.micro.setImageResource(R.drawable.ongoing_mute_select)
             } else {
                 binding.micro.setImageResource(R.drawable.ongoing_mute_default)
@@ -45,8 +45,8 @@ class OutgoingActivity : AppCompatActivity() {
         }
 
         binding.speaker.setOnClickListener {
-            Cans.toggleSpeaker()
-            if (Cans.isSpeakerState) {
+            cans.toggleSpeaker()
+            if (cans.isSpeakerState) {
                 binding.speaker.setImageResource(R.drawable.ongoing_speaker_selected)
             } else {
                 binding.speaker.setImageResource(R.drawable.ongoing_speaker_default)

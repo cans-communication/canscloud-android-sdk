@@ -10,7 +10,7 @@ import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.demoappinsdk.databinding.FragmentDialerBinding
 import cc.cans.canscloud.demoappinsdk.viewmodel.SharedMainViewModel
-import cc.cans.canscloud.sdk.Cans
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
 import cc.cans.canscloud.sdk.models.CansTransport
 
 
@@ -46,7 +46,7 @@ class DialerFragment : Fragment() {
 
         sharedViewModel.statusRegister.observe(viewLifecycleOwner) {
             binding.registerStatus.text = getString(it)
-            binding.registerUser.text = Cans.account
+            binding.registerUser.text = cans.account
         }
 
         sharedViewModel.isRegister.observe(viewLifecycleOwner) {
@@ -56,7 +56,7 @@ class DialerFragment : Fragment() {
 
         binding.buttonCall.setOnClickListener {
             if (binding.editTextPhoneNumber.text.isNotEmpty()) {
-                Cans.startCall(binding.editTextPhoneNumber.text.toString())
+                cans.startCall(binding.editTextPhoneNumber.text.toString())
             } else {
                 Toast.makeText(
                     requireContext(),
@@ -67,7 +67,7 @@ class DialerFragment : Fragment() {
         }
 
         binding.buttonRegister.setOnClickListener {
-            Cans.register(
+            cans.register(
                 "40107",
                 "p40107CANS",
                 "cns.cans.cc",
