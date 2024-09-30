@@ -3,6 +3,7 @@ package cc.cans.canscloud.sdk.core
 import android.content.Context
 import android.telephony.TelephonyManager
 import android.util.Log
+import androidx.annotation.Keep
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -34,8 +35,14 @@ class CoreContextSDK(
     val context: Context,
     ) : LifecycleOwner, ViewModelStoreOwner {
 
+    @Keep
     companion object {
-        var cans: Cans = CansCenter()
+       private val cans: Cans = CansCenter()
+
+        @JvmStatic
+        fun cansCenter(): Cans {
+            return cans
+        }
     }
 
     private val _lifecycleRegistry = LifecycleRegistry(this)
@@ -135,30 +142,25 @@ class CoreContextSDK(
         Log.i("[Context]","Ready")
     }
 
-    fun start(isPush: Boolean = false) {
+    fun start() {
 
         cans.addListener(listener)
-        // CoreContext listener must be added first!
-//        if (Version.sdkAboveOrEqual(Version.API26_O_80) && cans.corePreferences.useTelecomManager) {
-//            if (Compatibility.hasTelecomManagerPermissions(context)) {
-//                Log.i(
-//                    "[Context]","Creating Telecom Helper, disabling audio focus requests in AudioHelper"
-//                )
-//                cans.core.config.setBool("audio", "android_disable_audio_focus_requests", true)
-//                val telecomHelper = TelecomHelper.required(context)
-//                Log.i(
-//                    "[Context]","Telecom Helper created, account is ${if (telecomHelper.isAccountEnabled()) "enabled" else "disabled"}"
-//                )
-//            } else {
-//                Log.i("[Context]","Can't create Telecom Helper, permissions have been revoked")
-//                cans.corePreferences.useTelecomManager = false
-//            }
-//        }
-//
-//        if (isPush) {
-//            org.linphone.core.tools.Log.i("[Context] Push received, assume in background")
-//            cans.core.enterBackground()
-//        }
+        //CoreContext listener must be added first!
+        if (Version.sdkAboveOrEqual(Version.API26_O_80) && cans.corePreferences.useTelecomManager) {
+            if (Compatibility.hasTelecomManagerPermissions(context)) {
+                Log.i(
+                    "[Context]","Creating Telecom Helper, disabling audio focus requests in AudioHelper"
+                )
+                cans.core.config.setBool("audio", "android_disable_audio_focus_requests", true)
+                val telecomHelper = TelecomHelper.singletonHolder().required(context)
+                Log.i(
+                    "[Context]","Telecom Helper created, account is ${if (telecomHelper.isAccountEnabled()) "enabled" else "disabled"}"
+                )
+            } else {
+                Log.i("[Context]","Can't create Telecom Helper, permissions have been revoked")
+                cans.corePreferences.useTelecomManager = false
+            }
+        }
 
         configureCore()
 
@@ -180,10 +182,10 @@ class CoreContextSDK(
             phoneStateListener.destroy()
         }
 
-        if (TelecomHelper.exists()) {
+        if (TelecomHelper.singletonHolder().exists()) {
             Log.i("[Context]"," Destroying telecom helper")
-            TelecomHelper.get().destroy()
-            TelecomHelper.destroy()
+            TelecomHelper.singletonHolder().get().destroy()
+            TelecomHelper.singletonHolder().destroy()
         }
 
         cans.core.stop()
@@ -259,13 +261,13 @@ class CoreContextSDK(
 
     /* Call related functions */
     fun initPhoneStateListener() {
-        if (PermissionHelper.required(context).hasReadPhoneStatePermission()) {
+        if (PermissionHelper.singletonHolder().required(context).hasReadPhoneStatePermission()) {
             try {
                 phoneStateListener =
                     Compatibility.createPhoneListener(context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager)
             } catch (exception: SecurityException) {
                 val hasReadPhoneStatePermission =
-                    PermissionHelper.get().hasReadPhoneStateOrPhoneNumbersPermission()
+                    PermissionHelper.singletonHolder().get().hasReadPhoneStateOrPhoneNumbersPermission()
                 Log.e("[Context]"," Failed to create phone state listener: $exception, READ_PHONE_STATE permission status is $hasReadPhoneStatePermission")
             }
         } else {
@@ -285,9 +287,9 @@ class CoreContextSDK(
                 return true
             }
         } else {
-            if (TelecomHelper.exists()) {
-                if (!TelecomHelper.get().isIncomingCallPermitted() ||
-                    TelecomHelper.get().isInManagedCall()
+            if (TelecomHelper.singletonHolder().exists()) {
+                if (!TelecomHelper.singletonHolder().get().isIncomingCallPermitted() ||
+                    TelecomHelper.singletonHolder().get().isInManagedCall()
                 ) {
                     Log.w("[Context]"," Refusing the call with reason busy because Telecom Manager will reject the call")
                     return true

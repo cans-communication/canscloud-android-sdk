@@ -2,9 +2,10 @@ package cc.cans.canscloud.sdk.core
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.annotation.Keep
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
-import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -15,11 +16,12 @@ import java.security.KeyStoreException
 class CorePreferences constructor(private val context: Context) {
     private var _config: Config? = null
     var config: Config
-        get() = _config ?: cans.core.config
+        get() = _config ?: cansCenter().core.config
         set(value) {
             _config = value
         }
 
+    @Keep
     companion object {
         const val OVERLAY_CLICK_SENSITIVITY = 10
 

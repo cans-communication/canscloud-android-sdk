@@ -19,9 +19,12 @@
  */
 package cc.cans.canscloud.sdk.utils
 
+import androidx.annotation.Keep
+
 /**
  * Helper class to create singletons like CoreContext.
  */
+@Keep
 open class SingletonHolder<out T : Any, in A>(val creator: (A) -> T) {
     @Volatile private var instance: T? = null
 

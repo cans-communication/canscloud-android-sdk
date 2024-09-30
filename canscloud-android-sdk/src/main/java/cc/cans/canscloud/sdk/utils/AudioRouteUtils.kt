@@ -20,39 +20,41 @@
 package cc.cans.canscloud.sdk.utils
 
 import android.telecom.CallAudioState
+import androidx.annotation.Keep
 import cc.cans.canscloud.sdk.compatibility.Compatibility
-import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import org.linphone.core.AudioDevice
 import org.linphone.core.Call
 import org.linphone.core.tools.Log
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
 
 class AudioRouteUtils {
+    @Keep
     companion object {
         private fun applyAudioRouteChange(
             call: Call?,
             types: List<AudioDevice.Type>,
             output: Boolean = true
         ) {
-            val currentCall = if (cans.core.callsNb > 0) {
-                call ?:  cans.core.currentCall ?:  cans.core.calls[0]
+            val currentCall = if (cansCenter().core.callsNb > 0) {
+                call ?:  cansCenter().core.currentCall ?:  cansCenter().core.calls[0]
             } else {
                 Log.w("[Audio Route Helper] No call found, setting audio route on Core")
                 null
             }
-            val conference =  cans.core.conference
+            val conference =  cansCenter().core.conference
             val capability = if (output) {
                 AudioDevice.Capabilities.CapabilityPlay
             } else {
                 AudioDevice.Capabilities.CapabilityRecord
             }
             val preferredDriver = if (output) {
-                cans.core.defaultOutputAudioDevice?.driverName
+                cansCenter().core.defaultOutputAudioDevice?.driverName
             } else {
-                cans.core.defaultInputAudioDevice?.driverName
+                cansCenter().core.defaultInputAudioDevice?.driverName
             }
 
-            val extendedAudioDevices =  cans.core.extendedAudioDevices
+            val extendedAudioDevices =  cansCenter().core.extendedAudioDevices
             Log.i(
                 "[Audio Route Helper] Looking for an ${if (output) "output" else "input"} audio device with capability [$capability], driver name [$preferredDriver] and type [$types] in extended audio devices list (size ${extendedAudioDevices.size})"
             )
@@ -107,9 +109,9 @@ class AudioRouteUtils {
                     "[Audio Route Helper] Found [${audioDevice.type}] ${if (output) "playback" else "recorder"} audio device [${audioDevice.deviceName} (${audioDevice.driverName})], changing core default audio device"
                 )
                 if (output) {
-                    cans.core.outputAudioDevice = audioDevice
+                    cansCenter().core.outputAudioDevice = audioDevice
                 } else {
-                    cans.core.inputAudioDevice = audioDevice
+                    cansCenter().core.inputAudioDevice = audioDevice
                 }
             }
         }
@@ -139,12 +141,12 @@ class AudioRouteUtils {
             types: List<AudioDevice.Type>,
             skipTelecom: Boolean = false
         ) {
-            val currentCall = call ?:  cans.core.currentCall ?:  cans.core.calls.firstOrNull()
-            if (currentCall != null && !skipTelecom && TelecomHelper.exists()) {
+            val currentCall = call ?:  cansCenter().core.currentCall ?:  cansCenter().core.calls.firstOrNull()
+            if (currentCall != null && !skipTelecom && TelecomHelper.singletonHolder().exists()) {
                 Log.i(
                     "[Audio Route Helper] Call provided & Telecom Helper exists, trying to dispatch audio route change through Telecom API"
                 )
-                val connection = TelecomHelper.get().findConnectionForCallId(
+                val connection = TelecomHelper.singletonHolder().get().findConnectionForCallId(
                     currentCall.callLog.callId.orEmpty()
                 )
                 if (connection != null) {
@@ -203,20 +205,20 @@ class AudioRouteUtils {
         }
 
         fun isSpeakerAudioRouteCurrentlyUsed(call: Call? = null): Boolean {
-            val currentCall = if ( cans.core.callsNb > 0) {
-                call ?:  cans.core.currentCall ?:  cans.core.calls[0]
+            val currentCall = if ( cansCenter().core.callsNb > 0) {
+                call ?:  cansCenter().core.currentCall ?:  cansCenter().core.calls[0]
             } else {
                 Log.w("[Audio Route Helper] No call found, checking audio route on Core")
                 null
             }
-            val conference =  cans.core.conference
+            val conference =  cansCenter().core.conference
 
             val audioDevice = if (conference != null && conference.isIn) {
                 conference.outputAudioDevice
             } else if (currentCall != null) {
                 currentCall.outputAudioDevice
             } else {
-                cans.core.outputAudioDevice
+                cansCenter().core.outputAudioDevice
             }
 
             if (audioDevice == null) return false
@@ -227,12 +229,12 @@ class AudioRouteUtils {
         }
 
         fun isBluetoothAudioRouteCurrentlyUsed(call: Call? = null): Boolean {
-            if ( cans.core.callsNb == 0) {
+            if (cansCenter().core.callsNb == 0) {
                 Log.w("[Audio Route Helper] No call found, so bluetooth audio route isn't used")
                 return false
             }
-            val currentCall = call ?:  cans.core.currentCall ?:  cans.core.calls[0]
-            val conference =  cans.core.conference
+            val currentCall = call ?: cansCenter().core.currentCall ?: cansCenter().core.calls[0]
+            val conference = cansCenter().core.conference
 
             val audioDevice = if (conference != null && conference.isIn) {
                 conference.outputAudioDevice
@@ -248,7 +250,7 @@ class AudioRouteUtils {
         }
 
         fun isBluetoothAudioRouteAvailable(): Boolean {
-            for (audioDevice in  cans.core.audioDevices) {
+            for (audioDevice in cansCenter().core.audioDevices) {
                 if ((audioDevice.type == AudioDevice.Type.Bluetooth || audioDevice.type == AudioDevice.Type.HearingAid) &&
                     audioDevice.hasCapability(AudioDevice.Capabilities.CapabilityPlay)
                 ) {
@@ -262,7 +264,7 @@ class AudioRouteUtils {
         }
 
         private fun isBluetoothAudioRecorderAvailable(): Boolean {
-            for (audioDevice in  cans.core.audioDevices) {
+            for (audioDevice in cansCenter().core.audioDevices) {
                 if ((audioDevice.type == AudioDevice.Type.Bluetooth || audioDevice.type == AudioDevice.Type.HearingAid) &&
                     audioDevice.hasCapability(AudioDevice.Capabilities.CapabilityRecord)
                 ) {
@@ -276,7 +278,7 @@ class AudioRouteUtils {
         }
 
         fun isHeadsetAudioRouteAvailable(): Boolean {
-            for (audioDevice in  cans.core.audioDevices) {
+            for (audioDevice in cansCenter().core.audioDevices) {
                 if ((audioDevice.type == AudioDevice.Type.Headset || audioDevice.type == AudioDevice.Type.Headphones) &&
                     audioDevice.hasCapability(AudioDevice.Capabilities.CapabilityPlay)
                 ) {
@@ -290,7 +292,7 @@ class AudioRouteUtils {
         }
 
         private fun isHeadsetAudioRecorderAvailable(): Boolean {
-            for (audioDevice in  cans.core.audioDevices) {
+            for (audioDevice in cansCenter().core.audioDevices) {
                 if ((audioDevice.type == AudioDevice.Type.Headset || audioDevice.type == AudioDevice.Type.Headphones) &&
                     audioDevice.hasCapability(AudioDevice.Capabilities.CapabilityRecord)
                 ) {

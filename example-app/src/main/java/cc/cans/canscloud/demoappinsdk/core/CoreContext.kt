@@ -12,11 +12,9 @@ import cc.cans.canscloud.demoappinsdk.call.CallActivity
 import cc.cans.canscloud.demoappinsdk.call.IncomingActivity
 import cc.cans.canscloud.demoappinsdk.call.OutgoingActivity
 import cc.cans.canscloud.demoappinsdk.notifaication.NotificationsManager
-import cc.cans.canscloud.sdk.CansCenter
-import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.core.CoreContextSDK
-import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
 
@@ -85,7 +83,7 @@ class CoreContext(
     }
 
     init {
-        CoreContextSDK.cans.addListener(listener)
+        CoreContextSDK.cansCenter().addListener(listener)
         stopped = false
         _lifecycleRegistry.currentState = Lifecycle.State.INITIALIZED
         notificationsManager.onCoreReady()
@@ -95,7 +93,7 @@ class CoreContext(
     /* Start call related activities */
 
     private fun onIncomingReceived() {
-        if (cans.corePreferences.preventInterfaceFromShowingUp) {
+        if (cansCenter().corePreferences.preventInterfaceFromShowingUp) {
             Log.w("[Context]","We were asked to not show the incoming call screen")
             return
         }
@@ -108,7 +106,7 @@ class CoreContext(
     }
 
     private fun onOutgoingStarted() {
-        if (cans.corePreferences.preventInterfaceFromShowingUp) {
+        if (cansCenter().corePreferences.preventInterfaceFromShowingUp) {
             Log.w("[Context]","We were asked to not show the outgoing call screen")
             return
         }
@@ -121,7 +119,7 @@ class CoreContext(
     }
 
     fun onCallStarted() {
-        if (cans.corePreferences.preventInterfaceFromShowingUp) {
+        if (cansCenter().corePreferences.preventInterfaceFromShowingUp) {
             Log.w("[Context]","We were asked to not show the call screen")
             return
         }

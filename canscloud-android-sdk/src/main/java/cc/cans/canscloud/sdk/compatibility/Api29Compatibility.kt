@@ -22,11 +22,13 @@ package cc.cans.canscloud.sdk.compatibility
 import android.Manifest
 import android.annotation.TargetApi
 import android.content.Context
+import androidx.annotation.Keep
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import org.linphone.core.tools.Log
 
 @TargetApi(29)
 class Api29Compatibility {
+    @Keep
     companion object {
         fun hasTelecomManagerPermission(context: Context): Boolean {
             return Compatibility.hasPermission(context, Manifest.permission.READ_PHONE_STATE) &&

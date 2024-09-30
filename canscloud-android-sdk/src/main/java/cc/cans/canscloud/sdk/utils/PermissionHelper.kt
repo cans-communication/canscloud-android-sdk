@@ -21,6 +21,7 @@ package cc.cans.canscloud.sdk.utils
 
 import android.Manifest
 import android.content.Context
+import androidx.annotation.Keep
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import org.linphone.core.tools.Log
 
@@ -28,7 +29,15 @@ import org.linphone.core.tools.Log
  * Helper methods to check whether a permission has been granted and log the result
  */
 class PermissionHelper private constructor(private val context: Context) {
-    companion object : SingletonHolder<PermissionHelper, Context>(::PermissionHelper)
+
+    companion object {
+        private var holder = SingletonHolder<PermissionHelper, Context>(::PermissionHelper)
+
+        @JvmStatic
+        fun singletonHolder(): SingletonHolder<PermissionHelper, Context> {
+            return holder
+        }
+    }
 
     private fun hasPermission(permission: String): Boolean {
         val granted = Compatibility.hasPermission(context, permission)

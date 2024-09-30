@@ -23,15 +23,18 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.telephony.TelephonyManager
+import androidx.annotation.Keep
 import androidx.fragment.app.Fragment
 import cc.cans.canscloud.sdk.telecom.NativeCallWrapper
 import org.linphone.mediastream.Version
 
 @Suppress("DEPRECATION")
 class Compatibility {
+    @Keep
     companion object {
         const val BLUETOOTH_CONNECT = "android.permission.BLUETOOTH_CONNECT"
 
+        @JvmStatic
         fun hasPermission(context: Context, permission: String): Boolean {
             return when (Version.sdkAboveOrEqual(Version.API23_MARSHMALLOW_60)) {
                 true -> Api23Compatibility.hasPermission(context, permission)
@@ -40,6 +43,7 @@ class Compatibility {
         }
 
         // See https://developer.android.com/about/versions/11/privacy/permissions#phone-numbers
+        @JvmStatic
         fun hasReadPhoneStateOrNumbersPermission(context: Context): Boolean {
             return if (Version.sdkAboveOrEqual(Version.API30_ANDROID_11)) {
                 Api30Compatibility.hasReadPhoneNumbersPermission(context)
@@ -48,6 +52,7 @@ class Compatibility {
             }
         }
 
+        @JvmStatic
         fun hasTelecomManagerPermissions(context: Context): Boolean {
             return if (Version.sdkAboveOrEqual(Version.API30_ANDROID_11)) {
                 Api30Compatibility.hasTelecomManagerPermission(context)
@@ -58,6 +63,7 @@ class Compatibility {
             }
         }
 
+        @JvmStatic
         fun requestTelecomManagerPermissions(activity: Activity, code: Int) {
             if (Version.sdkAboveOrEqual(Version.API30_ANDROID_11)) {
                 Api30Compatibility.requestTelecomManagerPermission(activity, code)
@@ -66,6 +72,7 @@ class Compatibility {
             }
         }
 
+        @JvmStatic
         fun requestTelecomManagerPermissionsFragment(fragment: Fragment, code: Int) {
             if (Version.sdkAboveOrEqual(Version.API30_ANDROID_11)) {
                 Api30Compatibility.requestTelecomManagerPermissionFragment(fragment, code)
@@ -74,6 +81,7 @@ class Compatibility {
             }
         }
 
+        @JvmStatic
         fun hasTelecomManagerFeature(context: Context): Boolean {
             if (Version.sdkAboveOrEqual(Version.API33_ANDROID_13_TIRAMISU)) {
                 return Api33Compatibility.hasTelecomManagerFeature(context)
@@ -83,18 +91,21 @@ class Compatibility {
             return false
         }
 
+        @JvmStatic
         fun requestPostNotificationsPermission(activity: Activity, code: Int) {
             if (Version.sdkAboveOrEqual(Version.API33_ANDROID_13_TIRAMISU)) {
                 Api33Compatibility.requestPostNotificationsPermission(activity, code)
             }
         }
 
+        @JvmStatic
         fun requestPostNotificationsPermission(fragment: Fragment, code: Int) {
             if (Version.sdkAboveOrEqual(Version.API33_ANDROID_13_TIRAMISU)) {
                 Api33Compatibility.requestPostNotificationsPermission(fragment, code)
             }
         }
 
+        @JvmStatic
         fun hasPostNotificationsPermission(context: Context): Boolean {
             return if (Version.sdkAboveOrEqual(Version.API33_ANDROID_13_TIRAMISU)) {
                 Api33Compatibility.hasPostNotificationsPermission(context)
@@ -103,6 +114,7 @@ class Compatibility {
             }
         }
 
+        @JvmStatic
         fun hasBluetoothConnectPermission(context: Context): Boolean {
             if (Version.sdkAboveOrEqual(Version.API31_ANDROID_12)) {
                 return Api31Compatibility.hasBluetoothConnectPermission(context)
@@ -110,6 +122,7 @@ class Compatibility {
             return true
         }
 
+        @JvmStatic
         fun hasFullScreenIntentPermission(context: Context): Boolean {
             if (Version.sdkAboveOrEqual(Version.API34_ANDROID_14_UPSIDE_DOWN_CAKE)) {
                 return Api34Compatibility.hasFullScreenIntentPermission(context)
@@ -117,6 +130,7 @@ class Compatibility {
             return true
         }
 
+        @JvmStatic
         fun requestFullScreenIntentPermission(context: Context): Boolean {
             if (Version.sdkAboveOrEqual(Version.API34_ANDROID_14_UPSIDE_DOWN_CAKE)) {
                 Api34Compatibility.requestFullScreenIntentPermission(context)
@@ -125,6 +139,7 @@ class Compatibility {
             return false
         }
 
+        @JvmStatic
         fun createPhoneListener(telephonyManager: TelephonyManager): PhoneStateInterface {
             return if (Version.sdkStrictlyBelow(Version.API31_ANDROID_12)) {
                 PhoneStateListener(telephonyManager)
@@ -133,6 +148,7 @@ class Compatibility {
             }
         }
 
+        @JvmStatic
         fun changeAudioRouteForTelecomManager(connection: NativeCallWrapper, route: Int): Boolean {
             if (Version.sdkAboveOrEqual(Version.API26_O_80)) {
                 return Api26Compatibility.changeAudioRouteForTelecomManager(connection, route)

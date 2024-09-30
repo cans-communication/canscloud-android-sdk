@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import cc.cans.canscloud.sdk.callback.CansListenerStub
-import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
 class OutgoingViewModel : ViewModel() {
@@ -50,11 +50,11 @@ class OutgoingViewModel : ViewModel() {
     }
 
     init {
-        cans.addListener(listener)
+        cansCenter().addListener(listener)
     }
 
     override fun onCleared() {
-        cans.removeListener(listener)
+        cansCenter().removeListener(listener)
         super.onCleared()
     }
 }

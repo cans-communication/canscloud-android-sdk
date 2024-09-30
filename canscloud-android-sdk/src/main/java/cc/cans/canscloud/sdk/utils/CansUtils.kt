@@ -7,8 +7,10 @@ import android.net.NetworkInfo
 import android.telephony.TelephonyManager.NETWORK_TYPE_EDGE
 import android.telephony.TelephonyManager.NETWORK_TYPE_GPRS
 import android.telephony.TelephonyManager.NETWORK_TYPE_IDEN
+import androidx.annotation.Keep
 
 class CansUtils {
+    @Keep
     companion object {
         @SuppressLint("MissingPermission")
         fun checkIfNetworkHasLowBandwidth(context: Context): Boolean {

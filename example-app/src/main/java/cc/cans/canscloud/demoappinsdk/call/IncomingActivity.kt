@@ -8,7 +8,7 @@ import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityIncomingBinding
 import cc.cans.canscloud.demoappinsdk.viewmodel.CallsViewModel
 import cc.cans.canscloud.sdk.compatibility.Compatibility
-import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.utils.PermissionHelper
 
 class IncomingActivity : AppCompatActivity() {
@@ -25,19 +25,19 @@ class IncomingActivity : AppCompatActivity() {
             ViewModelProvider(this)[CallsViewModel::class.java]
         }
 
-        binding.contactName.text = cans.destinationUsername
+        binding.contactName.text = cansCenter().destinationUsername
 
         callsViewModel.isCallEnd.observe(this) {
             finish()
         }
 
         binding.acceptCall.setOnClickListener {
-            cans.startAnswerCall()
+            cansCenter().startAnswerCall()
             finish()
         }
 
         binding.hangUp.setOnClickListener {
-            cans.terminateCall()
+            cansCenter().terminateCall()
             finish()
         }
 
@@ -47,12 +47,12 @@ class IncomingActivity : AppCompatActivity() {
     private fun checkPermissions() {
         val permissionsRequiredList = arrayListOf<String>()
 
-        if (!PermissionHelper.get().hasRecordAudioPermission()) {
+        if (!PermissionHelper.singletonHolder().get().hasRecordAudioPermission()) {
             android.util.Log.i("[$TAG]","Asking for RECORD_AUDIO permission")
             permissionsRequiredList.add(Manifest.permission.RECORD_AUDIO)
         }
 
-        if (Build.VERSION.SDK_INT >= (Build.VERSION_CODES.S) && !PermissionHelper.get().hasBluetoothConnectPermission()) {
+        if (Build.VERSION.SDK_INT >= (Build.VERSION_CODES.S) && !PermissionHelper.singletonHolder().get().hasBluetoothConnectPermission()) {
             android.util.Log.i("[$TAG]","Asking for BLUETOOTH_CONNECT permission")
             permissionsRequiredList.add(Compatibility.BLUETOOTH_CONNECT)
         }

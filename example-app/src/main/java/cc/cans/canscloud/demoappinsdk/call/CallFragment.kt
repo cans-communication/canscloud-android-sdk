@@ -13,7 +13,7 @@ import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.demoappinsdk.databinding.FragmentCallBinding
 import cc.cans.canscloud.demoappinsdk.viewmodel.CallsViewModel
 import cc.cans.canscloud.sdk.compatibility.Compatibility
-import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.utils.PermissionHelper
 import org.linphone.core.tools.Log
 
@@ -46,7 +46,7 @@ class CallFragment : Fragment() {
             ViewModelProvider(this)[CallsViewModel::class.java]
         }
 
-        binding.textViewPhoneNumber.text =  cans.destinationUsername
+        binding.textViewPhoneNumber.text = cansCenter().destinationUsername
 
         callsViewModel.isCallEnd.observe(viewLifecycleOwner) {
             requireActivity().finish()
@@ -81,14 +81,14 @@ class CallFragment : Fragment() {
         }
 
         binding.buttonHangUp.setOnClickListener {
-            cans.terminateCall()
+            cansCenter().terminateCall()
             requireActivity().finish()
         }
 
         binding.micro.setOnClickListener {
-            cans.toggleMuteMicrophone()
+            cansCenter().toggleMuteMicrophone()
 
-            if (cans.isMicState) {
+            if (cansCenter().isMicState) {
                 binding.micro.setImageResource(R.drawable.ongoing_mute_select)
             } else {
                 binding.micro.setImageResource(R.drawable.ongoing_mute_default)
@@ -96,11 +96,11 @@ class CallFragment : Fragment() {
         }
 
         binding.speaker.setOnClickListener {
-            cans.toggleSpeaker()
+            cansCenter().toggleSpeaker()
         }
 
         binding.bluetooth.setOnClickListener {
-            cans.forceBluetoothAudioRoute()
+            cansCenter().forceBluetoothAudioRoute()
         }
 
         checkPermissions()
@@ -109,12 +109,12 @@ class CallFragment : Fragment() {
     private fun checkPermissions() {
         val permissionsRequiredList = arrayListOf<String>()
 
-        if (!PermissionHelper.get().hasRecordAudioPermission()) {
+        if (!PermissionHelper.singletonHolder().get().hasRecordAudioPermission()) {
             Log.i("[$TAG]","Asking for RECORD_AUDIO permission")
             permissionsRequiredList.add(Manifest.permission.RECORD_AUDIO)
         }
 
-        if (Build.VERSION.SDK_INT >= (Build.VERSION_CODES.S) && !PermissionHelper.get().hasBluetoothConnectPermission()) {
+        if (Build.VERSION.SDK_INT >= (Build.VERSION_CODES.S) && !PermissionHelper.singletonHolder().get().hasBluetoothConnectPermission()) {
             Log.i("[$TAG]","Asking for BLUETOOTH_CONNECT permission")
             permissionsRequiredList.add(Compatibility.BLUETOOTH_CONNECT)
         }
