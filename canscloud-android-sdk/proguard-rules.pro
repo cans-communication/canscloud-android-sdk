@@ -12,6 +12,7 @@
 #   public *;
 #}
 
+# Keep class names but obfuscate method bodies
 -keepnames class * {
     <methods>;
 }
