@@ -13,9 +13,9 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import cc.cans.canscloud.demoappinsdk.R
-import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.demoappinsdk.call.IncomingActivity
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
 
@@ -54,7 +54,7 @@ class NotificationsManager(private val context: Context) {
                 CallState.Error -> {}
                 CallState.CallEnd -> {}
                 CallState.MissCall -> {
-                    if (Cans.isCallLogMissed()) {
+                    if (cans.isCallLogMissed()) {
                         displayMissedCallNotification()
                     }
                 }
@@ -81,14 +81,14 @@ class NotificationsManager(private val context: Context) {
     }
 
     fun onCoreReady() {
-        Cans.addListener(listener)
+        cans.addListener(listener)
     }
 
     fun showIncomingCallNotification(context: Context) {
         val incomingCallNotificationIntent = Intent(context, IncomingActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION)
 
-            putExtra(INTENT_REMOTE_ADDRESS, Cans.destinationRemoteAddress)
+            putExtra(INTENT_REMOTE_ADDRESS, cans.destinationRemoteAddress)
         }
         val pendingIntent = PendingIntent.getActivity(
             context,
@@ -117,7 +117,7 @@ class NotificationsManager(private val context: Context) {
             declineIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val name = Cans.destinationUsername
+        val name = cans.destinationUsername
 
         // Build the notification
         val builder = NotificationCompat.Builder(
@@ -140,13 +140,13 @@ class NotificationsManager(private val context: Context) {
     }
 
     private fun displayMissedCallNotification() {
-        val missedCallCount: Int = Cans.missedCallsCount
+        val missedCallCount: Int = cans.missedCallsCount
 
         val body: String
         if (missedCallCount > 1) {
             body = context.getString(cc.cans.canscloud.sdk.R.string.missed_call_notification_body).format(missedCallCount)
         } else {
-            body = context.getString(cc.cans.canscloud.sdk.R.string.missed_call_notification_body).format(Cans.destinationUsername)
+            body = context.getString(cc.cans.canscloud.sdk.R.string.missed_call_notification_body).format(cans.destinationUsername)
         }
 
         val builder = NotificationCompat.Builder(

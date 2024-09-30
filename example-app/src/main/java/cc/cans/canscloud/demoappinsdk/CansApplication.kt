@@ -24,8 +24,8 @@ import android.app.Application
 import androidx.lifecycle.LifecycleObserver
 import cc.cans.canscloud.demoappinsdk.core.CoreContext
 import cc.cans.canscloud.demoappinsdk.notifaication.NotificationsManager
-import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.core.CoreContextSDK
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
 import org.linphone.core.tools.Log
 
 class CansApplication : Application(), LifecycleObserver {
@@ -39,7 +39,7 @@ class CansApplication : Application(), LifecycleObserver {
 
         val appName = getString(R.string.app_name)
         android.util.Log.i("[$appName]", "Application is being created")
-        Cans.config(applicationContext, appName)
+        cans.config(applicationContext, appName)
         CoreContext(this)
         coreContext = CoreContextSDK(this)
         coreContext.start()

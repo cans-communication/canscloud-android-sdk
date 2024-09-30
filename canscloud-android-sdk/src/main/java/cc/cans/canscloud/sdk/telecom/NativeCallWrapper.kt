@@ -26,9 +26,8 @@ import android.telecom.CallAudioState
 import android.telecom.Connection
 import android.telecom.DisconnectCause
 import android.telecom.StatusHints
-import cc.cans.canscloud.sdk.Cans.context
-import cc.cans.canscloud.sdk.Cans.core
 import cc.cans.canscloud.sdk.R
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import org.linphone.core.Call
 import org.linphone.core.tools.Log
@@ -41,7 +40,7 @@ class NativeCallWrapper(var callId: String) : Connection() {
         audioModeIsVoip = true
         statusHints = StatusHints(
             "",
-            Icon.createWithResource(context, R.drawable.ic_launcher_foreground),
+            Icon.createWithResource(cans.context, R.drawable.ic_launcher_foreground),
             Bundle()
         )
     }
@@ -107,15 +106,15 @@ class NativeCallWrapper(var callId: String) : Connection() {
 
     override fun onSilence() {
         Log.i("[Connection] Call with id: $callId asked to be silenced")
-        core.stopRinging()
+        cans.core.stopRinging()
     }
 
     private fun getCall(): Call? {
-        return core.getCallByCallid(callId)
+        return cans.core.getCallByCallid(callId)
     }
 
     private fun selfDestroy() {
-        if (core.callsNb == 0) {
+        if (cans.core.callsNb == 0) {
             Log.e("[Connection] No call in Core, destroy connection")
             setDisconnected(DisconnectCause(DisconnectCause.LOCAL))
             destroy()
