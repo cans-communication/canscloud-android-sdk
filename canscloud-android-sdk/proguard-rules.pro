@@ -38,10 +38,21 @@
     *;
 }
 
-# Keep the class that implements the interface and all its methods/properties
--keep class cc.cans.canscloud.sdk.CansCenter implements cc.cans.canscloud.sdk.Cans {
-    *;
-}
+-keep class cc.cans.canscloud.sdk.core.CoreContextSDK
+-keep class cc.cans.canscloud.sdk.core.CorePreferences
+-keep class cc.cans.canscloud.sdk.core.CoreContextSDK
+-keep class cc.cans.canscloud.sdk.models.*{ *;}
+-keep class cc.cans.canscloud.sdk.telecom.TelecomHelper
+-keep class cc.cans.canscloud.sdk.telecom.TelecomConnectionService
+-keep class cc.cans.canscloud.sdk.telecom.NativeCallWrapper
+-keep class cc.cans.canscloud.sdk.utils.AudioRouteUtils
+-keep class cc.cans.canscloud.sdk.utils.CansUtils
+-keep class cc.cans.canscloud.sdk.utils.PermissionHelper
+-keep class cc.cans.canscloud.sdk.utils.SingletonHolder
+-keep class cc.cans.canscloud.sdk.compatibility.*{*;}
+-keep class cc.cans.canscloud.sdk.callback.CansListenerStub { *; }
+
+
 
 #
 #-keep class cc.cans.canscloud.sdk.callback.CansListenerStub { *; }
