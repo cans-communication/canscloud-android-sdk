@@ -16,31 +16,25 @@
 # debugging stack traces.
 #-keepattributes SourceFile,LineNumberTable
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
-
-#-keepclasseswithmembernames class * {
-#    native <methods>;
-#}
-#-keepnames class ** { *; }
-
-#-keep class cc.cans.canscloud.sdk.Cans$Companion {
-#  public void config(android.content.Context, java.lang.String);
-#}
-#
-#-keep class cc.cans.canscloud.sdk.Cans {
-#    public static *;
-#}
-
 # Keep the interface and all its methods/properties
 -keep interface cc.cans.canscloud.sdk.Cans {
     *;
 }
 
--keep class cc.cans.canscloud.sdk.core.CoreContextSDK
--keep class cc.cans.canscloud.sdk.core.CorePreferences
--keep class cc.cans.canscloud.sdk.core.CoreContextSDK
+# Keep the names of classes, methods, and fields for your interface and its implementation
+-keep class cc.cans.canscloud.sdk.CansCenter {
+    <fields>;
+    <methods>;
+}
+
+-keep class cc.cans.canscloud.sdk.core.CorePreferences {
+    <fields>;
+    <methods>;
+}
+-keep class cc.cans.canscloud.sdk.core.CoreContextSDK {
+    <fields>;
+    <methods>;
+}
 -keep class cc.cans.canscloud.sdk.models.*{ *;}
 -keep class cc.cans.canscloud.sdk.telecom.TelecomHelper
 -keep class cc.cans.canscloud.sdk.telecom.TelecomConnectionService
