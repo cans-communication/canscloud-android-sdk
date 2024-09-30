@@ -12,14 +12,12 @@ import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
+import cc.cans.canscloud.sdk.CansCenter
 import cc.cans.canscloud.sdk.Cans
-import cc.cans.canscloud.sdk.CansCloud
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
 import kotlinx.coroutines.cancel
-import org.linphone.core.Call
-import org.linphone.core.Core
 import org.linphone.mediastream.Version
 import java.io.File
 import cc.cans.canscloud.sdk.compatibility.PhoneStateInterface
@@ -51,7 +49,7 @@ class CoreContextSDK(
     private val loggingService = Factory.instance().loggingService
 
     companion object {
-        var cans: CansCloud = Cans()
+        var cans: Cans = CansCenter()
     }
 
     private val listener = object : CansListenerStub {
@@ -140,26 +138,26 @@ class CoreContextSDK(
 
         cans.addListener(listener)
         // CoreContext listener must be added first!
-        if (Version.sdkAboveOrEqual(Version.API26_O_80) && cans.corePreferences.useTelecomManager) {
-            if (Compatibility.hasTelecomManagerPermissions(context)) {
-                Log.i(
-                    "[Context]","Creating Telecom Helper, disabling audio focus requests in AudioHelper"
-                )
-                cans.core.config.setBool("audio", "android_disable_audio_focus_requests", true)
-                val telecomHelper = TelecomHelper.required(context)
-                Log.i(
-                    "[Context]","Telecom Helper created, account is ${if (telecomHelper.isAccountEnabled()) "enabled" else "disabled"}"
-                )
-            } else {
-                Log.i("[Context]","Can't create Telecom Helper, permissions have been revoked")
-                cans.corePreferences.useTelecomManager = false
-            }
-        }
-
-        if (isPush) {
-            org.linphone.core.tools.Log.i("[Context] Push received, assume in background")
-            cans.core.enterBackground()
-        }
+//        if (Version.sdkAboveOrEqual(Version.API26_O_80) && cans.corePreferences.useTelecomManager) {
+//            if (Compatibility.hasTelecomManagerPermissions(context)) {
+//                Log.i(
+//                    "[Context]","Creating Telecom Helper, disabling audio focus requests in AudioHelper"
+//                )
+//                cans.core.config.setBool("audio", "android_disable_audio_focus_requests", true)
+//                val telecomHelper = TelecomHelper.required(context)
+//                Log.i(
+//                    "[Context]","Telecom Helper created, account is ${if (telecomHelper.isAccountEnabled()) "enabled" else "disabled"}"
+//                )
+//            } else {
+//                Log.i("[Context]","Can't create Telecom Helper, permissions have been revoked")
+//                cans.corePreferences.useTelecomManager = false
+//            }
+//        }
+//
+//        if (isPush) {
+//            org.linphone.core.tools.Log.i("[Context] Push received, assume in background")
+//            cans.core.enterBackground()
+//        }
 
         configureCore()
 

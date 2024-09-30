@@ -8,7 +8,6 @@ import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityOutgoinglBinding
 import cc.cans.canscloud.demoappinsdk.viewmodel.OutgoingViewModel
-import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
 import cc.cans.canscloud.sdk.utils.PermissionHelper

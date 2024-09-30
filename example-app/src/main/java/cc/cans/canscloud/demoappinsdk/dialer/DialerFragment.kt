@@ -10,7 +10,6 @@ import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.demoappinsdk.databinding.FragmentDialerBinding
 import cc.cans.canscloud.demoappinsdk.viewmodel.SharedMainViewModel
-import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
 import cc.cans.canscloud.sdk.models.CansTransport
 

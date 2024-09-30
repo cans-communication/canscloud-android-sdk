@@ -23,9 +23,9 @@ import android.annotation.SuppressLint
 import android.app.Application
 import androidx.lifecycle.LifecycleObserver
 import cc.cans.canscloud.demoappinsdk.core.CoreContext
-import cc.cans.canscloud.demoappinsdk.core.CoreContext.Companion.cans
 import cc.cans.canscloud.demoappinsdk.notifaication.NotificationsManager
 import cc.cans.canscloud.sdk.core.CoreContextSDK
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
 import org.linphone.core.tools.Log
 
 class CansApplication : Application(), LifecycleObserver {

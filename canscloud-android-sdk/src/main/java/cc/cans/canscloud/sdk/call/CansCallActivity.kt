@@ -2,7 +2,6 @@ package cc.cans.canscloud.sdk.call
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.databinding.ActivityCansCallBinding
 
 class CansCallActivity : ComponentActivity() {

@@ -13,7 +13,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import cc.cans.canscloud.demoappinsdk.R
-import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.demoappinsdk.call.IncomingActivity
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans

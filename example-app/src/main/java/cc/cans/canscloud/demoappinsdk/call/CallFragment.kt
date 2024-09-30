@@ -11,9 +11,7 @@ import android.view.ViewGroup
 import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.demoappinsdk.databinding.FragmentCallBinding
-import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.demoappinsdk.viewmodel.CallsViewModel
-import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
 import cc.cans.canscloud.sdk.utils.PermissionHelper
