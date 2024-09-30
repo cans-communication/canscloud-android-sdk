@@ -25,7 +25,8 @@
 -keepnames class cc.cans.canscloud.sdk.CansCenter { *; }
 
 -keepnames class cc.cans.canscloud.sdk.core.CorePreferences { *; }
--keepnames class cc.cans.canscloud.sdk.core.CoreContextSDK { *; }
+-keep class cc.cans.canscloud.sdk.core.CoreContextSDK$Companion { *; }
+-keep class cc.cans.canscloud.sdk.core.CoreContextSDK { *; }
 
 # Keep all fields and methods in the companion object
 #-keepclassmembers class cc.cans.canscloud.sdk.core.CoreContextSDK$Companion {
