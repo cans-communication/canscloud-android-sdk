@@ -23,6 +23,29 @@
 #-keepclasseswithmembernames class * {
 #    native <methods>;
 #}
+#-keepnames class ** { *; }
 
--keepnames class ** { *; }
+#-keep class cc.cans.canscloud.sdk.Cans$Companion {
+#  public void config(android.content.Context, java.lang.String);
+#}
+#
+#-keep class cc.cans.canscloud.sdk.Cans {
+#    public static *;
+#}
+
+#-keepclassmembers class cc.cans.canscloud.sdk.Cans { *;}
+#
+#-keep class cc.cans.canscloud.sdk.callback.CansListenerStub { *; }
+#-keep class cc.cans.canscloud.sdk.compatibility.*{*;}
+#
+#-keep class cc.cans.canscloud.sdk.core.CoreContextSDK { *;}
+#-keep class cc.cans.canscloud.sdk.core.CorePreferences { *;}
+#-keep class cc.cans.canscloud.sdk.models.*{ *;}
+#-keep class cc.cans.canscloud.sdk.telecom.*{ *;}
+#-keep class cc.cans.canscloud.sdk.utils.*{ *;}
+#
+
+
+
+
 
