@@ -33,8 +33,15 @@
 #    public static *;
 #}
 
--keep class cc.cans.canscloud.sdk.Cans { *;}
--keep class cc.cans.canscloud.sdk.CansCenter { *;}
+# Keep the interface and all its methods/properties
+-keep interface cc.cans.canscloud.sdk.Cans {
+    *;
+}
+
+# Keep the class that implements the interface and all its methods/properties
+-keep class cc.cans.canscloud.sdk.CansCenter implements cc.cans.canscloud.sdk.Cans {
+    *;
+}
 
 #
 #-keep class cc.cans.canscloud.sdk.callback.CansListenerStub { *; }
