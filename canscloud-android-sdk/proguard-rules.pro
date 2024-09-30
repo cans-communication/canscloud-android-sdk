@@ -33,7 +33,9 @@
 #    public static *;
 #}
 
-#-keepclassmembers class cc.cans.canscloud.sdk.Cans { *;}
+-keep class cc.cans.canscloud.sdk.Cans { *;}
+-keep class cc.cans.canscloud.sdk.CansCenter { *;}
+
 #
 #-keep class cc.cans.canscloud.sdk.callback.CansListenerStub { *; }
 #-keep class cc.cans.canscloud.sdk.compatibility.*{*;}
