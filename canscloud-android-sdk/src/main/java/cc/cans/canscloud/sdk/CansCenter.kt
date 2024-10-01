@@ -1,9 +1,13 @@
 package cc.cans.canscloud.sdk
 
 import android.annotation.SuppressLint
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Vibrator
 import android.widget.Toast
 import androidx.core.app.NotificationManagerCompat
@@ -24,16 +28,43 @@ import org.linphone.core.ProxyConfig
 import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import android.util.Log
+import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
+import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
+import cc.cans.canscloud.sdk.utils.ImageUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
+import org.linphone.core.Friend
 import org.linphone.core.LogCollectionState
 import org.linphone.core.LogLevel
 import org.linphone.core.tools.compatibility.DeviceUtils
+
+data class Notifiable(val notificationId: Int) {
+    val messages: ArrayList<NotifiableMessage> = arrayListOf()
+
+    var isGroup: Boolean = false
+    var groupTitle: String? = null
+    var localIdentity: String? = null
+    var myself: String? = null
+    var remoteAddress: String? = null
+}
+
+data class NotifiableMessage(
+    var message: String,
+    val friend: Friend?,
+    val sender: String,
+    val time: Long,
+    val senderAvatar: Bitmap? = null,
+    var filePath: Uri? = null,
+    var fileMime: String? = null,
+    val isOutgoing: Boolean = false,
+)
 
 class CansCenter : Cans {
     override lateinit var core: Core
     override lateinit var callCans: Call
     override lateinit var mVibrator: Vibrator
+
     var appName: String? = null
 
     @SuppressLint("StaticFieldLeak")
@@ -250,8 +281,22 @@ class CansCenter : Cans {
         context: Context,
         notificationManager: NotificationManagerCompat,
     ) {
+        createServiceChannel(context, notificationManager)
         createMissedCallChannel(context, notificationManager)
         createIncomingCallChannel(context, notificationManager)
+    }
+
+    private fun createServiceChannel(context: Context, notificationManager: NotificationManagerCompat) {
+        // Create service notification channel
+        val id = context.getString(R.string.notification_channel_service_id)
+        val name = context.getString(R.string.notification_channel_service_name)
+        val description = context.getString(R.string.notification_channel_service_name)
+        val channel = NotificationChannel(id, name, NotificationManager.IMPORTANCE_LOW)
+        channel.description = description
+        channel.enableVibration(false)
+        channel.enableLights(false)
+        channel.setShowBadge(false)
+        notificationManager.createNotificationChannel(channel)
     }
 
     private fun createMissedCallChannel(

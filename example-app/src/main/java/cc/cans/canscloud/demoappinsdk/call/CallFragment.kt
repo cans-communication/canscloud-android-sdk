@@ -46,7 +46,7 @@ class CallFragment : Fragment() {
             ViewModelProvider(this)[CallsViewModel::class.java]
         }
 
-        binding.textViewPhoneNumber.text = cansCenter().destinationUsername
+//        binding.textViewPhoneNumber.text = cansCenter().destinationUsername
 
         callsViewModel.isCallEnd.observe(viewLifecycleOwner) {
             requireActivity().finish()

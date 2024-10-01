@@ -1,0 +1,780 @@
+# compiler: R8
+# compiler_version: 8.6.17
+# common_typos_disable
+# {"id":"com.android.tools.r8.mapping","version":"2.2"}
+# pg_map_id: 53fd927
+# pg_map_hash: SHA-256 53fd9279b4703535c5679d131e625a89540bace4b9aa5e2d71776f5bae07a6c1
+cc.cans.canscloud.sdk.BuildConfig -> cc.cans.canscloud.sdk.BuildConfig:
+# {"id":"sourceFile","fileName":"BuildConfig.java"}
+    1:1:void <init>():6:6 -> <init>
+cc.cans.canscloud.sdk.Cans -> cc.cans.canscloud.sdk.Cans:
+# {"id":"sourceFile","fileName":"Cans.kt"}
+cc.cans.canscloud.sdk.CansCenter -> cc.cans.canscloud.sdk.CansCenter:
+# {"id":"sourceFile","fileName":"CansCenter.kt"}
+    java.lang.String appName -> a
+    kotlin.Lazy notificationManager$delegate -> b
+    java.util.List listeners -> c
+    cc.cans.canscloud.sdk.CansCenter$coreListenerStub$1 coreListenerStub -> d
+    1:95:void <init>():33:127 -> <init>
+    1:11:void createIncomingCallChannel(android.content.Context,androidx.core.app.NotificationManagerCompat):278:288 -> a
+    12:18:void answerCall(org.linphone.core.Call):395:401 -> a
+    19:26:void forceEarpieceAudioRoute():428:435 -> a
+    1:1:java.util.List access$getListeners$p(cc.cans.canscloud.sdk.CansCenter):33:33 -> access$getListeners$p
+    1:1:void access$vibrator(cc.cans.canscloud.sdk.CansCenter):33:33 -> access$vibrator
+    1:1:void addListener(cc.cans.canscloud.sdk.callback.CansListenerStub):469:469 -> addListener
+    1:1:androidx.core.app.NotificationManagerCompat getNotificationManager():45:45 -> b
+    2:12:void createMissedCallChannel(android.content.Context,androidx.core.app.NotificationManagerCompat):261:271 -> b
+    1:2:void createNotificationChannels(android.content.Context,androidx.core.app.NotificationManagerCompat):253:254 -> c
+    3:4:void vibrator():451:452 -> c
+    1:22:void config(android.content.Context,java.lang.String):218:239 -> config
+    23:23:androidx.core.app.NotificationManagerCompat getNotificationManager():45:45 -> config
+    23:23:void config(android.content.Context,java.lang.String):240 -> config
+    24:25:void createNotificationChannels(android.content.Context,androidx.core.app.NotificationManagerCompat):253:254 -> config
+    24:25:void config(android.content.Context,java.lang.String):240 -> config
+    26:29:void config(android.content.Context,java.lang.String):242:245 -> config
+    1:3:void forceBluetoothAudioRoute():445:447 -> forceBluetoothAudioRoute
+    1:3:void forceSpeakerAudioRoute():439:441 -> forceSpeakerAudioRoute
+    1:4:java.lang.String getAccount():53:56 -> getAccount
+    1:1:java.lang.String getAppName():37:37 -> getAppName
+    1:1:org.linphone.core.Call getCallCans():35:35 -> getCallCans
+    1:1:android.content.Context getContext():43:43 -> getContext
+    1:1:org.linphone.core.Core getCore():34:34 -> getCore
+    1:1:cc.cans.canscloud.sdk.core.CorePreferences getCorePreferences():40:40 -> getCorePreferences
+    1:2:int getCountCalls():107:108 -> getCountCalls
+    1:1:java.lang.String getDestinationRemoteAddress():86:86 -> getDestinationRemoteAddress
+    1:1:java.lang.String getDestinationUsername():91:91 -> getDestinationUsername
+    1:4:java.lang.String getDomain():70:73 -> getDomain
+    1:1:java.lang.Integer getDurationTime():96:96 -> getDurationTime
+    1:1:android.os.Vibrator getMVibrator():36:36 -> getMVibrator
+    1:1:int getMissedCallsCount():102:102 -> getMissedCallsCount
+    1:4:java.lang.String getPort():78:81 -> getPort
+    1:4:java.lang.String getUsername():61:64 -> getUsername
+    1:1:boolean isBluetoothState():124:124 -> isBluetoothState
+    1:6:boolean isCallLogMissed():458:463 -> isCallLogMissed
+    1:1:boolean isMicState():114:114 -> isMicState
+    1:1:boolean isSpeakerState():119:119 -> isSpeakerState
+    1:31:void register(java.lang.String,java.lang.String,java.lang.String,java.lang.String,cc.cans.canscloud.sdk.models.CansTransport):298:328 -> register
+    1:145:void removeAccount():333:477 -> removeAccount
+    146:146:void removeAccount():342:342 -> removeAccount
+    1:1:void removeListener(cc.cans.canscloud.sdk.callback.CansListenerStub):473:473 -> removeListener
+    1:1:void setAppName(java.lang.String):37:37 -> setAppName
+    1:1:void setCallCans(org.linphone.core.Call):35:35 -> setCallCans
+    1:1:void setContext(android.content.Context):43:43 -> setContext
+    1:1:void setCore(org.linphone.core.Core):34:34 -> setCore
+    1:1:void setCorePreferences(cc.cans.canscloud.sdk.core.CorePreferences):40:40 -> setCorePreferences
+    1:1:void setMVibrator(android.os.Vibrator):36:36 -> setMVibrator
+    1:10:void startAnswerCall():382:391 -> startAnswerCall
+    1:20:void startCall(java.lang.String):347:366 -> startCall
+    1:8:void terminateCall():371:378 -> terminateCall
+    1:11:void toggleMuteMicrophone():413:423 -> toggleMuteMicrophone
+    1:4:void toggleSpeaker():405:408 -> toggleSpeaker
+cc.cans.canscloud.sdk.CansCenter$coreListenerStub$1 -> cc.cans.canscloud.sdk.CansCenter$coreListenerStub$1:
+# {"id":"sourceFile","fileName":"CansCenter.kt"}
+    cc.cans.canscloud.sdk.CansCenter this$0 -> a
+    1:1:void <init>(cc.cans.canscloud.sdk.CansCenter):127:127 -> <init>
+    1:298:void onAudioDeviceChanged(org.linphone.core.Core,org.linphone.core.AudioDevice):204:501 -> onAudioDeviceChanged
+    299:299:void onAudioDeviceChanged(org.linphone.core.Core,org.linphone.core.AudioDevice):204:204 -> onAudioDeviceChanged
+    1:296:void onAudioDevicesListUpdated(org.linphone.core.Core):208:503 -> onAudioDevicesListUpdated
+    297:297:void onAudioDevicesListUpdated(org.linphone.core.Core):209:209 -> onAudioDevicesListUpdated
+    1:348:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):150:497 -> onCallStateChanged
+    349:349:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):188:188 -> onCallStateChanged
+    350:661:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):184:495 -> onCallStateChanged
+    662:662:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):184:184 -> onCallStateChanged
+    663:976:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):180:493 -> onCallStateChanged
+    977:977:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):180:180 -> onCallStateChanged
+    978:1293:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):176:491 -> onCallStateChanged
+    1294:1294:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):176:176 -> onCallStateChanged
+    1295:1612:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):172:489 -> onCallStateChanged
+    1613:1613:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):172:172 -> onCallStateChanged
+    1614:1933:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):168:487 -> onCallStateChanged
+    1934:1934:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):168:168 -> onCallStateChanged
+    1935:2256:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):164:485 -> onCallStateChanged
+    2257:2257:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):164:164 -> onCallStateChanged
+    2258:2581:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):160:483 -> onCallStateChanged
+    2582:2582:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):160:160 -> onCallStateChanged
+    2583:2909:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):155:481 -> onCallStateChanged
+    2910:2910:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):156:156 -> onCallStateChanged
+    1:306:void onLastCallEnded(org.linphone.core.Core):194:499 -> onLastCallEnded
+    307:307:void onLastCallEnded(org.linphone.core.Core):200:200 -> onLastCallEnded
+    1:344:void onRegistrationStateChanged(org.linphone.core.Core,org.linphone.core.ProxyConfig,org.linphone.core.RegistrationState,java.lang.String):134:477 -> onRegistrationStateChanged
+    345:688:void onRegistrationStateChanged(org.linphone.core.Core,org.linphone.core.ProxyConfig,org.linphone.core.RegistrationState,java.lang.String):136:479 -> onRegistrationStateChanged
+    689:689:void onRegistrationStateChanged(org.linphone.core.Core,org.linphone.core.ProxyConfig,org.linphone.core.RegistrationState,java.lang.String):138:138 -> onRegistrationStateChanged
+cc.cans.canscloud.sdk.CansCenter$coreListenerStub$1$WhenMappings -> cc.cans.canscloud.sdk.CansCenter$coreListenerStub$1$WhenMappings:
+# {"id":"sourceFile","fileName":"CansCenter.kt"}
+cc.cans.canscloud.sdk.CansCenter$notificationManager$2 -> cc.cans.canscloud.sdk.CansCenter$notificationManager$2:
+# {"id":"sourceFile","fileName":"CansCenter.kt"}
+    cc.cans.canscloud.sdk.CansCenter this$0 -> a
+    1:1:java.lang.Object invoke():45:45 -> invoke
+    2:2:androidx.core.app.NotificationManagerCompat invoke():46:46 -> invoke
+cc.cans.canscloud.sdk.call.CansCallActivity -> cc.cans.canscloud.sdk.call.CansCallActivity:
+# {"id":"sourceFile","fileName":"CansCallActivity.kt"}
+    cc.cans.canscloud.sdk.databinding.ActivityCansCallBinding binding -> a
+    1:1:void <init>():7:7 -> <init>
+    1:1:void onCreate$lambda$0(cc.cans.canscloud.sdk.call.CansCallActivity,android.view.View):25:25 -> a
+    1:12:void onCreate(android.os.Bundle):12:23 -> onCreate
+cc.cans.canscloud.sdk.call.CansCallFragment -> cc.cans.canscloud.sdk.call.CansCallFragment:
+# {"id":"sourceFile","fileName":"CansCallFragment.kt"}
+    1:1:void <init>():16:16 -> <init>
+    1:1:void onCreate(android.os.Bundle):19:19 -> onCreate
+    1:1:android.view.View onCreateView(android.view.LayoutInflater,android.view.ViewGroup,android.os.Bundle):27:27 -> onCreateView
+cc.cans.canscloud.sdk.callback.CansListenerStub -> cc.cans.canscloud.sdk.callback.CansListenerStub:
+# {"id":"sourceFile","fileName":"CansListenerStub.kt"}
+cc.cans.canscloud.sdk.callback.CansListenerStub$DefaultImpls -> cc.cans.canscloud.sdk.callback.CansListenerStub$DefaultImpls:
+# {"id":"sourceFile","fileName":"CansListenerStub.kt"}
+    1:1:void onCallState$default(cc.cans.canscloud.sdk.callback.CansListenerStub,cc.cans.canscloud.sdk.models.CallState,java.lang.String,int,java.lang.Object):11:11 -> onCallState$default
+    1:1:void onRegistration$default(cc.cans.canscloud.sdk.callback.CansListenerStub,cc.cans.canscloud.sdk.models.RegisterState,java.lang.String,int,java.lang.Object):9:9 -> onRegistration$default
+cc.cans.canscloud.sdk.compatibility.Api23Compatibility -> cc.cans.canscloud.sdk.compatibility.Api23Compatibility:
+# {"id":"sourceFile","fileName":"Api23Compatibility.kt"}
+    1:1:void <init>():30:30 -> <init>
+cc.cans.canscloud.sdk.compatibility.Api23Compatibility$Companion -> cc.cans.canscloud.sdk.compatibility.Api23Compatibility$Companion:
+# {"id":"sourceFile","fileName":"Api23Compatibility.kt"}
+    1:1:void <init>(kotlin.jvm.internal.DefaultConstructorMarker):0:0 -> <init>
+    2:2:void <init>():31:31 -> <init>
+    1:1:boolean hasPermission(android.content.Context,java.lang.String):34:34 -> hasPermission
+    1:1:void requestReadPhoneStatePermission(androidx.fragment.app.Fragment,int):38:38 -> requestReadPhoneStatePermission
+cc.cans.canscloud.sdk.compatibility.Api26Compatibility -> cc.cans.canscloud.sdk.compatibility.Api26Compatibility:
+# {"id":"sourceFile","fileName":"Api26Compatibility.kt"}
+    1:1:void <init>():31:31 -> <init>
+cc.cans.canscloud.sdk.compatibility.Api26Compatibility$Companion -> cc.cans.canscloud.sdk.compatibility.Api26Compatibility$Companion:
+# {"id":"sourceFile","fileName":"Api26Compatibility.kt"}
+    1:1:void <init>(kotlin.jvm.internal.DefaultConstructorMarker):0:0 -> <init>
+    2:2:void <init>():32:32 -> <init>
+    1:12:boolean changeAudioRouteForTelecomManager(cc.cans.canscloud.sdk.telecom.NativeCallWrapper,int):35:46 -> changeAudioRouteForTelecomManager
+    1:2:boolean hasTelecomManagerFeature(android.content.Context):76:76 -> hasTelecomManagerFeature
+    1:2:boolean hasTelecomManagerPermission(android.content.Context):71:72 -> hasTelecomManagerPermission
+    1:1:void requestTelecomManagerPermission(android.app.Activity,int):54:54 -> requestTelecomManagerPermission
+    2:2:void requestTelecomManagerPermission(android.app.Activity,int):51:51 -> requestTelecomManagerPermission
+    1:1:void requestTelecomManagerPermissionFragment(androidx.fragment.app.Fragment,int):64:64 -> requestTelecomManagerPermissionFragment
+    2:2:void requestTelecomManagerPermissionFragment(androidx.fragment.app.Fragment,int):61:61 -> requestTelecomManagerPermissionFragment
+cc.cans.canscloud.sdk.compatibility.Api29Compatibility -> cc.cans.canscloud.sdk.compatibility.Api29Compatibility:
+# {"id":"sourceFile","fileName":"Api29Compatibility.kt"}
+    1:1:void <init>():29:29 -> <init>
+cc.cans.canscloud.sdk.compatibility.Api29Compatibility$Companion -> cc.cans.canscloud.sdk.compatibility.Api29Compatibility$Companion:
+# {"id":"sourceFile","fileName":"Api29Compatibility.kt"}
+    1:1:void <init>(kotlin.jvm.internal.DefaultConstructorMarker):0:0 -> <init>
+    2:2:void <init>():31:31 -> <init>
+    1:5:boolean hasReadPhoneStatePermission(android.content.Context):39:43 -> hasReadPhoneStatePermission
+    1:2:boolean hasTelecomManagerPermission(android.content.Context):34:35 -> hasTelecomManagerPermission
+cc.cans.canscloud.sdk.compatibility.Api30Compatibility -> cc.cans.canscloud.sdk.compatibility.Api30Compatibility:
+# {"id":"sourceFile","fileName":"Api30Compatibility.kt"}
+    1:1:void <init>():31:31 -> <init>
+cc.cans.canscloud.sdk.compatibility.Api30Compatibility$Companion -> cc.cans.canscloud.sdk.compatibility.Api30Compatibility$Companion:
+# {"id":"sourceFile","fileName":"Api30Compatibility.kt"}
+    1:1:void <init>(kotlin.jvm.internal.DefaultConstructorMarker):0:0 -> <init>
+    2:2:void <init>():33:33 -> <init>
+    1:5:boolean hasReadPhoneNumbersPermission(android.content.Context):36:40 -> hasReadPhoneNumbersPermission
+    1:3:boolean hasTelecomManagerPermission(android.content.Context):72:74 -> hasTelecomManagerPermission
+    1:1:void requestReadPhoneNumbersPermission(androidx.fragment.app.Fragment,int):46:46 -> requestReadPhoneNumbersPermission
+    1:1:void requestTelecomManagerPermission(android.app.Activity,int):54:54 -> requestTelecomManagerPermission
+    2:2:void requestTelecomManagerPermission(android.app.Activity,int):50:50 -> requestTelecomManagerPermission
+    1:1:void requestTelecomManagerPermissionFragment(androidx.fragment.app.Fragment,int):65:65 -> requestTelecomManagerPermissionFragment
+    2:2:void requestTelecomManagerPermissionFragment(androidx.fragment.app.Fragment,int):61:61 -> requestTelecomManagerPermissionFragment
+cc.cans.canscloud.sdk.compatibility.Api31Compatibility -> cc.cans.canscloud.sdk.compatibility.Api31Compatibility:
+# {"id":"sourceFile","fileName":"Api31Compatibility.kt"}
+    1:1:void <init>():27:27 -> <init>
+cc.cans.canscloud.sdk.compatibility.Api31Compatibility$Companion -> cc.cans.canscloud.sdk.compatibility.Api31Compatibility$Companion:
+# {"id":"sourceFile","fileName":"Api31Compatibility.kt"}
+    1:1:void <init>(kotlin.jvm.internal.DefaultConstructorMarker):0:0 -> <init>
+    2:2:void <init>():29:29 -> <init>
+    1:1:boolean hasBluetoothConnectPermission(android.content.Context):32:32 -> hasBluetoothConnectPermission
+cc.cans.canscloud.sdk.compatibility.Api33Compatibility -> cc.cans.canscloud.sdk.compatibility.Api33Compatibility:
+# {"id":"sourceFile","fileName":"Api33Compatibility.kt"}
+    1:1:void <init>():31:31 -> <init>
+cc.cans.canscloud.sdk.compatibility.Api33Compatibility$Companion -> cc.cans.canscloud.sdk.compatibility.Api33Compatibility$Companion:
+# {"id":"sourceFile","fileName":"Api33Compatibility.kt"}
+    1:1:void <init>(kotlin.jvm.internal.DefaultConstructorMarker):0:0 -> <init>
+    2:2:void <init>():33:33 -> <init>
+    1:1:boolean hasPostNotificationsPermission(android.content.Context):54:54 -> hasPostNotificationsPermission
+    1:1:boolean hasTelecomManagerFeature(android.content.Context):58:58 -> hasTelecomManagerFeature
+    1:1:void requestPostNotificationsPermission(android.app.Activity,int):38:38 -> requestPostNotificationsPermission
+    2:2:void requestPostNotificationsPermission(android.app.Activity,int):36:36 -> requestPostNotificationsPermission
+    3:3:void requestPostNotificationsPermission(androidx.fragment.app.Fragment,int):47:47 -> requestPostNotificationsPermission
+    4:4:void requestPostNotificationsPermission(androidx.fragment.app.Fragment,int):45:45 -> requestPostNotificationsPermission
+cc.cans.canscloud.sdk.compatibility.Api34Compatibility -> cc.cans.canscloud.sdk.compatibility.Api34Compatibility:
+# {"id":"sourceFile","fileName":"Api34Compatibility.kt"}
+    1:1:void <init>():31:31 -> <init>
+cc.cans.canscloud.sdk.compatibility.Api34Compatibility$Companion -> cc.cans.canscloud.sdk.compatibility.Api34Compatibility$Companion:
+# {"id":"sourceFile","fileName":"Api34Compatibility.kt"}
+    1:1:void <init>(kotlin.jvm.internal.DefaultConstructorMarker):0:0 -> <init>
+    2:2:void <init>():33:33 -> <init>
+    1:3:boolean hasFullScreenIntentPermission(android.content.Context):36:38 -> hasFullScreenIntentPermission
+    1:6:void requestFullScreenIntentPermission(android.content.Context):42:47 -> requestFullScreenIntentPermission
+cc.cans.canscloud.sdk.compatibility.Compatibility -> cc.cans.canscloud.sdk.compatibility.Compatibility:
+# {"id":"sourceFile","fileName":"Compatibility.kt"}
+    1:1:void <init>():31:31 -> <init>
+    1:1:void requestPostNotificationsPermission(android.app.Activity,int):0:0 -> requestPostNotificationsPermission
+    2:2:void requestPostNotificationsPermission(androidx.fragment.app.Fragment,int):0:0 -> requestPostNotificationsPermission
+cc.cans.canscloud.sdk.compatibility.Compatibility$Companion -> cc.cans.canscloud.sdk.compatibility.Compatibility$Companion:
+# {"id":"sourceFile","fileName":"Compatibility.kt"}
+    1:1:void <init>(kotlin.jvm.internal.DefaultConstructorMarker):0:0 -> <init>
+    2:2:void <init>():33:33 -> <init>
+    1:2:boolean changeAudioRouteForTelecomManager(cc.cans.canscloud.sdk.telecom.NativeCallWrapper,int):153:154 -> changeAudioRouteForTelecomManager
+    1:4:cc.cans.canscloud.sdk.compatibility.PhoneStateInterface createPhoneListener(android.telephony.TelephonyManager):144:147 -> createPhoneListener
+    1:2:boolean hasBluetoothConnectPermission(android.content.Context):119:120 -> hasBluetoothConnectPermission
+    1:2:boolean hasFullScreenIntentPermission(android.content.Context):127:128 -> hasFullScreenIntentPermission
+    1:3:boolean hasPermission(android.content.Context,java.lang.String):39:41 -> hasPermission
+    1:2:boolean hasPostNotificationsPermission(android.content.Context):110:111 -> hasPostNotificationsPermission
+    1:4:boolean hasReadPhoneStateOrNumbersPermission(android.content.Context):48:51 -> hasReadPhoneStateOrNumbersPermission
+    1:4:boolean hasTelecomManagerFeature(android.content.Context):86:89 -> hasTelecomManagerFeature
+    1:4:boolean hasTelecomManagerPermissions(android.content.Context):57:60 -> hasTelecomManagerPermissions
+    1:2:boolean requestFullScreenIntentPermission(android.content.Context):135:136 -> requestFullScreenIntentPermission
+    1:2:void requestPostNotificationsPermission(android.app.Activity,int):96:97 -> requestPostNotificationsPermission
+    3:4:void requestPostNotificationsPermission(androidx.fragment.app.Fragment,int):103:104 -> requestPostNotificationsPermission
+    1:4:void requestTelecomManagerPermissions(android.app.Activity,int):68:71 -> requestTelecomManagerPermissions
+    1:4:void requestTelecomManagerPermissionsFragment(androidx.fragment.app.Fragment,int):77:80 -> requestTelecomManagerPermissionsFragment
+cc.cans.canscloud.sdk.compatibility.PhoneStateInterface -> cc.cans.canscloud.sdk.compatibility.PhoneStateInterface:
+# {"id":"sourceFile","fileName":"PhoneStateInterface.kt"}
+cc.cans.canscloud.sdk.compatibility.PhoneStateListener -> cc.cans.canscloud.sdk.compatibility.PhoneStateListener:
+# {"id":"sourceFile","fileName":"PhoneStateListener.kt"}
+    android.telephony.TelephonyManager telephonyManager -> a
+    boolean gsmCallActive -> b
+    cc.cans.canscloud.sdk.compatibility.PhoneStateListener$phoneStateListener$1 phoneStateListener -> c
+    1:28:void <init>(android.telephony.TelephonyManager):26:53 -> <init>
+    1:1:void access$setGsmCallActive$p(cc.cans.canscloud.sdk.compatibility.PhoneStateListener,boolean):26:26 -> access$setGsmCallActive$p
+    1:2:void destroy():57:58 -> destroy
+    1:1:boolean isInCall():62:62 -> isInCall
+cc.cans.canscloud.sdk.compatibility.PhoneStateListener$phoneStateListener$1 -> cc.cans.canscloud.sdk.compatibility.PhoneStateListener$phoneStateListener$1:
+# {"id":"sourceFile","fileName":"PhoneStateListener.kt"}
+    cc.cans.canscloud.sdk.compatibility.PhoneStateListener this$0 -> a
+    1:1:void <init>(cc.cans.canscloud.sdk.compatibility.PhoneStateListener):28:28 -> <init>
+    1:15:void onCallStateChanged(int,java.lang.String):30:44 -> onCallStateChanged
+    16:24:void onCallStateChanged(int,java.lang.String):32:40 -> onCallStateChanged
+    25:25:void onCallStateChanged(int,java.lang.String):30:30 -> onCallStateChanged
+cc.cans.canscloud.sdk.compatibility.TelephonyListener -> cc.cans.canscloud.sdk.compatibility.TelephonyListener:
+# {"id":"sourceFile","fileName":"TelephonyListener.kt"}
+    android.telephony.TelephonyManager telephonyManager -> a
+    boolean gsmCallActive -> b
+    cc.cans.canscloud.sdk.compatibility.TelephonyListener$TelephonyListener telephonyListener -> c
+    1:38:void <init>(android.telephony.TelephonyManager):30:67 -> <init>
+    1:2:java.util.concurrent.Executor runOnUiThreadExecutor():35:36 -> a
+    3:3:void runOnUiThreadExecutor$lambda$0(android.os.Handler,java.lang.Runnable):37:37 -> a
+    1:1:void access$setGsmCallActive$p(cc.cans.canscloud.sdk.compatibility.TelephonyListener,boolean):30:30 -> access$setGsmCallActive$p
+    1:2:void destroy():71:72 -> destroy
+    1:1:boolean isInCall():76:76 -> isInCall
+cc.cans.canscloud.sdk.compatibility.TelephonyListener$TelephonyListener -> cc.cans.canscloud.sdk.compatibility.TelephonyListener$TelephonyListener:
+# {"id":"sourceFile","fileName":"TelephonyListener.kt"}
+    cc.cans.canscloud.sdk.compatibility.TelephonyListener this$0 -> a
+    1:1:void <init>(cc.cans.canscloud.sdk.compatibility.TelephonyListener):41:41 -> <init>
+    1:15:void onCallStateChanged(int):43:57 -> onCallStateChanged
+    16:24:void onCallStateChanged(int):45:53 -> onCallStateChanged
+    25:25:void onCallStateChanged(int):43:43 -> onCallStateChanged
+cc.cans.canscloud.sdk.core.CoreContextSDK -> cc.cans.canscloud.sdk.core.CoreContextSDK:
+# {"id":"sourceFile","fileName":"CoreContextSDK.kt"}
+    android.content.Context context -> a
+    androidx.lifecycle.LifecycleRegistry _lifecycleRegistry -> b
+    androidx.lifecycle.ViewModelStore _viewModelStore -> c
+    cc.cans.canscloud.sdk.compatibility.PhoneStateInterface phoneStateListener -> d
+    boolean stopped -> e
+    cc.cans.canscloud.sdk.models.CallState previousCallState -> f
+    kotlinx.coroutines.CoroutineScope coroutineScope -> g
+    org.linphone.core.LoggingService loggingService -> h
+    cc.cans.canscloud.sdk.core.CoreContextSDK$listener$1 listener -> i
+    cc.cans.canscloud.sdk.core.CoreContextSDK$loggingServiceListener$1 loggingServiceListener -> j
+    cc.cans.canscloud.sdk.Cans cans -> k
+    1:1:void <clinit>():40:40 -> <clinit>
+    1:109:void <init>(android.content.Context):34:142 -> <init>
+    1:51:void configureCore():200:250 -> a
+    1:1:cc.cans.canscloud.sdk.Cans access$getCans$cp():34:34 -> access$getCans$cp
+    1:1:cc.cans.canscloud.sdk.models.CallState access$getPreviousCallState$p(cc.cans.canscloud.sdk.core.CoreContextSDK):34:34 -> access$getPreviousCallState$p
+    1:1:void access$setPreviousCallState$p(cc.cans.canscloud.sdk.core.CoreContextSDK,cc.cans.canscloud.sdk.models.CallState):34:34 -> access$setPreviousCallState$p
+    1:6:void initUserCertificates():254:259 -> b
+    1:20:boolean declineCallDueToGsmActiveCall():279:298 -> declineCallDueToGsmActiveCall
+    1:1:android.content.Context getContext():35:35 -> getContext
+    1:1:androidx.lifecycle.Lifecycle getLifecycle():50:50 -> getLifecycle
+    1:1:boolean getStopped():57:57 -> getStopped
+    1:1:androidx.lifecycle.ViewModelStore getViewModelStore():54:54 -> getViewModelStore
+    1:4:void initPhoneStateListener():264:267 -> initPhoneStateListener
+    5:13:void initPhoneStateListener():266:274 -> initPhoneStateListener
+    1:1:void setStopped(boolean):57:57 -> setStopped
+    1:11:void start():147:157 -> start
+    12:30:void start():156:174 -> start
+    1:19:void stop():178:196 -> stop
+cc.cans.canscloud.sdk.core.CoreContextSDK$Companion -> cc.cans.canscloud.sdk.core.CoreContextSDK$Companion:
+# {"id":"sourceFile","fileName":"CoreContextSDK.kt"}
+    1:1:void <init>(kotlin.jvm.internal.DefaultConstructorMarker):0:0 -> <init>
+    2:2:void <init>():38:38 -> <init>
+    1:1:cc.cans.canscloud.sdk.Cans cansCenter():44:44 -> cansCenter
+cc.cans.canscloud.sdk.core.CoreContextSDK$listener$1 -> cc.cans.canscloud.sdk.core.CoreContextSDK$listener$1:
+# {"id":"sourceFile","fileName":"CoreContextSDK.kt"}
+    cc.cans.canscloud.sdk.core.CoreContextSDK this$0 -> a
+    1:1:void <init>(cc.cans.canscloud.sdk.core.CoreContextSDK):63:63 -> <init>
+    1:1:void onAudioDeviceChanged():111:111 -> onAudioDeviceChanged
+    1:1:void onAudioDevicesListUpdated():115:115 -> onAudioDevicesListUpdated
+    1:22:void onCallState(cc.cans.canscloud.sdk.models.CallState,java.lang.String):73:94 -> onCallState
+    23:24:void onCallState(cc.cans.canscloud.sdk.models.CallState,java.lang.String):84:85 -> onCallState
+    25:51:void onCallState(cc.cans.canscloud.sdk.models.CallState,java.lang.String):77:103 -> onCallState
+    1:1:void onLastCallEnded():107:107 -> onLastCallEnded
+    1:1:void onRegistration(cc.cans.canscloud.sdk.models.RegisterState,java.lang.String):65:65 -> onRegistration
+    1:1:void onUnRegister():69:69 -> onUnRegister
+cc.cans.canscloud.sdk.core.CoreContextSDK$listener$1$WhenMappings -> cc.cans.canscloud.sdk.core.CoreContextSDK$listener$1$WhenMappings:
+# {"id":"sourceFile","fileName":"CoreContextSDK.kt"}
+cc.cans.canscloud.sdk.core.CoreContextSDK$loggingServiceListener$1 -> cc.cans.canscloud.sdk.core.CoreContextSDK$loggingServiceListener$1:
+# {"id":"sourceFile","fileName":"CoreContextSDK.kt"}
+    1:1:void <init>():119:119 -> <init>
+    1:7:void onLogMessageWritten(org.linphone.core.LoggingService,java.lang.String,org.linphone.core.LogLevel,java.lang.String):126:132 -> onLogMessageWritten
+    8:8:void onLogMessageWritten(org.linphone.core.LoggingService,java.lang.String,org.linphone.core.LogLevel,java.lang.String):131:131 -> onLogMessageWritten
+    9:9:void onLogMessageWritten(org.linphone.core.LoggingService,java.lang.String,org.linphone.core.LogLevel,java.lang.String):130:130 -> onLogMessageWritten
+    10:10:void onLogMessageWritten(org.linphone.core.LoggingService,java.lang.String,org.linphone.core.LogLevel,java.lang.String):129:129 -> onLogMessageWritten
+    11:11:void onLogMessageWritten(org.linphone.core.LoggingService,java.lang.String,org.linphone.core.LogLevel,java.lang.String):128:128 -> onLogMessageWritten
+cc.cans.canscloud.sdk.core.CoreContextSDK$loggingServiceListener$1$WhenMappings -> cc.cans.canscloud.sdk.core.CoreContextSDK$loggingServiceListener$1$WhenMappings:
+# {"id":"sourceFile","fileName":"CoreContextSDK.kt"}
+cc.cans.canscloud.sdk.core.CorePreferences -> cc.cans.canscloud.sdk.core.CorePreferences:
+# {"id":"sourceFile","fileName":"CorePreferences.kt"}
+    android.content.Context context -> a
+    org.linphone.core.Config _config -> b
+    android.content.SharedPreferences encryptedSharedPreferences -> c
+    java.lang.String encryptedSharedPreferencesFile -> d
+    1:19:void <init>(android.content.Context):16:34 -> <init>
+    20:29:void <init>(android.content.Context):32:41 -> <init>
+    30:38:void <init>(android.content.Context):36:44 -> <init>
+    39:39:void <init>(android.content.Context):31:31 -> <init>
+    1:1:boolean getDarkModeAllowed():438:438 -> a
+    2:2:void copy$default(cc.cans.canscloud.sdk.core.CorePreferences,java.lang.String,java.lang.String,boolean,int,java.lang.Object):654:654 -> a
+    3:6:void copy(java.lang.String,java.lang.String,boolean):655:658 -> a
+    7:25:void copy(java.lang.String,java.lang.String,boolean):657:675 -> a
+    1:1:void move$default(cc.cans.canscloud.sdk.core.CorePreferences,java.lang.String,java.lang.String,boolean,int,java.lang.Object):678:678 -> b
+    2:8:void move(java.lang.String,java.lang.String,boolean):679:685 -> b
+    9:30:void move(java.lang.String,java.lang.String,boolean):683:704 -> b
+    31:39:void move(java.lang.String,java.lang.String,boolean):702:710 -> b
+    40:40:void move(java.lang.String,java.lang.String,boolean):708:708 -> b
+    1:8:void copyAssetsFromPackage():635:642 -> copyAssetsFromPackage
+    9:15:void copyAssetsFromPackage():640:646 -> copyAssetsFromPackage
+    16:16:void copyAssetsFromPackage():644:644 -> copyAssetsFromPackage
+    1:1:boolean getAcceptEarlyMedia():288:288 -> getAcceptEarlyMedia
+    1:1:boolean getAllowDtlsTransport():579:579 -> getAllowDtlsTransport
+    1:1:boolean getAllowMultipleFilesAndTextInSameMessage():449:449 -> getAllowMultipleFilesAndTextInSameMessage
+    1:1:int getAutoAnswerDelay():300:300 -> getAutoAnswerDelay
+    1:1:boolean getAutoAnswerEnabled():294:294 -> getAutoAnswerEnabled
+    1:1:boolean getAutoStart():96:96 -> getAutoStart
+    1:1:boolean getAutomaticallyStartCallRecording():326:326 -> getAutomaticallyStartCallRecording
+    1:1:boolean getCallRightAway():320:320 -> getCallRightAway
+    1:1:boolean getCallWaiting():270:270 -> getCallWaiting
+    1:1:boolean getChatRoomShortcuts():208:208 -> getChatRoomShortcuts
+    1:2:java.lang.String getCheckIfUpdateAvailableUrl():527:527 -> getCheckIfUpdateAvailableUrl
+    6:6:java.lang.String getCheckIfUpdateAvailableUrl():531:531 -> getCheckIfUpdateAvailableUrl
+    1:1:int getCheckUpdateAvailableInterval():534:534 -> getCheckUpdateAvailableInterval
+    1:2:java.lang.String getConferenceServerUri():513:513 -> getConferenceServerUri
+    1:1:org.linphone.core.Config getConfig():19:19 -> getConfig
+    1:1:java.lang.String getConfigPath():611:611 -> getConfigPath
+    1:1:boolean getContactOrganizationVisible():429:429 -> getContactOrganizationVisible
+    1:1:boolean getContactsShortcuts():262:262 -> getContactsShortcuts
+    1:2:int getDarkMode():136:137 -> getDarkMode
+    1:1:boolean getDebugLogs():84:84 -> getDebugLogs
+    1:1:java.lang.String getDebugPopupCode():503:503 -> getDebugPopupCode
+    1:1:java.lang.String getDefaultAccountAvatarPath():416:416 -> getDefaultAccountAvatarPath
+    1:1:java.lang.String getDefaultDomain():497:497 -> getDefaultDomain
+    1:2:java.lang.String getDefaultLimeServerUrl():506:506 -> getDefaultLimeServerUrl
+    1:1:java.lang.String getDefaultRingtonePath():626:626 -> getDefaultRingtonePath
+    1:1:java.lang.String getDefaultRlsUri():500:500 -> getDefaultRlsUri
+    1:1:java.lang.String getDefaultValuesPath():620:620 -> getDefaultValuesPath
+    1:1:int getDelayBeforeShowingContactsSearchSpinner():455:455 -> getDelayBeforeShowingContactsSearchSpinner
+    1:1:java.lang.String getDeviceName():204:204 -> getDeviceName
+    1:1:boolean getDisableChat():467:467 -> getDisableChat
+    1:1:boolean getDisableSecureMode():145:145 -> getDisableSecureMode
+    1:1:boolean getDisplayOrganization():256:256 -> getDisplayOrganization
+    1:1:boolean getDtmfKeypadVibration():446:446 -> getDtmfKeypadVibration
+    1:1:int getEchoCancellerCalibration():494:494 -> getEchoCancellerCalibration
+    1:1:boolean getEnableAnimations():128:128 -> getEnableAnimations
+    1:1:android.content.SharedPreferences getEncryptedSharedPreferences():31:31 -> getEncryptedSharedPreferences
+    1:1:java.lang.String getFactoryConfigPath():614:614 -> getFactoryConfigPath
+    1:1:boolean getFetchContactsFromDefaultDirectory():452:452 -> getFetchContactsFromDefaultDirectory
+    1:1:boolean getFirstStart():376:376 -> getFirstStart
+    1:1:boolean getForcePortrait():116:116 -> getForcePortrait
+    1:1:boolean getFullScreenCallUI():348:348 -> getFullScreenCallUI
+    1:1:boolean getHideCameraPreviewInPipMode():472:472 -> getHideCameraPreviewInPipMode
+    1:1:boolean getHideChatMessageContentInNotification():186:186 -> getHideChatMessageContentInNotification
+    1:1:boolean getHideContactsWithoutPresence():426:426 -> getHideContactsWithoutPresence
+    1:1:boolean getHideEmptyRooms():192:192 -> getHideEmptyRooms
+    1:1:boolean getHideRoomsFromRemovedProxies():198:198 -> getHideRoomsFromRemovedProxies
+    1:1:boolean getHideStaticImageCamera():463:463 -> getHideStaticImageCamera
+    1:1:boolean getHoldToRecordVoiceMessage():220:220 -> getHoldToRecordVoiceMessage
+    1:1:boolean getKeepServiceAlive():102:102 -> getKeepServiceAlive
+    1:1:int getLastUpdateAvailableCheckTimestamp():410:410 -> getLastUpdateAvailableCheckTimestamp
+    1:1:boolean getLimeSecurityPopupEnabled():390:390 -> getLimeSecurityPopupEnabled
+    1:2:java.lang.String getLimeX3dhServerUrl():520:520 -> getLimeX3dhServerUrl
+    1:1:java.lang.String getLinphoneDefaultValuesPath():617:617 -> getLinphoneDefaultValuesPath
+    1:1:boolean getLogcatLogsOutput():90:90 -> getLogcatLogsOutput
+    1:1:boolean getMakePublicMediaFilesDownloaded():174:174 -> getMakePublicMediaFilesDownloaded
+    1:1:boolean getManuallyDisabledTelecomManager():342:342 -> getManuallyDisabledTelecomManager
+    1:1:boolean getMarkAsReadUponChatMessageNotificationDismissal():167:167 -> getMarkAsReadUponChatMessageNotificationDismissal
+    1:1:boolean getPauseCallsWhenAudioFocusIsLost():368:368 -> getPauseCallsWhenAudioFocusIsLost
+    1:1:boolean getPreferNormalizedPhoneNumbersFromAddressBook():460:460 -> getPreferNormalizedPhoneNumbersFromAddressBook
+    1:1:boolean getPreventInterfaceFromShowingUp():476:476 -> getPreventInterfaceFromShowingUp
+    1:1:boolean getPreventMoreThanOneFilePerMessage():161:161 -> getPreventMoreThanOneFilePerMessage
+    1:1:boolean getReadAndAgreeTermsAndPrivacy():108:108 -> getReadAndAgreeTermsAndPrivacy
+    1:1:boolean getRedirectDeclinedCallToVoiceMail():404:404 -> getRedirectDeclinedCallToVoiceMail
+    1:1:boolean getReplaceSipUriByUsername():122:122 -> getReplaceSipUriByUsername
+    1:1:java.lang.String getRingtonesPath():623:623 -> getRingtonesPath
+    1:1:boolean getRouteAudioToBluetoothIfAvailable():354:354 -> getRouteAudioToBluetoothIfAvailable
+    1:1:boolean getRouteAudioToSpeakerWhenVideoIsEnabled():361:361 -> getRouteAudioToSpeakerWhenVideoIsEnabled
+    1:1:boolean getSendEarlyMedia():282:282 -> getSendEarlyMedia
+    1:1:boolean getSendVoiceRecordingRightAway():224:224 -> getSendVoiceRecordingRightAway
+    1:1:boolean getShowAboutInSideMenu():571:571 -> getShowAboutInSideMenu
+    1:1:boolean getShowAccountSettings():582:582 -> getShowAccountSettings
+    1:1:boolean getShowAccountsInSideMenu():559:559 -> getShowAccountsInSideMenu
+    1:1:boolean getShowAdvancedSettings():606:606 -> getShowAdvancedSettings
+    1:1:boolean getShowAllRingtones():489:489 -> getShowAllRingtones
+    1:1:boolean getShowAssistantInSideMenu():562:562 -> getShowAssistantInSideMenu
+    1:1:boolean getShowAudioSettings():588:588 -> getShowAudioSettings
+    1:1:boolean getShowBorderOnBigContactAvatar():435:435 -> getShowBorderOnBigContactAvatar
+    1:1:boolean getShowBorderOnContactAvatar():432:432 -> getShowBorderOnContactAvatar
+    1:1:boolean getShowCallOverlay():307:307 -> getShowCallOverlay
+    1:1:boolean getShowCallSettings():594:594 -> getShowCallSettings
+    1:1:boolean getShowChatSettings():597:597 -> getShowChatSettings
+    1:1:boolean getShowContactsSettings():603:603 -> getShowContactsSettings
+    1:1:boolean getShowCreateAccount():539:539 -> getShowCreateAccount
+    1:1:boolean getShowGenericLogin():545:545 -> getShowGenericLogin
+    1:1:boolean getShowLinphoneLogin():542:542 -> getShowLinphoneLogin
+    1:1:boolean getShowNetworkSettings():600:600 -> getShowNetworkSettings
+    1:1:boolean getShowNewContactAccountDialog():250:250 -> getShowNewContactAccountDialog
+    1:1:boolean getShowQuitInSideMenu():574:574 -> getShowQuitInSideMenu
+    1:1:boolean getShowRecordingsInSideMenu():568:568 -> getShowRecordingsInSideMenu
+    1:1:boolean getShowRemoteProvisioning():548:548 -> getShowRemoteProvisioning
+    1:1:boolean getShowScreenshotButton():443:443 -> getShowScreenshotButton
+    1:1:boolean getShowSettingsInSideMenu():565:565 -> getShowSettingsInSideMenu
+    1:1:boolean getShowTunnelSettings():585:585 -> getShowTunnelSettings
+    1:1:boolean getShowVideoSettings():591:591 -> getShowVideoSettings
+    1:1:java.lang.String getStaticPicturePath():632:632 -> getStaticPicturePath
+    1:1:boolean getStorePresenceInNativeContact():244:244 -> getStorePresenceInNativeContact
+    1:1:java.lang.String getString(int):651:651 -> getString
+    1:1:boolean getSystemWideCallOverlay():314:314 -> getSystemWideCallOverlay
+    1:1:boolean getUseEphemeralPerDeviceMode():484:484 -> getUseEphemeralPerDeviceMode
+    1:1:boolean getUseInAppFileViewerForNonEncryptedFiles():180:180 -> getUseInAppFileViewerForNonEncryptedFiles
+    1:1:boolean getUseTelecomManager():333:333 -> getUseTelecomManager
+    1:1:java.lang.String getUserCertificatesPath():629:629 -> getUserCertificatesPath
+    1:1:boolean getVfsEnabled():49:49 -> getVfsEnabled
+    1:1:boolean getVideoPreview():155:155 -> getVideoPreview
+    1:1:java.lang.String getVoiceMailUri():398:398 -> getVoiceMailUri
+    1:1:boolean getVoiceMessagesFormatMkv():481:481 -> getVoiceMessagesFormatMkv
+    1:1:int getVoiceRecordingMaxDuration():216:216 -> getVoiceRecordingMaxDuration
+    1:1:java.lang.String getXmlRpcServerUrl():382:382 -> getXmlRpcServerUrl
+    1:1:boolean isBatterySetting():76:76 -> isBatterySetting
+    1:1:boolean isFirstAskedNotifications():236:236 -> isFirstAskedNotifications
+    1:1:boolean isFirstAskedPhoneCall():230:230 -> isFirstAskedPhoneCall
+    1:1:boolean isFirstCallWaiting():276:276 -> isFirstCallWaiting
+    1:1:boolean isOpenBatterySettingOS():70:70 -> isOpenBatterySettingOS
+    1:1:boolean isRegister():551:551 -> isRegister
+    1:1:void setAcceptEarlyMedia(boolean):290:290 -> setAcceptEarlyMedia
+    1:1:void setAutoAnswerDelay(int):302:302 -> setAutoAnswerDelay
+    1:1:void setAutoAnswerEnabled(boolean):296:296 -> setAutoAnswerEnabled
+    1:1:void setAutoStart(boolean):98:98 -> setAutoStart
+    1:1:void setAutomaticallyStartCallRecording(boolean):328:328 -> setAutomaticallyStartCallRecording
+    1:1:void setBatterySetting(boolean):78:78 -> setBatterySetting
+    1:1:void setCallRightAway(boolean):322:322 -> setCallRightAway
+    1:1:void setCallWaiting(boolean):272:272 -> setCallWaiting
+    1:1:void setChatRoomShortcuts(boolean):210:210 -> setChatRoomShortcuts
+    1:1:void setConfig(org.linphone.core.Config):21:21 -> setConfig
+    1:1:void setContactsShortcuts(boolean):264:264 -> setContactsShortcuts
+    1:1:void setDarkMode(int):140:140 -> setDarkMode
+    1:1:void setDebugLogs(boolean):86:86 -> setDebugLogs
+    1:1:void setDefaultAccountAvatarPath(java.lang.String):418:418 -> setDefaultAccountAvatarPath
+    1:1:void setDeviceName(java.lang.String):205:205 -> setDeviceName
+    1:1:void setDisableSecureMode(boolean):147:147 -> setDisableSecureMode
+    1:1:void setDisplayOrganization(boolean):258:258 -> setDisplayOrganization
+    1:1:void setEnableAnimations(boolean):130:130 -> setEnableAnimations
+    1:1:void setFirstAskedNotifications(boolean):238:238 -> setFirstAskedNotifications
+    1:1:void setFirstAskedPhoneCall(boolean):232:232 -> setFirstAskedPhoneCall
+    1:1:void setFirstCallWaiting(boolean):278:278 -> setFirstCallWaiting
+    1:1:void setFirstStart(boolean):378:378 -> setFirstStart
+    1:1:void setForcePortrait(boolean):118:118 -> setForcePortrait
+    1:1:void setFullScreenCallUI(boolean):350:350 -> setFullScreenCallUI
+    1:1:void setHideChatMessageContentInNotification(boolean):188:188 -> setHideChatMessageContentInNotification
+    1:1:void setHideEmptyRooms(boolean):194:194 -> setHideEmptyRooms
+    1:1:void setHideRoomsFromRemovedProxies(boolean):200:200 -> setHideRoomsFromRemovedProxies
+    1:1:void setHoldToRecordVoiceMessage(boolean):221:221 -> setHoldToRecordVoiceMessage
+    1:1:void setKeepServiceAlive(boolean):104:104 -> setKeepServiceAlive
+    1:1:void setLastUpdateAvailableCheckTimestamp(int):412:412 -> setLastUpdateAvailableCheckTimestamp
+    1:1:void setLimeSecurityPopupEnabled(boolean):392:392 -> setLimeSecurityPopupEnabled
+    1:1:void setLogcatLogsOutput(boolean):92:92 -> setLogcatLogsOutput
+    1:1:void setMakePublicMediaFilesDownloaded(boolean):176:176 -> setMakePublicMediaFilesDownloaded
+    1:1:void setManuallyDisabledTelecomManager(boolean):344:344 -> setManuallyDisabledTelecomManager
+    1:1:void setMarkAsReadUponChatMessageNotificationDismissal(boolean):169:169 -> setMarkAsReadUponChatMessageNotificationDismissal
+    1:1:void setOpenBatterySettingOS(boolean):72:72 -> setOpenBatterySettingOS
+    1:1:void setPauseCallsWhenAudioFocusIsLost(boolean):370:370 -> setPauseCallsWhenAudioFocusIsLost
+    1:1:void setPreventMoreThanOneFilePerMessage(boolean):163:163 -> setPreventMoreThanOneFilePerMessage
+    1:1:void setReadAndAgreeTermsAndPrivacy(boolean):110:110 -> setReadAndAgreeTermsAndPrivacy
+    1:1:void setRedirectDeclinedCallToVoiceMail(boolean):406:406 -> setRedirectDeclinedCallToVoiceMail
+    1:1:void setRegister(boolean):553:553 -> setRegister
+    1:1:void setReplaceSipUriByUsername(boolean):124:124 -> setReplaceSipUriByUsername
+    1:1:void setRouteAudioToBluetoothIfAvailable(boolean):356:356 -> setRouteAudioToBluetoothIfAvailable
+    1:1:void setRouteAudioToSpeakerWhenVideoIsEnabled(boolean):363:363 -> setRouteAudioToSpeakerWhenVideoIsEnabled
+    1:1:void setSendEarlyMedia(boolean):284:284 -> setSendEarlyMedia
+    1:1:void setSendVoiceRecordingRightAway(boolean):225:225 -> setSendVoiceRecordingRightAway
+    1:1:void setShowCallOverlay(boolean):309:309 -> setShowCallOverlay
+    1:1:void setShowNewContactAccountDialog(boolean):252:252 -> setShowNewContactAccountDialog
+    1:1:void setStorePresenceInNativeContact(boolean):246:246 -> setStorePresenceInNativeContact
+    1:1:void setSystemWideCallOverlay(boolean):316:316 -> setSystemWideCallOverlay
+    1:1:void setUseInAppFileViewerForNonEncryptedFiles(boolean):182:182 -> setUseInAppFileViewerForNonEncryptedFiles
+    1:3:void setUseTelecomManager(boolean):335:337 -> setUseTelecomManager
+    1:12:void setVfsEnabled(boolean):51:62 -> setVfsEnabled
+    1:1:void setVideoPreview(boolean):156:156 -> setVideoPreview
+    1:1:void setVoiceMailUri(java.lang.String):400:400 -> setVoiceMailUri
+    1:1:void setVoiceRecordingMaxDuration(int):217:217 -> setVoiceRecordingMaxDuration
+    1:1:void setXmlRpcServerUrl(java.lang.String):384:384 -> setXmlRpcServerUrl
+cc.cans.canscloud.sdk.core.CorePreferences$Companion -> cc.cans.canscloud.sdk.core.CorePreferences$Companion:
+# {"id":"sourceFile","fileName":"CorePreferences.kt"}
+    1:1:void <init>(kotlin.jvm.internal.DefaultConstructorMarker):0:0 -> <init>
+    2:2:void <init>():24:24 -> <init>
+cc.cans.canscloud.sdk.databinding.ActivityCallBinding -> cc.cans.canscloud.sdk.databinding.ActivityCallBinding:
+# {"id":"sourceFile","fileName":"ActivityCallBinding.java"}
+    androidx.constraintlayout.widget.ConstraintLayout rootView -> a
+    1:3:void <init>(androidx.constraintlayout.widget.ConstraintLayout,android.widget.FrameLayout):26:28 -> <init>
+    1:10:cc.cans.canscloud.sdk.databinding.ActivityCallBinding bind(android.view.View):58:67 -> bind
+    1:1:android.view.View getRoot():18:18 -> getRoot
+    2:2:androidx.constraintlayout.widget.ConstraintLayout getRoot():34:34 -> getRoot
+    1:1:cc.cans.canscloud.sdk.databinding.ActivityCallBinding inflate(android.view.LayoutInflater):39:39 -> inflate
+    2:6:cc.cans.canscloud.sdk.databinding.ActivityCallBinding inflate(android.view.LayoutInflater,android.view.ViewGroup,boolean):45:49 -> inflate
+cc.cans.canscloud.sdk.databinding.ActivityCansCallBinding -> cc.cans.canscloud.sdk.databinding.ActivityCansCallBinding:
+# {"id":"sourceFile","fileName":"ActivityCansCallBinding.java"}
+    android.widget.LinearLayout rootView -> a
+    1:6:void <init>(android.widget.LinearLayout,android.widget.ImageButton,android.widget.Button,android.widget.Button,android.widget.TextView):38:43 -> <init>
+    1:29:cc.cans.canscloud.sdk.databinding.ActivityCansCallBinding bind(android.view.View):73:101 -> bind
+    1:1:android.view.View getRoot():20:20 -> getRoot
+    2:2:android.widget.LinearLayout getRoot():49:49 -> getRoot
+    1:1:cc.cans.canscloud.sdk.databinding.ActivityCansCallBinding inflate(android.view.LayoutInflater):54:54 -> inflate
+    2:6:cc.cans.canscloud.sdk.databinding.ActivityCansCallBinding inflate(android.view.LayoutInflater,android.view.ViewGroup,boolean):60:64 -> inflate
+cc.cans.canscloud.sdk.databinding.FragmentCansCallBinding -> cc.cans.canscloud.sdk.databinding.FragmentCansCallBinding:
+# {"id":"sourceFile","fileName":"FragmentCansCallBinding.java"}
+    android.widget.FrameLayout rootView -> a
+    1:2:void <init>(android.widget.FrameLayout):19:20 -> <init>
+    1:1:cc.cans.canscloud.sdk.databinding.FragmentCansCallBinding bind(android.view.View):50:50 -> bind
+    2:2:cc.cans.canscloud.sdk.databinding.FragmentCansCallBinding bind(android.view.View):47:47 -> bind
+    1:1:android.view.View getRoot():15:15 -> getRoot
+    2:2:android.widget.FrameLayout getRoot():26:26 -> getRoot
+    1:1:cc.cans.canscloud.sdk.databinding.FragmentCansCallBinding inflate(android.view.LayoutInflater):31:31 -> inflate
+    2:6:cc.cans.canscloud.sdk.databinding.FragmentCansCallBinding inflate(android.view.LayoutInflater,android.view.ViewGroup,boolean):37:41 -> inflate
+cc.cans.canscloud.sdk.models.AudioState -> cc.cans.canscloud.sdk.models.AudioState:
+# {"id":"sourceFile","fileName":"AudioState.kt"}
+    cc.cans.canscloud.sdk.models.AudioState[] $VALUES -> a
+    kotlin.enums.EnumEntries $ENTRIES -> b
+    1:3:void <clinit>():4:6 -> <clinit>
+    4:4:cc.cans.canscloud.sdk.models.AudioState[] $values():0:0 -> <clinit>
+    4:4:void <clinit>():6 -> <clinit>
+    5:5:void <clinit>():6:6 -> <clinit>
+    1:1:void <init>(java.lang.String,int):3:3 -> <init>
+    cc.cans.canscloud.sdk.models.AudioState[] $values() -> a
+cc.cans.canscloud.sdk.models.CallState -> cc.cans.canscloud.sdk.models.CallState:
+# {"id":"sourceFile","fileName":"CallState.kt"}
+    cc.cans.canscloud.sdk.models.CallState[] $VALUES -> a
+    kotlin.enums.EnumEntries $ENTRIES -> b
+    1:10:void <clinit>():4:13 -> <clinit>
+    1:1:void <init>(java.lang.String,int):3:3 -> <init>
+    cc.cans.canscloud.sdk.models.CallState[] $values() -> a
+cc.cans.canscloud.sdk.models.CansTransport -> cc.cans.canscloud.sdk.models.CansTransport:
+# {"id":"sourceFile","fileName":"CansTransport.kt"}
+    cc.cans.canscloud.sdk.models.CansTransport[] $VALUES -> a
+    kotlin.enums.EnumEntries $ENTRIES -> b
+    1:3:void <clinit>():4:6 -> <clinit>
+    4:4:cc.cans.canscloud.sdk.models.CansTransport[] $values():0:0 -> <clinit>
+    4:4:void <clinit>():6 -> <clinit>
+    5:5:void <clinit>():6:6 -> <clinit>
+    1:1:void <init>(java.lang.String,int):3:3 -> <init>
+    cc.cans.canscloud.sdk.models.CansTransport[] $values() -> a
+cc.cans.canscloud.sdk.models.RegisterState -> cc.cans.canscloud.sdk.models.RegisterState:
+# {"id":"sourceFile","fileName":"RegisterState.kt"}
+    cc.cans.canscloud.sdk.models.RegisterState[] $VALUES -> a
+    kotlin.enums.EnumEntries $ENTRIES -> b
+    1:2:void <clinit>():4:5 -> <clinit>
+    3:3:cc.cans.canscloud.sdk.models.RegisterState[] $values():0:0 -> <clinit>
+    3:3:void <clinit>():5 -> <clinit>
+    4:4:void <clinit>():5:5 -> <clinit>
+    1:1:void <init>(java.lang.String,int):3:3 -> <init>
+    cc.cans.canscloud.sdk.models.RegisterState[] $values() -> a
+cc.cans.canscloud.sdk.telecom.NativeCallWrapper -> cc.cans.canscloud.sdk.telecom.NativeCallWrapper:
+# {"id":"sourceFile","fileName":"NativeCallWrapper.kt"}
+    java.lang.String callId -> a
+    1:9:void <init>(java.lang.String):36:44 -> <init>
+    10:10:void <init>(java.lang.String):41:41 -> <init>
+    1:1:org.linphone.core.Call getCall():113:113 -> a
+    1:4:void selfDestroy():117:120 -> b
+    1:1:java.lang.String getCallId():36:36 -> getCallId
+    1:2:void onAbort():98:99 -> onAbort
+    1:2:void onAnswer(int):54:55 -> onAnswer
+    1:10:void onCallAudioStateChanged(android.telecom.CallAudioState):71:80 -> onCallAudioStateChanged
+    11:11:void onCallAudioStateChanged(android.telecom.CallAudioState):79:79 -> onCallAudioStateChanged
+    12:18:void onCallAudioStateChanged(android.telecom.CallAudioState):77:83 -> onCallAudioStateChanged
+    1:2:void onDisconnect():93:94 -> onDisconnect
+    1:3:void onHold():59:61 -> onHold
+    1:2:void onPlayDtmfTone(char):88:89 -> onPlayDtmfTone
+    1:2:void onReject():103:104 -> onReject
+    1:2:void onSilence():108:109 -> onSilence
+    1:2:void onStateChanged(int):49:50 -> onStateChanged
+    1:3:void onUnhold():65:67 -> onUnhold
+    1:1:void setCallId(java.lang.String):36:36 -> setCallId
+cc.cans.canscloud.sdk.telecom.TelecomConnectionService -> cc.cans.canscloud.sdk.telecom.TelecomConnectionService:
+# {"id":"sourceFile","fileName":"TelecomConnectionService.kt"}
+    java.lang.String TAG -> a
+    org.linphone.core.CoreListenerStub listener -> b
+    1:3:void <init>():34:36 -> <init>
+    1:9:void onCallConnected(org.linphone.core.Call):212:220 -> a
+    1:1:void access$onCallConnected(cc.cans.canscloud.sdk.telecom.TelecomConnectionService,org.linphone.core.Call):33:33 -> access$onCallConnected
+    1:1:void access$onCallEnded(cc.cans.canscloud.sdk.telecom.TelecomConnectionService,org.linphone.core.Call):33:33 -> access$onCallEnded
+    1:1:void access$onCallError(cc.cans.canscloud.sdk.telecom.TelecomConnectionService,org.linphone.core.Call):33:33 -> access$onCallError
+    1:12:void onCallEnded(org.linphone.core.Call):197:208 -> b
+    1:10:void onCallError(org.linphone.core.Call):184:193 -> c
+    1:1:java.lang.String getTAG():35:35 -> getTAG
+    1:4:void onCreate():76:79 -> onCreate
+    1:36:android.telecom.Connection onCreateIncomingConnection(android.telecom.PhoneAccountHandle,android.telecom.ConnectionRequest):142:177 -> onCreateIncomingConnection
+    37:37:android.telecom.Connection onCreateIncomingConnection(android.telecom.PhoneAccountHandle,android.telecom.ConnectionRequest):175:175 -> onCreateIncomingConnection
+    38:38:android.telecom.Connection onCreateIncomingConnection(android.telecom.PhoneAccountHandle,android.telecom.ConnectionRequest):174:174 -> onCreateIncomingConnection
+    39:39:android.telecom.Connection onCreateIncomingConnection(android.telecom.PhoneAccountHandle,android.telecom.ConnectionRequest):172:172 -> onCreateIncomingConnection
+    1:40:android.telecom.Connection onCreateOutgoingConnection(android.telecom.PhoneAccountHandle,android.telecom.ConnectionRequest):93:132 -> onCreateOutgoingConnection
+    41:41:android.telecom.Connection onCreateOutgoingConnection(android.telecom.PhoneAccountHandle,android.telecom.ConnectionRequest):130:130 -> onCreateOutgoingConnection
+    42:42:android.telecom.Connection onCreateOutgoingConnection(android.telecom.PhoneAccountHandle,android.telecom.ConnectionRequest):129:129 -> onCreateOutgoingConnection
+    43:43:android.telecom.Connection onCreateOutgoingConnection(android.telecom.PhoneAccountHandle,android.telecom.ConnectionRequest):127:127 -> onCreateOutgoingConnection
+    1:4:boolean onUnbind(android.content.Intent):83:86 -> onUnbind
+cc.cans.canscloud.sdk.telecom.TelecomConnectionService$listener$1 -> cc.cans.canscloud.sdk.telecom.TelecomConnectionService$listener$1:
+# {"id":"sourceFile","fileName":"TelecomConnectionService.kt"}
+    cc.cans.canscloud.sdk.telecom.TelecomConnectionService this$0 -> a
+    1:1:void <init>(cc.cans.canscloud.sdk.telecom.TelecomConnectionService):36:36 -> <init>
+    1:15:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):43:57 -> onCallStateChanged
+    16:16:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):55:55 -> onCallStateChanged
+    17:17:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):54:54 -> onCallStateChanged
+    18:18:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):53:53 -> onCallStateChanged
+    19:22:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):46:49 -> onCallStateChanged
+    1:7:void onLastCallEnded(org.linphone.core.Core):63:69 -> onLastCallEnded
+cc.cans.canscloud.sdk.telecom.TelecomConnectionService$listener$1$WhenMappings -> cc.cans.canscloud.sdk.telecom.TelecomConnectionService$listener$1$WhenMappings:
+# {"id":"sourceFile","fileName":"TelecomConnectionService.kt"}
+cc.cans.canscloud.sdk.telecom.TelecomHelper -> cc.cans.canscloud.sdk.telecom.TelecomHelper:
+# {"id":"sourceFile","fileName":"TelecomHelper.kt"}
+    android.telecom.TelecomManager telecomManager -> a
+    android.telecom.PhoneAccount account -> b
+    java.util.ArrayList connections -> c
+    org.linphone.core.CoreListenerStub listener -> d
+    cc.cans.canscloud.sdk.utils.SingletonHolder holder -> e
+    1:1:void <clinit>():44:44 -> <clinit>
+    1:1:void <init>(android.content.Context,kotlin.jvm.internal.DefaultConstructorMarker):0:0 -> <init>
+    2:41:void <init>(android.content.Context):42:81 -> <init>
+    1:3:android.telecom.PhoneAccount createAccount(android.content.Context):150:152 -> a
+    4:27:android.telecom.PhoneAccount createAccount(android.content.Context):150:173 -> a
+    28:28:android.telecom.PhoneAccount createAccount(android.content.Context):161:161 -> a
+    29:37:void onIncomingCall(org.linphone.core.Call):177:185 -> a
+    38:38:void onIncomingCall(org.linphone.core.Call):180:180 -> a
+    1:1:cc.cans.canscloud.sdk.utils.SingletonHolder access$getHolder$cp():42:42 -> access$getHolder$cp
+    1:1:void access$onIncomingCall(cc.cans.canscloud.sdk.telecom.TelecomHelper,org.linphone.core.Call):42:42 -> access$onIncomingCall
+    1:1:void access$onOutgoingCall(cc.cans.canscloud.sdk.telecom.TelecomHelper,org.linphone.core.Call):42:42 -> access$onOutgoingCall
+    1:4:android.telecom.PhoneAccount initPhoneAccount(android.content.Context):141:144 -> b
+    5:13:void onOutgoingCall(org.linphone.core.Call):191:199 -> b
+    14:14:void onOutgoingCall(org.linphone.core.Call):194:194 -> b
+    1:7:android.os.Bundle prepareBundle(org.linphone.core.Call):204:210 -> c
+    8:17:android.os.Bundle prepareBundle(org.linphone.core.Call):208:217 -> c
+    1:2:void destroy():85:86 -> destroy
+    1:2:cc.cans.canscloud.sdk.telecom.NativeCallWrapper findConnectionForCallId(java.lang.String):135:136 -> findConnectionForCallId
+    3:3:cc.cans.canscloud.sdk.telecom.NativeCallWrapper findConnectionForCallId(java.lang.String):135:135 -> findConnectionForCallId
+    1:19:android.telecom.PhoneAccount findExistingAccount(android.content.Context):111:129 -> findExistingAccount
+    1:1:java.util.ArrayList getConnections():56:56 -> getConnections
+    1:2:boolean isAccountEnabled():104:105 -> isAccountEnabled
+    1:2:boolean isInManagedCall():98:99 -> isInManagedCall
+    1:2:boolean isIncomingCallPermitted():90:91 -> isIncomingCallPermitted
+cc.cans.canscloud.sdk.telecom.TelecomHelper$Companion -> cc.cans.canscloud.sdk.telecom.TelecomHelper$Companion:
+# {"id":"sourceFile","fileName":"TelecomHelper.kt"}
+    1:1:void <init>(kotlin.jvm.internal.DefaultConstructorMarker):0:0 -> <init>
+    2:2:void <init>():43:43 -> <init>
+    1:1:cc.cans.canscloud.sdk.utils.SingletonHolder singletonHolder():48:48 -> singletonHolder
+cc.cans.canscloud.sdk.telecom.TelecomHelper$Companion$holder$1 -> cc.cans.canscloud.sdk.telecom.TelecomHelper$Companion$holder$1:
+# {"id":"sourceFile","fileName":"TelecomHelper.kt"}
+    1:1:cc.cans.canscloud.sdk.telecom.TelecomHelper invoke(android.content.Context):44:44 -> invoke
+    2:2:java.lang.Object invoke(java.lang.Object):44:44 -> invoke
+cc.cans.canscloud.sdk.telecom.TelecomHelper$listener$1 -> cc.cans.canscloud.sdk.telecom.TelecomHelper$listener$1:
+# {"id":"sourceFile","fileName":"TelecomHelper.kt"}
+    cc.cans.canscloud.sdk.telecom.TelecomHelper this$0 -> a
+    1:1:void <init>(cc.cans.canscloud.sdk.telecom.TelecomHelper):58:58 -> <init>
+    1:10:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):65:74 -> onCallStateChanged
+cc.cans.canscloud.sdk.utils.AudioRouteUtils -> cc.cans.canscloud.sdk.utils.AudioRouteUtils:
+# {"id":"sourceFile","fileName":"AudioRouteUtils.kt"}
+    1:1:void <init>():31:31 -> <init>
+cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion -> cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion:
+# {"id":"sourceFile","fileName":"AudioRouteUtils.kt"}
+    1:1:void <init>(kotlin.jvm.internal.DefaultConstructorMarker):0:0 -> <init>
+    2:2:void <init>():32:32 -> <init>
+    1:21:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):39:59 -> applyAudioRouteChange
+    22:32:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):58:68 -> applyAudioRouteChange
+    33:45:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):67:79 -> applyAudioRouteChange
+    46:52:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):78:84 -> applyAudioRouteChange
+    53:61:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):83:91 -> applyAudioRouteChange
+    62:72:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):90:100 -> applyAudioRouteChange
+    73:83:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):99:109 -> applyAudioRouteChange
+    84:90:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):108:114 -> applyAudioRouteChange
+    1:1:void applyAudioRouteChange$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,java.util.List,boolean,int,java.lang.Object):34:34 -> applyAudioRouteChange$default
+    1:15:void changeCaptureDeviceToMatchAudioRoute(org.linphone.core.Call,java.util.List):120:134 -> changeCaptureDeviceToMatchAudioRoute
+    16:18:void changeCaptureDeviceToMatchAudioRoute(org.linphone.core.Call,java.util.List):128:130 -> changeCaptureDeviceToMatchAudioRoute
+    19:21:void changeCaptureDeviceToMatchAudioRoute(org.linphone.core.Call,java.util.List):122:124 -> changeCaptureDeviceToMatchAudioRoute
+    1:6:boolean isBluetoothAudioRecorderAvailable():267:272 -> isBluetoothAudioRecorderAvailable
+    7:7:boolean isBluetoothAudioRecorderAvailable():271:271 -> isBluetoothAudioRecorderAvailable
+    1:6:boolean isBluetoothAudioRouteAvailable():253:258 -> isBluetoothAudioRouteAvailable
+    7:7:boolean isBluetoothAudioRouteAvailable():257:257 -> isBluetoothAudioRouteAvailable
+    1:16:boolean isBluetoothAudioRouteCurrentlyUsed(org.linphone.core.Call):232:247 -> isBluetoothAudioRouteCurrentlyUsed
+    17:20:boolean isBluetoothAudioRouteCurrentlyUsed(org.linphone.core.Call):246:249 -> isBluetoothAudioRouteCurrentlyUsed
+    1:1:boolean isBluetoothAudioRouteCurrentlyUsed$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,int,java.lang.Object):231:231 -> isBluetoothAudioRouteCurrentlyUsed$default
+    1:6:boolean isHeadsetAudioRecorderAvailable():295:300 -> isHeadsetAudioRecorderAvailable
+    7:7:boolean isHeadsetAudioRecorderAvailable():299:299 -> isHeadsetAudioRecorderAvailable
+    1:6:boolean isHeadsetAudioRouteAvailable():281:286 -> isHeadsetAudioRouteAvailable
+    7:7:boolean isHeadsetAudioRouteAvailable():285:285 -> isHeadsetAudioRouteAvailable
+    1:19:boolean isSpeakerAudioRouteCurrentlyUsed(org.linphone.core.Call):208:226 -> isSpeakerAudioRouteCurrentlyUsed
+    20:23:boolean isSpeakerAudioRouteCurrentlyUsed(org.linphone.core.Call):225:228 -> isSpeakerAudioRouteCurrentlyUsed
+    1:1:boolean isSpeakerAudioRouteCurrentlyUsed$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,int,java.lang.Object):207:207 -> isSpeakerAudioRouteCurrentlyUsed$default
+    1:4:void routeAudioTo(org.linphone.core.Call,java.util.List,boolean):144:147 -> routeAudioTo
+    5:9:void routeAudioTo(org.linphone.core.Call,java.util.List,boolean):146:150 -> routeAudioTo
+    10:22:void routeAudioTo(org.linphone.core.Call,java.util.List,boolean):149:161 -> routeAudioTo
+    23:30:void routeAudioTo(org.linphone.core.Call,java.util.List,boolean):160:167 -> routeAudioTo
+    31:44:void routeAudioTo(org.linphone.core.Call,java.util.List,boolean):166:179 -> routeAudioTo
+    1:1:void routeAudioTo$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,java.util.List,boolean,int,java.lang.Object):139:139 -> routeAudioTo$default
+    1:1:void routeAudioToBluetooth(org.linphone.core.Call,boolean):194:194 -> routeAudioToBluetooth
+    2:2:void routeAudioToBluetooth(org.linphone.core.Call,boolean):192:192 -> routeAudioToBluetooth
+    1:1:void routeAudioToBluetooth$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,boolean,int,java.lang.Object):191:191 -> routeAudioToBluetooth$default
+    1:1:void routeAudioToEarpiece(org.linphone.core.Call,boolean):184:184 -> routeAudioToEarpiece
+    1:1:void routeAudioToEarpiece$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,boolean,int,java.lang.Object):183:183 -> routeAudioToEarpiece$default
+    1:1:void routeAudioToHeadset(org.linphone.core.Call,boolean):202:202 -> routeAudioToHeadset
+    2:2:void routeAudioToHeadset(org.linphone.core.Call,boolean):200:200 -> routeAudioToHeadset
+    1:1:void routeAudioToHeadset$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,boolean,int,java.lang.Object):199:199 -> routeAudioToHeadset$default
+    1:1:void routeAudioToSpeaker(org.linphone.core.Call,boolean):188:188 -> routeAudioToSpeaker
+    1:1:void routeAudioToSpeaker$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,boolean,int,java.lang.Object):187:187 -> routeAudioToSpeaker$default
+cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion$WhenMappings -> cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion$WhenMappings:
+# {"id":"sourceFile","fileName":"AudioRouteUtils.kt"}
+cc.cans.canscloud.sdk.utils.CansUtils -> cc.cans.canscloud.sdk.utils.CansUtils:
+# {"id":"sourceFile","fileName":"CansUtils.kt"}
+    1:1:void <init>():12:12 -> <init>
+cc.cans.canscloud.sdk.utils.CansUtils$Companion -> cc.cans.canscloud.sdk.utils.CansUtils$Companion:
+# {"id":"sourceFile","fileName":"CansUtils.kt"}
+    1:1:void <init>(kotlin.jvm.internal.DefaultConstructorMarker):0:0 -> <init>
+    2:2:void <init>():13:13 -> <init>
+    1:4:boolean checkIfNetworkHasLowBandwidth(android.content.Context):18:21 -> checkIfNetworkHasLowBandwidth
+cc.cans.canscloud.sdk.utils.PermissionHelper -> cc.cans.canscloud.sdk.utils.PermissionHelper:
+# {"id":"sourceFile","fileName":"PermissionHelper.kt"}
+    android.content.Context context -> a
+    cc.cans.canscloud.sdk.utils.SingletonHolder holder -> b
+    1:1:void <clinit>():34:34 -> <clinit>
+    1:1:void <init>(android.content.Context):31:31 -> <init>
+    2:2:void <init>(android.content.Context):31:31 -> <init>
+    2:2:void <init>(android.content.Context,kotlin.jvm.internal.DefaultConstructorMarker):0 -> <init>
+    1:6:boolean hasPermission(java.lang.String):43:48 -> a
+    1:1:cc.cans.canscloud.sdk.utils.SingletonHolder access$getHolder$cp():31:31 -> access$getHolder$cp
+    1:1:boolean hasBluetoothConnectPermission():91:91 -> hasBluetoothConnectPermission
+    1:1:boolean hasCameraPermission():79:79 -> hasCameraPermission
+    1:1:boolean hasPostNotificationsPermission():87:87 -> hasPostNotificationsPermission
+    1:1:boolean hasReadContactsPermission():55:55 -> hasReadContactsPermission
+    1:1:boolean hasReadExternalStoragePermission():71:71 -> hasReadExternalStoragePermission
+    1:1:boolean hasReadPhoneStateOrPhoneNumbersPermission():67:67 -> hasReadPhoneStateOrPhoneNumbersPermission
+    1:1:boolean hasReadPhoneStatePermission():63:63 -> hasReadPhoneStatePermission
+    1:1:boolean hasRecordAudioPermission():83:83 -> hasRecordAudioPermission
+    1:1:boolean hasWriteContactsPermission():59:59 -> hasWriteContactsPermission
+    1:1:boolean hasWriteExternalStoragePermission():75:75 -> hasWriteExternalStoragePermission
+cc.cans.canscloud.sdk.utils.PermissionHelper$Companion -> cc.cans.canscloud.sdk.utils.PermissionHelper$Companion:
+# {"id":"sourceFile","fileName":"PermissionHelper.kt"}
+    1:1:void <init>(kotlin.jvm.internal.DefaultConstructorMarker):0:0 -> <init>
+    2:2:void <init>():33:33 -> <init>
+    1:1:cc.cans.canscloud.sdk.utils.SingletonHolder singletonHolder():38:38 -> singletonHolder
+cc.cans.canscloud.sdk.utils.PermissionHelper$Companion$holder$1 -> cc.cans.canscloud.sdk.utils.PermissionHelper$Companion$holder$1:
+# {"id":"sourceFile","fileName":"PermissionHelper.kt"}
+    1:1:cc.cans.canscloud.sdk.utils.PermissionHelper invoke(android.content.Context):34:34 -> invoke
+    2:2:java.lang.Object invoke(java.lang.Object):34:34 -> invoke
+cc.cans.canscloud.sdk.utils.SingletonHolder -> cc.cans.canscloud.sdk.utils.SingletonHolder:
+# {"id":"sourceFile","fileName":"SingletonHolder.kt"}
+    1:2:void <init>(kotlin.jvm.functions.Function1):27:28 -> <init>
+    1:12:java.lang.Object create(java.lang.Object):45:56 -> create
+    13:13:java.lang.Object create(java.lang.Object):50:50 -> create
+    1:1:void destroy():36:36 -> destroy
+    1:1:boolean exists():32:32 -> exists
+    1:1:java.lang.Object get():41:41 -> get
+    1:1:kotlin.jvm.functions.Function1 getCreator():28:28 -> getCreator
+    1:1:java.lang.Object required(java.lang.Object):63:63 -> required

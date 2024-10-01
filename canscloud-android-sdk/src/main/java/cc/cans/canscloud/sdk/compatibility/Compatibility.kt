@@ -22,8 +22,11 @@ package cc.cans.canscloud.sdk.compatibility
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.net.Uri
 import android.telephony.TelephonyManager
 import androidx.annotation.Keep
+import androidx.core.app.NotificationManagerCompat
 import androidx.fragment.app.Fragment
 import cc.cans.canscloud.sdk.telecom.NativeCallWrapper
 import org.linphone.mediastream.Version
@@ -33,6 +36,24 @@ class Compatibility {
     @Keep
     companion object {
         const val BLUETOOTH_CONNECT = "android.permission.BLUETOOTH_CONNECT"
+
+        fun getBitmapFromUri(context: Context, uri: Uri): Bitmap {
+            return if (Version.sdkStrictlyBelow(Version.API29_ANDROID_10)) {
+                Api21Compatibility.getBitmapFromUri(context, uri)
+            } else {
+                Api29Compatibility.getBitmapFromUri(context, uri)
+            }
+        }
+
+        fun getChannelImportance(
+            notificationManager: NotificationManagerCompat,
+            channelId: String,
+        ): Int {
+            if (Version.sdkAboveOrEqual(Version.API26_O_80)) {
+                return Api26Compatibility.getChannelImportance(notificationManager, channelId)
+            }
+            return NotificationManagerCompat.IMPORTANCE_DEFAULT
+        }
 
         @JvmStatic
         fun hasPermission(context: Context, permission: String): Boolean {
