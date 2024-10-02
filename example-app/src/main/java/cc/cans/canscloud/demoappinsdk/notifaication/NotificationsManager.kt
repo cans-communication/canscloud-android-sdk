@@ -29,7 +29,6 @@ class NotificationsManager(private val context: Context) {
         const val INTENT_REMOTE_ADDRESS = "REMOTE_ADDRESS"
         private const val MISSED_CALL_TAG = "Missed call"
         private const val MISSED_CALLS_NOTIF_ID = 2
-        private const val SERVICE_NOTIF_ID = 1
 
     }
     private val callNotificationsMap: HashMap<String, Notifiable> = HashMap()

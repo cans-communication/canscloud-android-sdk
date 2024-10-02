@@ -37,6 +37,7 @@ class Compatibility {
     companion object {
         const val BLUETOOTH_CONNECT = "android.permission.BLUETOOTH_CONNECT"
 
+        @JvmStatic
         fun getBitmapFromUri(context: Context, uri: Uri): Bitmap {
             return if (Version.sdkStrictlyBelow(Version.API29_ANDROID_10)) {
                 Api21Compatibility.getBitmapFromUri(context, uri)
@@ -45,6 +46,7 @@ class Compatibility {
             }
         }
 
+        @JvmStatic
         fun getChannelImportance(
             notificationManager: NotificationManagerCompat,
             channelId: String,

@@ -66,6 +66,7 @@ class CansCenter : Cans {
     override lateinit var core: Core
     override lateinit var callCans: Call
     override lateinit var mVibrator: Vibrator
+    override lateinit var callState: CallState
 
     var appName: String? = null
 
@@ -130,6 +131,12 @@ class CansCenter : Cans {
             return durationTime
         }
 
+    override val startDateCall: Int
+        get() {
+            val startDate = core.currentCall?.callLog?.startDate?.toInt()
+            return startDate ?: 0
+        }
+
     override val missedCallsCount: Int
         get() {
             return core.missedCallsCount
@@ -185,43 +192,42 @@ class CansCenter : Cans {
 
             Log.w("Cansdestination: state: ", "${call.remoteAddress.username}")
 
-
             when (state) {
                 Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> {
                     vibrator()
-                    listeners.forEach { it.onCallState(CallState.IncomingCall) }
+                    setListenerCall(CallState.IncomingCall)
                 }
 
                 Call.State.OutgoingInit -> {
-                    listeners.forEach { it.onCallState(CallState.StartCall) }
+                    setListenerCall(CallState.StartCall)
                 }
 
                 Call.State.OutgoingProgress -> {
-                    listeners.forEach { it.onCallState(CallState.CallOutgoing) }
+                    setListenerCall(CallState.CallOutgoing)
                 }
 
                 Call.State.StreamsRunning -> {
-                    listeners.forEach { it.onCallState(CallState.StreamsRunning) }
+                    setListenerCall(CallState.StreamsRunning)
                 }
 
                 Call.State.Connected -> {
-                    listeners.forEach { it.onCallState(CallState.Connected) }
+                    setListenerCall(CallState.Connected)
                 }
 
                 Call.State.Error -> {
-                    listeners.forEach { it.onCallState(CallState.Error) }
+                    setListenerCall(CallState.Error)
                 }
 
                 Call.State.End -> {
-                    listeners.forEach { it.onCallState(CallState.CallEnd) }
+                    setListenerCall(CallState.CallEnd)
                 }
 
                 Call.State.Released -> {
-                    listeners.forEach { it.onCallState(CallState.MissCall) }
+                    setListenerCall(CallState.MissCall)
                 }
 
                 else -> {
-                    listeners.forEach { it.onCallState(CallState.Unknown) }
+                    setListenerCall(CallState.Unknown)
                 }
             }
         }
@@ -244,6 +250,11 @@ class CansCenter : Cans {
             Log.i("[CansSDK Controls]", "Audio devices list updated")
             listeners.forEach { it.onAudioDevicesListUpdated() }
         }
+    }
+
+    private fun setListenerCall(callState: CallState) {
+        this.callState = callState
+        listeners.forEach { it.onCallState(callState) }
     }
 
     override fun config(
@@ -453,6 +464,14 @@ class CansCenter : Cans {
             params?.isLowBandwidthEnabled = true
         }
         call.acceptWithParams(params)
+    }
+
+    override fun isPauseState() : Boolean {
+        return core.currentCall?.state == Call.State.Paused || core.currentCall?.state == Call.State.Pausing || core.currentCall?.state == Call.State.PausedByRemote
+    }
+
+    override fun isOutgoingState() : Boolean {
+        return core.currentCall?.state == Call.State.OutgoingRinging || core.currentCall?.state == Call.State.OutgoingProgress || core.currentCall?.state == Call.State.OutgoingInit || core.currentCall?.state == Call.State.OutgoingEarlyMedia
     }
 
     override fun toggleSpeaker() {
