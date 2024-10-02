@@ -2,7 +2,6 @@ package cc.cans.canscloud.sdk.core
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.annotation.Keep
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
@@ -21,7 +20,6 @@ class CorePreferences constructor(private val context: Context) {
             _config = value
         }
 
-    @Keep
     companion object {
         const val OVERLAY_CLICK_SENSITIVITY = 10
 

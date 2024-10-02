@@ -22,7 +22,6 @@
 }
 
 
-
 # Keep all annotations
 -keepattributes *Annotation*
 
