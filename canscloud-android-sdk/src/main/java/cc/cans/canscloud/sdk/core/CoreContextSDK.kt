@@ -228,7 +228,7 @@ class CoreContextSDK(
                 if (account.params.conferenceFactoryUri == null) {
                     val params = account.params.clone()
                     val uri = cans.corePreferences.conferenceServerUri
-                    org.linphone.core.tools.Log.i("[Context] Setting conference factory on proxy config ${params.identityAddress?.asString()} to default value: $uri")
+                    Log.i("[Context]", " Setting conference factory on proxy config ${params.identityAddress?.asString()} to default value: $uri")
                     params.conferenceFactoryUri = uri
                     account.params = params
                 }
@@ -238,7 +238,7 @@ class CoreContextSDK(
                     var url: String? = cans.core.limeX3DhServerUrl
                     if (url == null || url.isEmpty()) {
                         url = cans.corePreferences.limeX3dhServerUrl
-                        org.linphone.core.tools.Log.i("[Context] Setting LIME X3Dh server url to default value: $url")
+                        Log.i("[Context]", " Setting LIME X3Dh server url to default value: $url")
                         cans.core.limeX3DhServerUrl = url
                     }
                 }
@@ -247,7 +247,7 @@ class CoreContextSDK(
                 val newParams = account.params.clone()
                 newParams.isCpimInBasicChatRoomEnabled = true
                 account.params = newParams
-                org.linphone.core.tools.Log.i("[Context] CPIM allowed in basic chat rooms for account ${newParams.identityAddress?.asStringUriOnly()}")
+                Log.i("[Context]", " CPIM allowed in basic chat rooms for account ${newParams.identityAddress?.asStringUriOnly()}")
             }
         }
 
@@ -258,7 +258,7 @@ class CoreContextSDK(
         val userCertsPath = cans.corePreferences.userCertificatesPath
         val f = File(userCertsPath)
         if (!f.exists() && !f.mkdir()) {
-            org.linphone.core.tools.Log.e("[Context]", "$userCertsPath can't be created.")
+            Log.i("[Context]", " $userCertsPath can't be created.")
         }
         cans.core.userCertificatesPath = userCertsPath
     }
@@ -405,10 +405,10 @@ class CoreContextSDK(
 
         fun activateVFS() {
             try {
-                org.linphone.core.tools.Log.i("[Context] Activating VFS")
+                Log.i("[Context]", " Activating VFS")
                 val preferences = cansCenter().corePreferences.encryptedSharedPreferences
                 if (preferences == null) {
-                    org.linphone.core.tools.Log.e("[Context] Can't get encrypted SharedPreferences, can't init VFS")
+                    Log.i("[Context]", " Can't get encrypted SharedPreferences, can't init VFS")
                     return
                 }
 
@@ -428,9 +428,9 @@ class CoreContextSDK(
                     32,
                 )
 
-                org.linphone.core.tools.Log.i("[Context] VFS activated")
+                Log.i("[Context]", " VFS activated")
             } catch (e: Exception) {
-                org.linphone.core.tools.Log.f("[Context] Unable to activate VFS encryption: $e")
+                Log.i("[Context]", " Unable to activate VFS encryption: $e")
             }
         }
     }
