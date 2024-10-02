@@ -114,13 +114,12 @@ class CansCenter : Cans {
 
     override val destinationRemoteAddress: String
         get() {
-            return core.currentCall?.remoteAddress?.asStringUriOnly() ?: ""
+            return callCans.remoteAddress.asStringUriOnly() ?: ""
         }
 
     override val destinationUsername: String
         get() {
-            Log.w("Cansdestination: ", destinationUsername)
-            return ""
+            return core.currentCall?.remoteAddress?.username ?: ""
         }
 
     override val durationTime: Int?

@@ -2,7 +2,6 @@ package cc.cans.canscloud.demoappinsdk.notifaication
 
 import android.Manifest
 import android.app.Notification
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -17,14 +16,12 @@ import cc.cans.canscloud.demoappinsdk.call.CallActivity
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.demoappinsdk.call.IncomingActivity
 import cc.cans.canscloud.demoappinsdk.call.OutgoingActivity
-import cc.cans.canscloud.sdk.CansCenter
 import cc.cans.canscloud.sdk.Notifiable
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
 import org.linphone.core.Call
-import org.linphone.core.tools.service.CoreService
 
 class NotificationsManager(private val context: Context) {
 
@@ -36,8 +33,6 @@ class NotificationsManager(private val context: Context) {
 
     }
     private val callNotificationsMap: HashMap<String, Notifiable> = HashMap()
-    private var currentForegroundServiceNotificationId: Int = 0
-    var service: CoreService? = null
 
     private val notificationManager: NotificationManagerCompat by lazy {
         NotificationManagerCompat.from(context)
@@ -65,8 +60,7 @@ class NotificationsManager(private val context: Context) {
                     }
                 }
                 else -> {
-                    dismissCallNotification()
-                    displayCallNotification(context, true)
+                    displayCallNotification(context)
                 }
             }
         }
@@ -95,10 +89,7 @@ class NotificationsManager(private val context: Context) {
 
     fun displayIncomingCallNotification(context: Context) {
         val notifiable = getNotifiableForCall()
-        if (notifiable.notificationId == currentForegroundServiceNotificationId) {
-            cancel(notifiable.notificationId)
-            currentForegroundServiceNotificationId = 0
-        }
+        cancel(notifiable.notificationId)
 
         val incomingCallNotificationIntent = Intent(context, IncomingActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION)
@@ -181,7 +172,7 @@ class NotificationsManager(private val context: Context) {
         notify(MISSED_CALLS_NOTIF_ID, notification, MISSED_CALL_TAG)
     }
 
-    fun displayCallNotification(context: Context, isCallActive: Boolean) {
+    fun displayCallNotification(context: Context) {
         val notifiable = getNotifiableForCall()
 
         val callActivity: Class<*> = when (cansCenter().callCans.state) {
@@ -280,17 +271,6 @@ class NotificationsManager(private val context: Context) {
         }
 
         notify(notifiable.notificationId, builder.build())
-
-//        val coreService = service
-//        if (coreService != null && (currentForegroundServiceNotificationId == 0 || currentForegroundServiceNotificationId == notifiable.notificationId)) {
-//            org.linphone.core.tools.Log.i(
-//                "[Notifications Manager] Notifying call notification for foreground service [${notifiable.notificationId}]",
-//            )
-//            startForeground(notifiable.notificationId, notification, isCallActive)
-//        } else if (coreService != null && currentForegroundServiceNotificationId == SERVICE_NOTIF_ID) {
-//            // To add microphone & camera foreground service use to foreground service if needed
-//            startForeground(coreService)
-//        }
     }
 
     private fun notify(id: Int, notification: Notification, tag: String? = null) {
@@ -321,166 +301,22 @@ class NotificationsManager(private val context: Context) {
     }
 
     fun dismissCallNotification() {
-        cancel(MISSED_CALLS_NOTIF_ID, MISSED_CALL_TAG)
+        val address = cansCenter().destinationRemoteAddress
+        val notifiable: Notifiable? = callNotificationsMap[address]
+        if (notifiable != null) {
+            cancel(notifiable.notificationId)
+            callNotificationsMap.remove(address)
+        } else {
+            Log.w("[Notifications Manager] "," No notification found for call")
+        }
     }
 
     fun dismissMissedCallNotification() {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancel(MISSED_CALL_TAG, MISSED_CALLS_NOTIF_ID)
+        cancel(MISSED_CALLS_NOTIF_ID, MISSED_CALL_TAG)
     }
 
     fun cancel(id: Int, tag: String? = null) {
         Log.i("[Notifications Manager] ","Canceling [$id] with tag [$tag]")
         notificationManager.cancel(tag, id)
     }
-
-
-//    fun startCallForeground(coreService: CoreService) {
-//        service = coreService
-//        when {
-//            currentForegroundServiceNotificationId != 0 -> {
-//                if (currentForegroundServiceNotificationId != SERVICE_NOTIF_ID) {
-//                    org.linphone.core.tools.Log.e(
-//                        "[Notifications Manager] There is already a foreground service notification [$currentForegroundServiceNotificationId]",
-//                    )
-//                } else {
-//                    org.linphone.core.tools.Log.i(
-//                        "[Notifications Manager] There is already a foreground service notification, no need to use the call notification to keep Service alive",
-//                    )
-//                }
-//            }
-//            cansCenter().countCalls > 0 -> {
-//                // When this method will be called, we won't have any notification yet
-//                val call = cansCenter().coreContext.core.currentCall ?: coreContext.core.calls[0]
-//                when (call.state) {
-//                    Call.State.IncomingReceived, Call.State.IncomingEarlyMedia -> {
-//                        org.linphone.core.tools.Log.i(
-//                            "[Notifications Manager] Creating incoming call notification to be used as foreground service",
-//                        )
-//                        displayIncomingCallNotification(call, true)
-//                    }
-//                    else -> {
-//                        org.linphone.core.tools.Log.i(
-//                            "[Notifications Manager] Creating call notification to be used as foreground service",
-//                        )
-//                        displayCallNotification(call, true)
-//                    }
-//                }
-//            }
-//        }
-//    }
-//
-//    private fun startForeground(coreService: CoreService) {
-//        service = coreService
-//
-//        val notification = serviceNotification ?: createServiceNotification(false)
-//        if (notification == null) {
-//            org.linphone.core.tools.Log.e(
-//                "[Notifications Manager] Failed to create service notification, aborting foreground service!",
-//            )
-//            return
-//        }
-//
-//        currentForegroundServiceNotificationId = SERVICE_NOTIF_ID
-//        org.linphone.core.tools.Log.i(
-//            "[Notifications Manager] Starting service as foreground [$currentForegroundServiceNotificationId]",
-//        )
-//
-//        val core = coreContext.core
-//        val isActiveCall = if (core.callsNb > 0) {
-//            val currentCall = core.currentCall ?: core.calls.first()
-//            when (currentCall.state) {
-//                Call.State.IncomingReceived, Call.State.IncomingEarlyMedia, Call.State.OutgoingInit, Call.State.OutgoingProgress, Call.State.OutgoingRinging -> false
-//                else -> true
-//            }
-//        } else {
-//            false
-//        }
-//
-//        Compatibility.startDataSyncForegroundService(
-//            coreService,
-//            currentForegroundServiceNotificationId,
-//            notification,
-//            isActiveCall,
-//        )
-//    }
-//
-//    fun startForegroundToKeepAppAlive(
-//        coreService: CoreService,
-//        useAutoStartDescription: Boolean = true,
-//    ) {
-//        service = coreService
-//
-//        val notification = serviceNotification ?: createServiceNotification(useAutoStartDescription)
-//        if (notification == null) {
-//            org.linphone.core.tools.Log.e(
-//                "[Notifications Manager] Failed to create service notification, aborting foreground service!",
-//            )
-//            return
-//        }
-//
-//        currentForegroundServiceNotificationId = SERVICE_NOTIF_ID
-//        org.linphone.core.tools.Log.i(
-//            "[Notifications Manager] Starting service as foreground [$currentForegroundServiceNotificationId]",
-//        )
-//
-//        Compatibility.startDataSyncForegroundService(
-//            coreService,
-//            currentForegroundServiceNotificationId,
-//            notification,
-//            false,
-//        )
-//    }
-//
-//    private fun startForeground(
-//        notificationId: Int,
-//        callNotification: Notification,
-//        isCallActive: Boolean,
-//    ) {
-//        val coreService = service
-//        if (coreService != null && (currentForegroundServiceNotificationId == 0 || currentForegroundServiceNotificationId == notificationId)) {
-//            org.linphone.core.tools.Log.i(
-//                "[Notifications Manager] Starting service as foreground using call notification [$notificationId]",
-//            )
-//            try {
-//                currentForegroundServiceNotificationId = notificationId
-//
-//                Compatibility.startCallForegroundService(
-//                    coreService,
-//                    currentForegroundServiceNotificationId,
-//                    callNotification,
-//                    isCallActive,
-//                )
-//            } catch (e: Exception) {
-//                org.linphone.core.tools.Log.e("[Notifications Manager] Foreground service wasn't allowed! $e")
-//                currentForegroundServiceNotificationId = 0
-//            }
-//        } else {
-//            org.linphone.core.tools.Log.w(
-//                "[Notifications Manager] Can't start foreground service using notification id [$notificationId] (current foreground service notification id is [$currentForegroundServiceNotificationId]) and service [$coreService]",
-//            )
-//        }
-//    }
-//
-//    fun stopForegroundNotification() {
-//        if (service != null) {
-//            org.linphone.core.tools.Log.i("[Notifications Manager] Stopping service as foreground [$currentForegroundServiceNotificationId]")
-//            service?.stopForeground(true)
-//            currentForegroundServiceNotificationId = 0
-//        }
-//    }
-//
-//    fun stopForegroundNotificationIfPossible() {
-//        if (service != null && currentForegroundServiceNotificationId == SERVICE_NOTIF_ID && !corePreferences.keepServiceAlive) {
-//            org.linphone.core.tools.Log.i("[Notifications Manager] Stopping auto-started service notification [$currentForegroundServiceNotificationId]")
-//            stopForegroundNotification()
-//        }
-//    }
-//
-//    fun stopCallForeground() {
-//        if (service != null && currentForegroundServiceNotificationId != SERVICE_NOTIF_ID && !corePreferences.keepServiceAlive) {
-//            org.linphone.core.tools.Log.i("[Notifications Manager] Stopping call notification [$currentForegroundServiceNotificationId] used as foreground service")
-//            stopForegroundNotification()
-//        }
-//    }
 }
