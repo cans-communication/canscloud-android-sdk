@@ -24,6 +24,8 @@ import org.linphone.core.ProxyConfig
 import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import android.util.Log
+import cc.cans.canscloud.sdk.core.CoreContextSDK
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
 import org.linphone.core.LogCollectionState
@@ -223,6 +225,10 @@ class CansCenter : Cans {
 
         corePreferences = CorePreferences(context)
         corePreferences.copyAssetsFromPackage()
+
+        if (cansCenter().corePreferences.vfsEnabled) {
+            CoreContextSDK.activateVFS()
+        }
 
         val config = Factory.instance()
             .createConfigWithFactory(corePreferences.configPath, corePreferences.factoryConfigPath)
