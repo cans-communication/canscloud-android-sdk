@@ -55,7 +55,7 @@ class NotificationsManager(private val context: Context) {
         override fun onCallState(state: CallState, message: String?) {
             Log.i("[NotificationsManager] onCallState: ", "$state")
             when (state) {
-                CallState.IncomingCall -> showIncomingCallNotification(context)
+                CallState.IncomingCall -> displayIncomingCallNotification(context)
                 CallState.Error, CallState.CallEnd -> {
                     dismissCallNotification()
                 }
@@ -66,7 +66,7 @@ class NotificationsManager(private val context: Context) {
                 }
                 else -> {
                     dismissCallNotification()
-                    displayCallNotification(true)
+                    displayCallNotification(context, true)
                 }
             }
         }
@@ -93,7 +93,7 @@ class NotificationsManager(private val context: Context) {
         cansCenter().addListener(listener)
     }
 
-    fun showIncomingCallNotification(context: Context) {
+    fun displayIncomingCallNotification(context: Context) {
         val notifiable = getNotifiableForCall()
         if (notifiable.notificationId == currentForegroundServiceNotificationId) {
             cancel(notifiable.notificationId)
@@ -181,7 +181,7 @@ class NotificationsManager(private val context: Context) {
         notify(MISSED_CALLS_NOTIF_ID, notification, MISSED_CALL_TAG)
     }
 
-    fun displayCallNotification(isCallActive: Boolean) {
+    fun displayCallNotification(context: Context, isCallActive: Boolean) {
         val notifiable = getNotifiableForCall()
 
         val callActivity: Class<*> = when (cansCenter().callCans.state) {
@@ -196,10 +196,10 @@ class NotificationsManager(private val context: Context) {
             }
         }
 
-        val serviceChannel = context.getString(cc.cans.canscloud.sdk.R.string.notification_channel_service_id)
+        val serviceChannel = "${context.getString(R.string.app_name)} ${context.getString(cc.cans.canscloud.sdk.R.string.notification_channel_service_id)}"
         val channelToUse = when (Compatibility.getChannelImportance(notificationManager, serviceChannel)) {
             NotificationManagerCompat.IMPORTANCE_NONE -> {
-                context.getString(cc.cans.canscloud.sdk.R.string.notification_channel_incoming_call_id)
+                "${context.getString(R.string.app_name)} ${context.getString(cc.cans.canscloud.sdk.R.string.notification_channel_incoming_call_id)}"
             }
             NotificationManagerCompat.IMPORTANCE_LOW -> {
                 // Expected, nothing to do
@@ -220,7 +220,7 @@ class NotificationsManager(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
-        val displayName = CansCenter().username
+        val displayName = ""
 
         val stringResourceId: Int
         val iconResourceId: Int

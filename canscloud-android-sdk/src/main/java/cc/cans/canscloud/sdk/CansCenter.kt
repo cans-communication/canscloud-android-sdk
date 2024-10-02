@@ -119,7 +119,8 @@ class CansCenter : Cans {
 
     override val destinationUsername: String
         get() {
-            return callCans.remoteAddress.username ?: ""
+            Log.w("Cansdestination: ", destinationUsername)
+            return ""
         }
 
     override val durationTime: Int?
@@ -181,8 +182,11 @@ class CansCenter : Cans {
             callCans = call
             mVibrator.cancel()
 
+            Log.w("Cansdestination: state: ", "${call.remoteAddress.username}")
+
+
             when (state) {
-                Call.State.IncomingReceived, Call.State.IncomingEarlyMedia -> {
+                Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> {
                     vibrator()
                     listeners.forEach { it.onCallState(CallState.IncomingCall) }
                 }
@@ -288,9 +292,9 @@ class CansCenter : Cans {
 
     private fun createServiceChannel(context: Context, notificationManager: NotificationManagerCompat) {
         // Create service notification channel
-        val id = context.getString(R.string.notification_channel_service_id)
-        val name = context.getString(R.string.notification_channel_service_name)
-        val description = context.getString(R.string.notification_channel_service_name)
+        val id = "$appName ${context.getString(R.string.notification_channel_service_id)}"
+        val name = "$appName ${context.getString(R.string.notification_channel_service_name)}"
+        val description = "$appName ${context.getString(R.string.notification_channel_service_name)}"
         val channel = NotificationChannel(id, name, NotificationManager.IMPORTANCE_LOW)
         channel.description = description
         channel.enableVibration(false)
