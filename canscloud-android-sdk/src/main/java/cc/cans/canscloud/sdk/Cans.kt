@@ -49,6 +49,10 @@ interface Cans {
 
     val isBluetoothState: Boolean
 
+    val isHeadsetState: Boolean
+
+    val wasBluetoothPreviouslyAvailable: Boolean
+
     fun config(context: Context, appName: String)
 
     fun register(
@@ -67,9 +71,15 @@ interface Cans {
 
     fun startAnswerCall()
 
+    fun updateAudioRelated()
+
+    fun updateAudioRoutesState()
+
     fun toggleSpeaker()
 
     fun toggleMuteMicrophone()
+
+    fun forceHeadsetAudioRoute()
 
     fun forceSpeakerAudioRoute()
 

@@ -69,6 +69,7 @@ class CansCenter : Cans {
     override lateinit var callState: CallState
 
     var appName: String? = null
+    var audioRoutesEnabled: Boolean = false
 
     @SuppressLint("StaticFieldLeak")
     override lateinit var corePreferences: CorePreferences
@@ -149,19 +150,23 @@ class CansCenter : Cans {
             return call
         }
 
+    override val wasBluetoothPreviouslyAvailable: Boolean
+        get() = audioRoutesEnabled
+
     override val isMicState: Boolean
-        get() {
-            return core.currentCall?.microphoneMuted == true
-        }
+        get() = core.currentCall?.microphoneMuted == true
 
     override val isSpeakerState: Boolean
-        get() {
-            return AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
-        }
+        get() = AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
 
     override val isBluetoothState: Boolean
         get() {
             return AudioRouteUtils.isBluetoothAudioRouteAvailable()
+        }
+
+    override val isHeadsetState: Boolean
+        get() {
+            return AudioRouteUtils.isHeadsetAudioRouteAvailable()
         }
 
     private var coreListenerStub = object : CoreListenerStub() {
@@ -243,6 +248,8 @@ class CansCenter : Cans {
         }
 
         override fun onAudioDeviceChanged(core: Core, audioDevice: AudioDevice) {
+            AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
+            AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
             listeners.forEach { it.onAudioDeviceChanged() }
         }
 
@@ -497,6 +504,20 @@ class CansCenter : Cans {
         }
     }
 
+    override fun updateAudioRelated() {
+        AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
+        AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
+        updateAudioRoutesState()
+    }
+
+    override fun updateAudioRoutesState() {
+        val bluetoothDeviceAvailable = AudioRouteUtils.isBluetoothAudioRouteAvailable()
+        audioRoutesEnabled = bluetoothDeviceAvailable
+        if (!bluetoothDeviceAvailable) {
+            audioRoutesEnabled = false
+        }
+    }
+
     private fun forceEarpieceAudioRoute() {
         if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
             Log.i("[CansSDK Controls]", "Headset found, route audio to it instead of earpiece")
@@ -506,6 +527,10 @@ class CansCenter : Cans {
         }
         AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
         AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
+    }
+
+    override fun forceHeadsetAudioRoute() {
+        AudioRouteUtils.routeAudioToHeadset()
     }
 
     override fun forceSpeakerAudioRoute() {

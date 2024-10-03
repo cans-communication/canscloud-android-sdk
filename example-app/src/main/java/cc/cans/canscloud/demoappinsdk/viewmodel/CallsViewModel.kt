@@ -16,7 +16,7 @@ class CallsViewModel : ViewModel() {
 
     private val listener = object : CansListenerStub {
         override fun onAudioDeviceChanged() {
-            setAudio()
+           // setAudio()
         }
 
         override fun onAudioDevicesListUpdated() {
@@ -55,15 +55,24 @@ class CallsViewModel : ViewModel() {
     }
 
     init {
+        cansCenter().updateAudioRelated()
+        isBluetooth.value = cansCenter().wasBluetoothPreviouslyAvailable
+
         cansCenter().addListener(listener)
         callDuration.value = cansCenter().durationTime
     }
 
     fun setAudio() {
-        if (cansCenter().isBluetoothState) {
-            isBluetooth.value = true
+        cansCenter().updateAudioRoutesState()
+        isBluetooth.value = cansCenter().wasBluetoothPreviouslyAvailable
+
+        if (cansCenter().isHeadsetState) {
+            cansCenter().forceHeadsetAudioRoute()
+        } else if (!cansCenter().wasBluetoothPreviouslyAvailable && cansCenter().corePreferences.routeAudioToBluetoothIfAvailable) {
+            if (cansCenter().isBluetoothState) {
+                cansCenter().forceBluetoothAudioRoute()
+            }
         } else {
-            isBluetooth.value = false
             setSpeaker()
         }
     }
