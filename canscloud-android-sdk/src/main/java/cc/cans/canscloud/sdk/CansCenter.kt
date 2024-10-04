@@ -1,9 +1,13 @@
 package cc.cans.canscloud.sdk
 
 import android.annotation.SuppressLint
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Vibrator
 import android.widget.Toast
 import androidx.core.app.NotificationManagerCompat
@@ -24,19 +28,32 @@ import org.linphone.core.ProxyConfig
 import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import android.util.Log
+import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
+import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
+import cc.cans.canscloud.sdk.utils.ImageUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
+import org.linphone.core.Event
+import org.linphone.core.Friend
 import org.linphone.core.LogCollectionState
 import org.linphone.core.LogLevel
 import org.linphone.core.tools.compatibility.DeviceUtils
+
+data class Notifiable(val notificationId: Int) {
+    var remoteAddress: String? = null
+}
 
 class CansCenter : Cans {
     override lateinit var core: Core
     override lateinit var callCans: Call
     override lateinit var mVibrator: Vibrator
+    override lateinit var callState: CallState
+
     var appName: String? = null
+    var audioRoutesEnabled: Boolean = false
 
     @SuppressLint("StaticFieldLeak")
     override lateinit var corePreferences: CorePreferences
@@ -84,47 +101,42 @@ class CansCenter : Cans {
         }
 
     override val destinationRemoteAddress: String
-        get() {
-            return core.currentCall?.remoteAddress?.asStringUriOnly() ?: ""
-        }
+        get() = callCans.remoteAddress.asStringUriOnly()
 
     override val destinationUsername: String
-        get() {
-            return callCans.remoteAddress.username ?: ""
-        }
+        get() = core.currentCall?.remoteAddress?.username ?: ""
 
     override val durationTime: Int?
-        get() {
-            val durationTime = core.currentCall?.duration
-            return durationTime
-        }
+        get() = core.currentCall?.duration
+
+    override val startDateCall: Int
+        get() = core.currentCall?.callLog?.startDate?.toInt() ?: 0
 
     override val missedCallsCount: Int
-        get() {
-            return core.missedCallsCount
-        }
+        get() = core.missedCallsCount
 
     override val countCalls: Int
-        get() {
-            val call = core.callsNb
-            Log.i("[CansSDK]", "getCountCalls : $call")
-            return call
+        get() = core.callsNb
+
+    override val isBluetoothDevices: Boolean
+        get() = cansCenter().core.extendedAudioDevices.any {
+            it.type == AudioDevice.Type.Bluetooth
         }
+
+    override val wasBluetoothPreviouslyAvailable: Boolean
+        get() = audioRoutesEnabled
 
     override val isMicState: Boolean
-        get() {
-            return core.currentCall?.microphoneMuted == true
-        }
+        get() = core.currentCall?.microphoneMuted == true
 
     override val isSpeakerState: Boolean
-        get() {
-            return AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
-        }
+        get() = AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
 
     override val isBluetoothState: Boolean
-        get() {
-            return AudioRouteUtils.isBluetoothAudioRouteAvailable()
-        }
+        get() = AudioRouteUtils.isBluetoothAudioRouteAvailable()
+
+    override val isHeadsetState: Boolean
+        get() = AudioRouteUtils.isHeadsetAudioRouteAvailable()
 
     private var coreListenerStub = object : CoreListenerStub() {
         override fun onRegistrationStateChanged(
@@ -152,42 +164,44 @@ class CansCenter : Cans {
             callCans = call
             mVibrator.cancel()
 
+            Log.w("Cansdestination: state: ", "${call.remoteAddress.username}")
+
             when (state) {
-                Call.State.IncomingReceived, Call.State.IncomingEarlyMedia -> {
+                Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> {
                     vibrator()
-                    listeners.forEach { it.onCallState(CallState.IncomingCall) }
+                    setListenerCall(CallState.IncomingCall)
                 }
 
                 Call.State.OutgoingInit -> {
-                    listeners.forEach { it.onCallState(CallState.StartCall) }
+                    setListenerCall(CallState.StartCall)
                 }
 
                 Call.State.OutgoingProgress -> {
-                    listeners.forEach { it.onCallState(CallState.CallOutgoing) }
+                    setListenerCall(CallState.CallOutgoing)
                 }
 
                 Call.State.StreamsRunning -> {
-                    listeners.forEach { it.onCallState(CallState.StreamsRunning) }
+                    setListenerCall(CallState.StreamsRunning)
                 }
 
                 Call.State.Connected -> {
-                    listeners.forEach { it.onCallState(CallState.Connected) }
+                    setListenerCall(CallState.Connected)
                 }
 
                 Call.State.Error -> {
-                    listeners.forEach { it.onCallState(CallState.Error) }
+                    setListenerCall(CallState.Error)
                 }
 
                 Call.State.End -> {
-                    listeners.forEach { it.onCallState(CallState.CallEnd) }
+                    setListenerCall(CallState.CallEnd)
                 }
 
                 Call.State.Released -> {
-                    listeners.forEach { it.onCallState(CallState.MissCall) }
+                    setListenerCall(CallState.MissCall)
                 }
 
                 else -> {
-                    listeners.forEach { it.onCallState(CallState.Unknown) }
+                    setListenerCall(CallState.Unknown)
                 }
             }
         }
@@ -203,13 +217,21 @@ class CansCenter : Cans {
         }
 
         override fun onAudioDeviceChanged(core: Core, audioDevice: AudioDevice) {
+            AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
+            AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
             listeners.forEach { it.onAudioDeviceChanged() }
         }
 
         override fun onAudioDevicesListUpdated(core: Core) {
             Log.i("[CansSDK Controls]", "Audio devices list updated")
+            audioDevicesListUpdated()
             listeners.forEach { it.onAudioDevicesListUpdated() }
         }
+    }
+
+    private fun setListenerCall(callState: CallState) {
+        this.callState = callState
+        listeners.forEach { it.onCallState(callState) }
     }
 
     override fun config(
@@ -256,8 +278,22 @@ class CansCenter : Cans {
         context: Context,
         notificationManager: NotificationManagerCompat,
     ) {
+        createServiceChannel(context, notificationManager)
         createMissedCallChannel(context, notificationManager)
         createIncomingCallChannel(context, notificationManager)
+    }
+
+    private fun createServiceChannel(context: Context, notificationManager: NotificationManagerCompat) {
+        // Create service notification channel
+        val id = "$appName ${context.getString(R.string.notification_channel_service_id)}"
+        val name = "$appName ${context.getString(R.string.notification_channel_service_name)}"
+        val description = "$appName ${context.getString(R.string.notification_channel_service_name)}"
+        val channel = NotificationChannel(id, name, NotificationManager.IMPORTANCE_LOW)
+        channel.description = description
+        channel.enableVibration(false)
+        channel.enableLights(false)
+        channel.setShowBadge(false)
+        notificationManager.createNotificationChannel(channel)
     }
 
     private fun createMissedCallChannel(
@@ -407,11 +443,19 @@ class CansCenter : Cans {
         call.acceptWithParams(params)
     }
 
+    override fun isPauseState() : Boolean {
+        return core.currentCall?.state == Call.State.Paused || core.currentCall?.state == Call.State.Pausing || core.currentCall?.state == Call.State.PausedByRemote
+    }
+
+    override fun isOutgoingState() : Boolean {
+        return core.currentCall?.state == Call.State.OutgoingRinging || core.currentCall?.state == Call.State.OutgoingProgress || core.currentCall?.state == Call.State.OutgoingInit || core.currentCall?.state == Call.State.OutgoingEarlyMedia
+    }
+
     override fun toggleSpeaker() {
         if (AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()) {
             forceEarpieceAudioRoute()
         } else {
-            forceSpeakerAudioRoute()
+            routeAudioToSpeaker()
         }
     }
 
@@ -430,27 +474,50 @@ class CansCenter : Cans {
         }
     }
 
-    private fun forceEarpieceAudioRoute() {
+    override fun updateAudioRelated() {
+        AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
+        AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
+        updateAudioRoutesState()
+    }
+
+    override fun updateAudioRoutesState() {
+        val bluetoothDeviceAvailable = AudioRouteUtils.isBluetoothAudioRouteAvailable()
+        audioRoutesEnabled = bluetoothDeviceAvailable
+        if (!bluetoothDeviceAvailable) {
+            audioRoutesEnabled = false
+        }
+    }
+
+    override fun forceEarpieceAudioRoute() {
         if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
-            Log.i("[CansSDK Controls]", "Headset found, route audio to it instead of earpiece")
             AudioRouteUtils.routeAudioToHeadset()
         } else {
             AudioRouteUtils.routeAudioToEarpiece()
         }
-        AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
-        AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
     }
 
-    override fun forceSpeakerAudioRoute() {
-        AudioRouteUtils.routeAudioToSpeaker()
-        AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
-        AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
+    override fun routeAudioToHeadset() {
+        AudioRouteUtils.routeAudioToHeadset()
     }
 
-    override fun forceBluetoothAudioRoute() {
+    override fun routeAudioToBluetooth() {
         AudioRouteUtils.routeAudioToBluetooth()
-        AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
-        AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
+    }
+
+    override fun routeAudioToSpeaker() {
+        AudioRouteUtils.routeAudioToSpeaker()
+    }
+
+    override fun audioDevicesListUpdated() {
+        updateAudioRoutesState()
+
+        if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
+            AudioRouteUtils.routeAudioToHeadset()
+        } else if (corePreferences.routeAudioToBluetoothIfAvailable) {
+            if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
+                AudioRouteUtils.routeAudioToBluetooth()
+            }
+        }
     }
 
     private fun vibrator() {
