@@ -2,8 +2,8 @@
 # compiler_version: 8.6.17
 # common_typos_disable
 # {"id":"com.android.tools.r8.mapping","version":"2.2"}
-# pg_map_id: 247ed10
-# pg_map_hash: SHA-256 247ed105a47b7924c0ab4a67bf900e31a7a974d4a7eacda89a37ea82c182ae35
+# pg_map_id: 6402a49
+# pg_map_hash: SHA-256 6402a49c15fe7cb49622cbbaf420e01de2ad2a4d9a1c55756f2dd6f7fec70dea
 cc.cans.canscloud.sdk.BuildConfig -> cc.cans.canscloud.sdk.BuildConfig:
 # {"id":"sourceFile","fileName":"BuildConfig.java"}
     1:1:void <init>():6:6 -> <init>
@@ -12,145 +12,119 @@ cc.cans.canscloud.sdk.Cans -> cc.cans.canscloud.sdk.Cans:
 cc.cans.canscloud.sdk.CansCenter -> cc.cans.canscloud.sdk.CansCenter:
 # {"id":"sourceFile","fileName":"CansCenter.kt"}
     java.lang.String appName -> a
-    kotlin.Lazy notificationManager$delegate -> b
-    java.util.List listeners -> c
-    cc.cans.canscloud.sdk.CansCenter$coreListenerStub$1 coreListenerStub -> d
-    1:103:void <init>():65:167 -> <init>
-    1:295:void setListenerCall(cc.cans.canscloud.sdk.models.CallState):256:550 -> a
-    296:296:void setListenerCall(cc.cans.canscloud.sdk.models.CallState):257:257 -> a
-    297:307:void createIncomingCallChannel(android.content.Context,androidx.core.app.NotificationManagerCompat):343:353 -> a
-    308:314:void answerCall(org.linphone.core.Call):460:466 -> a
-    315:322:void forceEarpieceAudioRoute():501:508 -> a
-    1:1:java.util.List access$getListeners$p(cc.cans.canscloud.sdk.CansCenter):65:65 -> access$getListeners$p
-    1:1:void access$setListenerCall(cc.cans.canscloud.sdk.CansCenter,cc.cans.canscloud.sdk.models.CallState):65:65 -> access$setListenerCall
-    1:1:void access$vibrator(cc.cans.canscloud.sdk.CansCenter):65:65 -> access$vibrator
+    boolean audioRoutesEnabled -> b
+    kotlin.Lazy notificationManager$delegate -> c
+    java.util.List listeners -> d
+    cc.cans.canscloud.sdk.CansCenter$coreListenerStub$1 coreListenerStub -> e
+    1:93:void <init>():49:141 -> <init>
+    1:1:androidx.core.app.NotificationManagerCompat getNotificationManager():64:64 -> a
+    2:321:void setListenerCall(cc.cans.canscloud.sdk.models.CallState):233:552 -> a
+    322:322:void setListenerCall(cc.cans.canscloud.sdk.models.CallState):234:234 -> a
+    323:333:void createIncomingCallChannel(android.content.Context,androidx.core.app.NotificationManagerCompat):320:330 -> a
+    334:340:void answerCall(org.linphone.core.Call):437:443 -> a
+    1:1:java.util.List access$getListeners$p(cc.cans.canscloud.sdk.CansCenter):49:49 -> access$getListeners$p
+    1:1:void access$setListenerCall(cc.cans.canscloud.sdk.CansCenter,cc.cans.canscloud.sdk.models.CallState):49:49 -> access$setListenerCall
+    1:1:void access$vibrator(cc.cans.canscloud.sdk.CansCenter):49:49 -> access$vibrator
     1:1:void addListener(cc.cans.canscloud.sdk.callback.CansListenerStub):542:542 -> addListener
-    1:1:androidx.core.app.NotificationManagerCompat getNotificationManager():79:79 -> b
-    2:12:void createMissedCallChannel(android.content.Context,androidx.core.app.NotificationManagerCompat):326:336 -> b
-    1:3:void createNotificationChannels(android.content.Context,androidx.core.app.NotificationManagerCompat):304:306 -> c
-    4:5:void vibrator():524:525 -> c
-    1:26:void config(android.content.Context,java.lang.String):265:290 -> config
-    27:27:androidx.core.app.NotificationManagerCompat getNotificationManager():79:79 -> config
-    27:27:void config(android.content.Context,java.lang.String):291 -> config
-    28:30:void createNotificationChannels(android.content.Context,androidx.core.app.NotificationManagerCompat):304:306 -> config
-    28:30:void config(android.content.Context,java.lang.String):291 -> config
-    31:34:void config(android.content.Context,java.lang.String):293:296 -> config
-    1:9:void createServiceChannel(android.content.Context,androidx.core.app.NotificationManagerCompat):311:319 -> d
-    1:3:void forceBluetoothAudioRoute():518:520 -> forceBluetoothAudioRoute
-    1:3:void forceSpeakerAudioRoute():512:514 -> forceSpeakerAudioRoute
-    1:4:java.lang.String getAccount():87:90 -> getAccount
-    1:1:java.lang.String getAppName():71:71 -> getAppName
-    1:1:org.linphone.core.Call getCallCans():67:67 -> getCallCans
-    1:1:cc.cans.canscloud.sdk.models.CallState getCallState():69:69 -> getCallState
-    1:1:android.content.Context getContext():77:77 -> getContext
-    1:1:org.linphone.core.Core getCore():66:66 -> getCore
-    1:1:cc.cans.canscloud.sdk.core.CorePreferences getCorePreferences():74:74 -> getCorePreferences
-    1:2:int getCountCalls():147:148 -> getCountCalls
-    1:1:java.lang.String getDestinationRemoteAddress():120:120 -> getDestinationRemoteAddress
-    1:1:java.lang.String getDestinationUsername():125:125 -> getDestinationUsername
-    1:4:java.lang.String getDomain():104:107 -> getDomain
-    1:1:java.lang.Integer getDurationTime():130:130 -> getDurationTime
-    1:1:android.os.Vibrator getMVibrator():68:68 -> getMVibrator
-    1:1:int getMissedCallsCount():142:142 -> getMissedCallsCount
-    1:4:java.lang.String getPort():112:115 -> getPort
-    1:2:int getStartDateCall():136:137 -> getStartDateCall
-    1:4:java.lang.String getUsername():95:98 -> getUsername
-    1:1:boolean isBluetoothState():164:164 -> isBluetoothState
+    1:7:void audioDevicesListUpdated():512:518 -> audioDevicesListUpdated
+    1:11:void createMissedCallChannel(android.content.Context,androidx.core.app.NotificationManagerCompat):303:313 -> b
+    12:13:void vibrator():524:525 -> b
+    1:3:void createNotificationChannels(android.content.Context,androidx.core.app.NotificationManagerCompat):281:283 -> c
+    1:26:void config(android.content.Context,java.lang.String):242:267 -> config
+    27:27:androidx.core.app.NotificationManagerCompat getNotificationManager():64:64 -> config
+    27:27:void config(android.content.Context,java.lang.String):268 -> config
+    28:30:void createNotificationChannels(android.content.Context,androidx.core.app.NotificationManagerCompat):281:283 -> config
+    28:30:void config(android.content.Context,java.lang.String):268 -> config
+    31:34:void config(android.content.Context,java.lang.String):270:273 -> config
+    1:9:void createServiceChannel(android.content.Context,androidx.core.app.NotificationManagerCompat):288:296 -> d
+    1:4:void forceEarpieceAudioRoute():492:495 -> forceEarpieceAudioRoute
+    1:4:java.lang.String getAccount():72:75 -> getAccount
+    1:1:java.lang.String getAppName():55:55 -> getAppName
+    1:1:boolean getAudioRoutesEnabled():56:56 -> getAudioRoutesEnabled
+    1:1:org.linphone.core.Call getCallCans():51:51 -> getCallCans
+    1:1:cc.cans.canscloud.sdk.models.CallState getCallState():53:53 -> getCallState
+    1:1:android.content.Context getContext():62:62 -> getContext
+    1:1:org.linphone.core.Core getCore():50:50 -> getCore
+    1:1:cc.cans.canscloud.sdk.core.CorePreferences getCorePreferences():59:59 -> getCorePreferences
+    1:1:int getCountCalls():119:119 -> getCountCalls
+    1:1:java.lang.String getDestinationRemoteAddress():104:104 -> getDestinationRemoteAddress
+    1:1:java.lang.String getDestinationUsername():107:107 -> getDestinationUsername
+    1:4:java.lang.String getDomain():89:92 -> getDomain
+    1:1:java.lang.Integer getDurationTime():110:110 -> getDurationTime
+    1:1:android.os.Vibrator getMVibrator():52:52 -> getMVibrator
+    1:1:int getMissedCallsCount():116:116 -> getMissedCallsCount
+    1:4:java.lang.String getPort():97:100 -> getPort
+    1:1:int getStartDateCall():113:113 -> getStartDateCall
+    1:4:java.lang.String getUsername():80:83 -> getUsername
+    1:1:boolean getWasBluetoothPreviouslyAvailable():127:127 -> getWasBluetoothPreviouslyAvailable
+    1:429:boolean isBluetoothDevices():122:550 -> isBluetoothDevices
+    430:430:boolean isBluetoothDevices():123:123 -> isBluetoothDevices
+    1:1:boolean isBluetoothState():136:136 -> isBluetoothState
     1:6:boolean isCallLogMissed():531:536 -> isCallLogMissed
-    1:1:boolean isMicState():154:154 -> isMicState
-    1:1:boolean isOutgoingState():474:474 -> isOutgoingState
-    1:1:boolean isPauseState():470:470 -> isPauseState
-    1:1:boolean isSpeakerState():159:159 -> isSpeakerState
-    1:31:void register(java.lang.String,java.lang.String,java.lang.String,java.lang.String,cc.cans.canscloud.sdk.models.CansTransport):363:393 -> register
-    1:155:void removeAccount():398:552 -> removeAccount
-    156:156:void removeAccount():407:407 -> removeAccount
+    1:1:boolean isHeadsetState():139:139 -> isHeadsetState
+    1:1:boolean isMicState():130:130 -> isMicState
+    1:1:boolean isOutgoingState():451:451 -> isOutgoingState
+    1:1:boolean isPauseState():447:447 -> isPauseState
+    1:1:boolean isSpeakerState():133:133 -> isSpeakerState
+    1:31:void register(java.lang.String,java.lang.String,java.lang.String,java.lang.String,cc.cans.canscloud.sdk.models.CansTransport):340:370 -> register
+    1:180:void removeAccount():375:554 -> removeAccount
+    181:181:void removeAccount():384:384 -> removeAccount
     1:1:void removeListener(cc.cans.canscloud.sdk.callback.CansListenerStub):546:546 -> removeListener
-    1:1:void setAppName(java.lang.String):71:71 -> setAppName
-    1:1:void setCallCans(org.linphone.core.Call):67:67 -> setCallCans
-    1:1:void setCallState(cc.cans.canscloud.sdk.models.CallState):69:69 -> setCallState
-    1:1:void setContext(android.content.Context):77:77 -> setContext
-    1:1:void setCore(org.linphone.core.Core):66:66 -> setCore
-    1:1:void setCorePreferences(cc.cans.canscloud.sdk.core.CorePreferences):74:74 -> setCorePreferences
-    1:1:void setMVibrator(android.os.Vibrator):68:68 -> setMVibrator
-    1:10:void startAnswerCall():447:456 -> startAnswerCall
-    1:20:void startCall(java.lang.String):412:431 -> startCall
-    1:8:void terminateCall():436:443 -> terminateCall
-    1:11:void toggleMuteMicrophone():486:496 -> toggleMuteMicrophone
-    1:4:void toggleSpeaker():478:481 -> toggleSpeaker
+    1:1:void routeAudioToBluetooth():504:504 -> routeAudioToBluetooth
+    1:1:void routeAudioToHeadset():500:500 -> routeAudioToHeadset
+    1:1:void routeAudioToSpeaker():508:508 -> routeAudioToSpeaker
+    1:1:void setAppName(java.lang.String):55:55 -> setAppName
+    1:1:void setAudioRoutesEnabled(boolean):56:56 -> setAudioRoutesEnabled
+    1:1:void setCallCans(org.linphone.core.Call):51:51 -> setCallCans
+    1:1:void setCallState(cc.cans.canscloud.sdk.models.CallState):53:53 -> setCallState
+    1:1:void setContext(android.content.Context):62:62 -> setContext
+    1:1:void setCore(org.linphone.core.Core):50:50 -> setCore
+    1:1:void setCorePreferences(cc.cans.canscloud.sdk.core.CorePreferences):59:59 -> setCorePreferences
+    1:1:void setMVibrator(android.os.Vibrator):52:52 -> setMVibrator
+    1:10:void startAnswerCall():424:433 -> startAnswerCall
+    1:20:void startCall(java.lang.String):389:408 -> startCall
+    1:8:void terminateCall():413:420 -> terminateCall
+    1:11:void toggleMuteMicrophone():463:473 -> toggleMuteMicrophone
+    1:4:void toggleSpeaker():455:458 -> toggleSpeaker
+    1:3:void updateAudioRelated():478:480 -> updateAudioRelated
+    1:4:void updateAudioRoutesState():484:487 -> updateAudioRoutesState
 cc.cans.canscloud.sdk.CansCenter$coreListenerStub$1 -> cc.cans.canscloud.sdk.CansCenter$coreListenerStub$1:
 # {"id":"sourceFile","fileName":"CansCenter.kt"}
     cc.cans.canscloud.sdk.CansCenter this$0 -> a
-    1:1:void <init>(cc.cans.canscloud.sdk.CansCenter):167:167 -> <init>
-    1:311:void onAudioDeviceChanged(org.linphone.core.Core,org.linphone.core.AudioDevice):246:556 -> onAudioDeviceChanged
-    312:312:void onAudioDeviceChanged(org.linphone.core.Core,org.linphone.core.AudioDevice):246:246 -> onAudioDeviceChanged
-    1:309:void onAudioDevicesListUpdated(org.linphone.core.Core):250:558 -> onAudioDevicesListUpdated
-    310:310:void onAudioDevicesListUpdated(org.linphone.core.Core):251:251 -> onAudioDevicesListUpdated
-    1:41:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):190:230 -> onCallStateChanged
-    42:42:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):226:226 -> onCallStateChanged
-    43:43:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):222:222 -> onCallStateChanged
-    44:44:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):218:218 -> onCallStateChanged
-    45:45:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):214:214 -> onCallStateChanged
-    46:46:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):210:210 -> onCallStateChanged
-    47:47:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):206:206 -> onCallStateChanged
-    48:48:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):202:202 -> onCallStateChanged
-    49:50:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):197:198 -> onCallStateChanged
-    1:319:void onLastCallEnded(org.linphone.core.Core):236:554 -> onLastCallEnded
-    320:320:void onLastCallEnded(org.linphone.core.Core):242:242 -> onLastCallEnded
-    1:377:void onRegistrationStateChanged(org.linphone.core.Core,org.linphone.core.ProxyConfig,org.linphone.core.RegistrationState,java.lang.String):174:550 -> onRegistrationStateChanged
-    378:754:void onRegistrationStateChanged(org.linphone.core.Core,org.linphone.core.ProxyConfig,org.linphone.core.RegistrationState,java.lang.String):176:552 -> onRegistrationStateChanged
-    755:755:void onRegistrationStateChanged(org.linphone.core.Core,org.linphone.core.ProxyConfig,org.linphone.core.RegistrationState,java.lang.String):178:178 -> onRegistrationStateChanged
+    1:1:void <init>(cc.cans.canscloud.sdk.CansCenter):141:141 -> <init>
+    1:337:void onAudioDeviceChanged(org.linphone.core.Core,org.linphone.core.AudioDevice):220:556 -> onAudioDeviceChanged
+    338:338:void onAudioDeviceChanged(org.linphone.core.Core,org.linphone.core.AudioDevice):222:222 -> onAudioDeviceChanged
+    1:333:void onAudioDevicesListUpdated(org.linphone.core.Core):226:558 -> onAudioDevicesListUpdated
+    334:334:void onAudioDevicesListUpdated(org.linphone.core.Core):228:228 -> onAudioDevicesListUpdated
+    1:41:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):164:204 -> onCallStateChanged
+    42:42:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):200:200 -> onCallStateChanged
+    43:43:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):196:196 -> onCallStateChanged
+    44:44:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):192:192 -> onCallStateChanged
+    45:45:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):188:188 -> onCallStateChanged
+    46:46:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):184:184 -> onCallStateChanged
+    47:47:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):180:180 -> onCallStateChanged
+    48:48:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):176:176 -> onCallStateChanged
+    49:50:void onCallStateChanged(org.linphone.core.Core,org.linphone.core.Call,org.linphone.core.Call$State,java.lang.String):171:172 -> onCallStateChanged
+    1:345:void onLastCallEnded(org.linphone.core.Core):210:554 -> onLastCallEnded
+    346:346:void onLastCallEnded(org.linphone.core.Core):216:216 -> onLastCallEnded
+    1:403:void onRegistrationStateChanged(org.linphone.core.Core,org.linphone.core.ProxyConfig,org.linphone.core.RegistrationState,java.lang.String):148:550 -> onRegistrationStateChanged
+    404:806:void onRegistrationStateChanged(org.linphone.core.Core,org.linphone.core.ProxyConfig,org.linphone.core.RegistrationState,java.lang.String):150:552 -> onRegistrationStateChanged
+    807:807:void onRegistrationStateChanged(org.linphone.core.Core,org.linphone.core.ProxyConfig,org.linphone.core.RegistrationState,java.lang.String):152:152 -> onRegistrationStateChanged
 cc.cans.canscloud.sdk.CansCenter$coreListenerStub$1$WhenMappings -> cc.cans.canscloud.sdk.CansCenter$coreListenerStub$1$WhenMappings:
 # {"id":"sourceFile","fileName":"CansCenter.kt"}
 cc.cans.canscloud.sdk.CansCenter$notificationManager$2 -> cc.cans.canscloud.sdk.CansCenter$notificationManager$2:
 # {"id":"sourceFile","fileName":"CansCenter.kt"}
     cc.cans.canscloud.sdk.CansCenter this$0 -> a
-    1:1:java.lang.Object invoke():79:79 -> invoke
-    2:2:androidx.core.app.NotificationManagerCompat invoke():80:80 -> invoke
+    1:1:java.lang.Object invoke():64:64 -> invoke
+    2:2:androidx.core.app.NotificationManagerCompat invoke():65:65 -> invoke
 cc.cans.canscloud.sdk.Notifiable -> cc.cans.canscloud.sdk.Notifiable:
 # {"id":"sourceFile","fileName":"CansCenter.kt"}
     int notificationId -> a
-    java.util.ArrayList messages -> b
-    boolean isGroup -> c
-    java.lang.String groupTitle -> d
-    java.lang.String localIdentity -> e
-    java.lang.String myself -> f
-    java.lang.String remoteAddress -> g
-    1:2:void <init>(int):44:45 -> <init>
-    1:1:java.lang.String getGroupTitle():48:48 -> getGroupTitle
-    1:1:java.lang.String getLocalIdentity():49:49 -> getLocalIdentity
-    1:1:java.util.ArrayList getMessages():45:45 -> getMessages
-    1:1:java.lang.String getMyself():50:50 -> getMyself
-    1:1:int getNotificationId():44:44 -> getNotificationId
-    1:1:java.lang.String getRemoteAddress():51:51 -> getRemoteAddress
-    1:1:boolean isGroup():47:47 -> isGroup
-    1:1:void setGroup(boolean):47:47 -> setGroup
-    1:1:void setGroupTitle(java.lang.String):48:48 -> setGroupTitle
-    1:1:void setLocalIdentity(java.lang.String):49:49 -> setLocalIdentity
-    1:1:void setMyself(java.lang.String):50:50 -> setMyself
-    1:1:void setRemoteAddress(java.lang.String):51:51 -> setRemoteAddress
-cc.cans.canscloud.sdk.NotifiableMessage -> cc.cans.canscloud.sdk.NotifiableMessage:
-# {"id":"sourceFile","fileName":"CansCenter.kt"}
-    java.lang.String message -> a
-    org.linphone.core.Friend friend -> b
-    java.lang.String sender -> c
-    long time -> d
-    android.graphics.Bitmap senderAvatar -> e
-    android.net.Uri filePath -> f
-    java.lang.String fileMime -> g
-    boolean isOutgoing -> h
-    1:9:void <init>(java.lang.String,org.linphone.core.Friend,java.lang.String,long,android.graphics.Bitmap,android.net.Uri,java.lang.String,boolean):54:62 -> <init>
-    10:10:void <init>(java.lang.String,org.linphone.core.Friend,java.lang.String,long,android.graphics.Bitmap,android.net.Uri,java.lang.String,boolean,int,kotlin.jvm.internal.DefaultConstructorMarker):54:54 -> <init>
-    1:1:java.lang.String getFileMime():61:61 -> getFileMime
-    1:1:android.net.Uri getFilePath():60:60 -> getFilePath
-    1:1:org.linphone.core.Friend getFriend():56:56 -> getFriend
-    1:1:java.lang.String getMessage():55:55 -> getMessage
-    1:1:java.lang.String getSender():57:57 -> getSender
-    1:1:android.graphics.Bitmap getSenderAvatar():59:59 -> getSenderAvatar
-    1:1:long getTime():58:58 -> getTime
-    1:1:boolean isOutgoing():62:62 -> isOutgoing
-    1:1:void setFileMime(java.lang.String):61:61 -> setFileMime
-    1:1:void setFilePath(android.net.Uri):60:60 -> setFilePath
-    1:1:void setMessage(java.lang.String):55:55 -> setMessage
+    java.lang.String remoteAddress -> b
+    1:1:void <init>(int):45:45 -> <init>
+    1:1:int getNotificationId():45:45 -> getNotificationId
+    1:1:java.lang.String getRemoteAddress():46:46 -> getRemoteAddress
+    1:1:void setRemoteAddress(java.lang.String):46:46 -> setRemoteAddress
 cc.cans.canscloud.sdk.call.CansCallActivity -> cc.cans.canscloud.sdk.call.CansCallActivity:
 # {"id":"sourceFile","fileName":"CansCallActivity.kt"}
     cc.cans.canscloud.sdk.databinding.ActivityCansCallBinding binding -> a
@@ -769,47 +743,47 @@ cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion -> cc.cans.canscloud.sdk.u
     1:1:void <init>(kotlin.jvm.internal.DefaultConstructorMarker):0:0 -> <init>
     2:2:void <init>():32:32 -> <init>
     1:21:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):39:59 -> applyAudioRouteChange
-    22:32:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):58:68 -> applyAudioRouteChange
-    33:45:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):67:79 -> applyAudioRouteChange
-    46:52:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):78:84 -> applyAudioRouteChange
-    53:61:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):83:91 -> applyAudioRouteChange
-    62:72:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):90:100 -> applyAudioRouteChange
-    73:83:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):99:109 -> applyAudioRouteChange
-    84:90:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):108:114 -> applyAudioRouteChange
+    22:33:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):58:69 -> applyAudioRouteChange
+    34:46:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):68:80 -> applyAudioRouteChange
+    47:53:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):79:85 -> applyAudioRouteChange
+    54:62:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):84:92 -> applyAudioRouteChange
+    63:73:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):91:101 -> applyAudioRouteChange
+    74:84:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):100:110 -> applyAudioRouteChange
+    85:91:void applyAudioRouteChange(org.linphone.core.Call,java.util.List,boolean):109:115 -> applyAudioRouteChange
     1:1:void applyAudioRouteChange$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,java.util.List,boolean,int,java.lang.Object):34:34 -> applyAudioRouteChange$default
-    1:15:void changeCaptureDeviceToMatchAudioRoute(org.linphone.core.Call,java.util.List):120:134 -> changeCaptureDeviceToMatchAudioRoute
-    16:18:void changeCaptureDeviceToMatchAudioRoute(org.linphone.core.Call,java.util.List):128:130 -> changeCaptureDeviceToMatchAudioRoute
-    19:21:void changeCaptureDeviceToMatchAudioRoute(org.linphone.core.Call,java.util.List):122:124 -> changeCaptureDeviceToMatchAudioRoute
-    1:6:boolean isBluetoothAudioRecorderAvailable():267:272 -> isBluetoothAudioRecorderAvailable
-    7:7:boolean isBluetoothAudioRecorderAvailable():271:271 -> isBluetoothAudioRecorderAvailable
-    1:6:boolean isBluetoothAudioRouteAvailable():253:258 -> isBluetoothAudioRouteAvailable
-    7:7:boolean isBluetoothAudioRouteAvailable():257:257 -> isBluetoothAudioRouteAvailable
-    1:16:boolean isBluetoothAudioRouteCurrentlyUsed(org.linphone.core.Call):232:247 -> isBluetoothAudioRouteCurrentlyUsed
-    17:20:boolean isBluetoothAudioRouteCurrentlyUsed(org.linphone.core.Call):246:249 -> isBluetoothAudioRouteCurrentlyUsed
-    1:1:boolean isBluetoothAudioRouteCurrentlyUsed$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,int,java.lang.Object):231:231 -> isBluetoothAudioRouteCurrentlyUsed$default
-    1:6:boolean isHeadsetAudioRecorderAvailable():295:300 -> isHeadsetAudioRecorderAvailable
-    7:7:boolean isHeadsetAudioRecorderAvailable():299:299 -> isHeadsetAudioRecorderAvailable
-    1:6:boolean isHeadsetAudioRouteAvailable():281:286 -> isHeadsetAudioRouteAvailable
-    7:7:boolean isHeadsetAudioRouteAvailable():285:285 -> isHeadsetAudioRouteAvailable
-    1:19:boolean isSpeakerAudioRouteCurrentlyUsed(org.linphone.core.Call):208:226 -> isSpeakerAudioRouteCurrentlyUsed
-    20:23:boolean isSpeakerAudioRouteCurrentlyUsed(org.linphone.core.Call):225:228 -> isSpeakerAudioRouteCurrentlyUsed
-    1:1:boolean isSpeakerAudioRouteCurrentlyUsed$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,int,java.lang.Object):207:207 -> isSpeakerAudioRouteCurrentlyUsed$default
-    1:4:void routeAudioTo(org.linphone.core.Call,java.util.List,boolean):144:147 -> routeAudioTo
-    5:9:void routeAudioTo(org.linphone.core.Call,java.util.List,boolean):146:150 -> routeAudioTo
-    10:22:void routeAudioTo(org.linphone.core.Call,java.util.List,boolean):149:161 -> routeAudioTo
-    23:30:void routeAudioTo(org.linphone.core.Call,java.util.List,boolean):160:167 -> routeAudioTo
-    31:44:void routeAudioTo(org.linphone.core.Call,java.util.List,boolean):166:179 -> routeAudioTo
-    1:1:void routeAudioTo$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,java.util.List,boolean,int,java.lang.Object):139:139 -> routeAudioTo$default
-    1:1:void routeAudioToBluetooth(org.linphone.core.Call,boolean):194:194 -> routeAudioToBluetooth
-    2:2:void routeAudioToBluetooth(org.linphone.core.Call,boolean):192:192 -> routeAudioToBluetooth
-    1:1:void routeAudioToBluetooth$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,boolean,int,java.lang.Object):191:191 -> routeAudioToBluetooth$default
-    1:1:void routeAudioToEarpiece(org.linphone.core.Call,boolean):184:184 -> routeAudioToEarpiece
-    1:1:void routeAudioToEarpiece$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,boolean,int,java.lang.Object):183:183 -> routeAudioToEarpiece$default
-    1:1:void routeAudioToHeadset(org.linphone.core.Call,boolean):202:202 -> routeAudioToHeadset
-    2:2:void routeAudioToHeadset(org.linphone.core.Call,boolean):200:200 -> routeAudioToHeadset
-    1:1:void routeAudioToHeadset$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,boolean,int,java.lang.Object):199:199 -> routeAudioToHeadset$default
-    1:1:void routeAudioToSpeaker(org.linphone.core.Call,boolean):188:188 -> routeAudioToSpeaker
-    1:1:void routeAudioToSpeaker$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,boolean,int,java.lang.Object):187:187 -> routeAudioToSpeaker$default
+    1:15:void changeCaptureDeviceToMatchAudioRoute(org.linphone.core.Call,java.util.List):121:135 -> changeCaptureDeviceToMatchAudioRoute
+    16:18:void changeCaptureDeviceToMatchAudioRoute(org.linphone.core.Call,java.util.List):129:131 -> changeCaptureDeviceToMatchAudioRoute
+    19:21:void changeCaptureDeviceToMatchAudioRoute(org.linphone.core.Call,java.util.List):123:125 -> changeCaptureDeviceToMatchAudioRoute
+    1:6:boolean isBluetoothAudioRecorderAvailable():268:273 -> isBluetoothAudioRecorderAvailable
+    7:7:boolean isBluetoothAudioRecorderAvailable():272:272 -> isBluetoothAudioRecorderAvailable
+    1:6:boolean isBluetoothAudioRouteAvailable():254:259 -> isBluetoothAudioRouteAvailable
+    7:7:boolean isBluetoothAudioRouteAvailable():258:258 -> isBluetoothAudioRouteAvailable
+    1:16:boolean isBluetoothAudioRouteCurrentlyUsed(org.linphone.core.Call):233:248 -> isBluetoothAudioRouteCurrentlyUsed
+    17:20:boolean isBluetoothAudioRouteCurrentlyUsed(org.linphone.core.Call):247:250 -> isBluetoothAudioRouteCurrentlyUsed
+    1:1:boolean isBluetoothAudioRouteCurrentlyUsed$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,int,java.lang.Object):232:232 -> isBluetoothAudioRouteCurrentlyUsed$default
+    1:6:boolean isHeadsetAudioRecorderAvailable():296:301 -> isHeadsetAudioRecorderAvailable
+    7:7:boolean isHeadsetAudioRecorderAvailable():300:300 -> isHeadsetAudioRecorderAvailable
+    1:6:boolean isHeadsetAudioRouteAvailable():282:287 -> isHeadsetAudioRouteAvailable
+    7:7:boolean isHeadsetAudioRouteAvailable():286:286 -> isHeadsetAudioRouteAvailable
+    1:19:boolean isSpeakerAudioRouteCurrentlyUsed(org.linphone.core.Call):209:227 -> isSpeakerAudioRouteCurrentlyUsed
+    20:23:boolean isSpeakerAudioRouteCurrentlyUsed(org.linphone.core.Call):226:229 -> isSpeakerAudioRouteCurrentlyUsed
+    1:1:boolean isSpeakerAudioRouteCurrentlyUsed$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,int,java.lang.Object):208:208 -> isSpeakerAudioRouteCurrentlyUsed$default
+    1:4:void routeAudioTo(org.linphone.core.Call,java.util.List,boolean):145:148 -> routeAudioTo
+    5:9:void routeAudioTo(org.linphone.core.Call,java.util.List,boolean):147:151 -> routeAudioTo
+    10:22:void routeAudioTo(org.linphone.core.Call,java.util.List,boolean):150:162 -> routeAudioTo
+    23:30:void routeAudioTo(org.linphone.core.Call,java.util.List,boolean):161:168 -> routeAudioTo
+    31:44:void routeAudioTo(org.linphone.core.Call,java.util.List,boolean):167:180 -> routeAudioTo
+    1:1:void routeAudioTo$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,java.util.List,boolean,int,java.lang.Object):140:140 -> routeAudioTo$default
+    1:1:void routeAudioToBluetooth(org.linphone.core.Call,boolean):195:195 -> routeAudioToBluetooth
+    2:2:void routeAudioToBluetooth(org.linphone.core.Call,boolean):193:193 -> routeAudioToBluetooth
+    1:1:void routeAudioToBluetooth$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,boolean,int,java.lang.Object):192:192 -> routeAudioToBluetooth$default
+    1:1:void routeAudioToEarpiece(org.linphone.core.Call,boolean):185:185 -> routeAudioToEarpiece
+    1:1:void routeAudioToEarpiece$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,boolean,int,java.lang.Object):184:184 -> routeAudioToEarpiece$default
+    1:1:void routeAudioToHeadset(org.linphone.core.Call,boolean):203:203 -> routeAudioToHeadset
+    2:2:void routeAudioToHeadset(org.linphone.core.Call,boolean):201:201 -> routeAudioToHeadset
+    1:1:void routeAudioToHeadset$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,boolean,int,java.lang.Object):200:200 -> routeAudioToHeadset$default
+    1:1:void routeAudioToSpeaker(org.linphone.core.Call,boolean):189:189 -> routeAudioToSpeaker
+    1:1:void routeAudioToSpeaker$default(cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion,org.linphone.core.Call,boolean,int,java.lang.Object):188:188 -> routeAudioToSpeaker$default
 cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion$WhenMappings -> cc.cans.canscloud.sdk.utils.AudioRouteUtils$Companion$WhenMappings:
 # {"id":"sourceFile","fileName":"AudioRouteUtils.kt"}
 cc.cans.canscloud.sdk.utils.CansUtils -> cc.cans.canscloud.sdk.utils.CansUtils:

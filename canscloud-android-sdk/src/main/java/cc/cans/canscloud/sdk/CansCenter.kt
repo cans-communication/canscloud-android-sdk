@@ -36,31 +36,15 @@ import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.utils.ImageUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
+import org.linphone.core.Event
 import org.linphone.core.Friend
 import org.linphone.core.LogCollectionState
 import org.linphone.core.LogLevel
 import org.linphone.core.tools.compatibility.DeviceUtils
 
 data class Notifiable(val notificationId: Int) {
-    val messages: ArrayList<NotifiableMessage> = arrayListOf()
-
-    var isGroup: Boolean = false
-    var groupTitle: String? = null
-    var localIdentity: String? = null
-    var myself: String? = null
     var remoteAddress: String? = null
 }
-
-data class NotifiableMessage(
-    var message: String,
-    val friend: Friend?,
-    val sender: String,
-    val time: Long,
-    val senderAvatar: Bitmap? = null,
-    var filePath: Uri? = null,
-    var fileMime: String? = null,
-    val isOutgoing: Boolean = false,
-)
 
 class CansCenter : Cans {
     override lateinit var core: Core
@@ -117,37 +101,26 @@ class CansCenter : Cans {
         }
 
     override val destinationRemoteAddress: String
-        get() {
-            return callCans.remoteAddress.asStringUriOnly() ?: ""
-        }
+        get() = callCans.remoteAddress.asStringUriOnly()
 
     override val destinationUsername: String
-        get() {
-            return core.currentCall?.remoteAddress?.username ?: ""
-        }
+        get() = core.currentCall?.remoteAddress?.username ?: ""
 
     override val durationTime: Int?
-        get() {
-            val durationTime = core.currentCall?.duration
-            return durationTime
-        }
+        get() = core.currentCall?.duration
 
     override val startDateCall: Int
-        get() {
-            val startDate = core.currentCall?.callLog?.startDate?.toInt()
-            return startDate ?: 0
-        }
+        get() = core.currentCall?.callLog?.startDate?.toInt() ?: 0
 
     override val missedCallsCount: Int
-        get() {
-            return core.missedCallsCount
-        }
+        get() = core.missedCallsCount
 
     override val countCalls: Int
-        get() {
-            val call = core.callsNb
-            Log.i("[CansSDK]", "getCountCalls : $call")
-            return call
+        get() = core.callsNb
+
+    override val isBluetoothDevices: Boolean
+        get() = cansCenter().core.extendedAudioDevices.any {
+            it.type == AudioDevice.Type.Bluetooth
         }
 
     override val wasBluetoothPreviouslyAvailable: Boolean
@@ -160,14 +133,10 @@ class CansCenter : Cans {
         get() = AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
 
     override val isBluetoothState: Boolean
-        get() {
-            return AudioRouteUtils.isBluetoothAudioRouteAvailable()
-        }
+        get() = AudioRouteUtils.isBluetoothAudioRouteAvailable()
 
     override val isHeadsetState: Boolean
-        get() {
-            return AudioRouteUtils.isHeadsetAudioRouteAvailable()
-        }
+        get() = AudioRouteUtils.isHeadsetAudioRouteAvailable()
 
     private var coreListenerStub = object : CoreListenerStub() {
         override fun onRegistrationStateChanged(
@@ -255,6 +224,7 @@ class CansCenter : Cans {
 
         override fun onAudioDevicesListUpdated(core: Core) {
             Log.i("[CansSDK Controls]", "Audio devices list updated")
+            audioDevicesListUpdated()
             listeners.forEach { it.onAudioDevicesListUpdated() }
         }
     }
@@ -485,7 +455,7 @@ class CansCenter : Cans {
         if (AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()) {
             forceEarpieceAudioRoute()
         } else {
-            forceSpeakerAudioRoute()
+            routeAudioToSpeaker()
         }
     }
 
@@ -518,31 +488,36 @@ class CansCenter : Cans {
         }
     }
 
-    private fun forceEarpieceAudioRoute() {
+    override fun forceEarpieceAudioRoute() {
         if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
-            Log.i("[CansSDK Controls]", "Headset found, route audio to it instead of earpiece")
             AudioRouteUtils.routeAudioToHeadset()
         } else {
             AudioRouteUtils.routeAudioToEarpiece()
         }
-        AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
-        AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
     }
 
-    override fun forceHeadsetAudioRoute() {
+    override fun routeAudioToHeadset() {
         AudioRouteUtils.routeAudioToHeadset()
     }
 
-    override fun forceSpeakerAudioRoute() {
-        AudioRouteUtils.routeAudioToSpeaker()
-        AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
-        AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
+    override fun routeAudioToBluetooth() {
+        AudioRouteUtils.routeAudioToBluetooth()
     }
 
-    override fun forceBluetoothAudioRoute() {
-        AudioRouteUtils.routeAudioToBluetooth()
-        AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
-        AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
+    override fun routeAudioToSpeaker() {
+        AudioRouteUtils.routeAudioToSpeaker()
+    }
+
+    override fun audioDevicesListUpdated() {
+        updateAudioRoutesState()
+
+        if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
+            AudioRouteUtils.routeAudioToHeadset()
+        } else if (corePreferences.routeAudioToBluetoothIfAvailable) {
+            if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
+                AudioRouteUtils.routeAudioToBluetooth()
+            }
+        }
     }
 
     private fun vibrator() {

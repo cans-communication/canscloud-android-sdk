@@ -43,6 +43,8 @@ interface Cans {
 
     val countCalls: Int
 
+    val isBluetoothDevices : Boolean
+
     val isMicState: Boolean
 
     val isSpeakerState: Boolean
@@ -79,11 +81,16 @@ interface Cans {
 
     fun toggleMuteMicrophone()
 
-    fun forceHeadsetAudioRoute()
+    fun forceEarpieceAudioRoute()
 
-    fun forceSpeakerAudioRoute()
+    fun routeAudioToBluetooth()
 
-    fun forceBluetoothAudioRoute()
+    fun routeAudioToHeadset()
+
+    fun routeAudioToSpeaker()
+
+
+    fun audioDevicesListUpdated()
 
     fun isCallLogMissed(): Boolean
 
