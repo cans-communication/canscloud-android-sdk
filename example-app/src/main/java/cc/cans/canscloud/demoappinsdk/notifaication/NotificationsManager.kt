@@ -2,7 +2,6 @@ package cc.cans.canscloud.demoappinsdk.notifaication
 
 import android.Manifest
 import android.app.Notification
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -13,19 +12,26 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import cc.cans.canscloud.demoappinsdk.R
+import cc.cans.canscloud.demoappinsdk.call.CallActivity
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.demoappinsdk.call.IncomingActivity
+import cc.cans.canscloud.demoappinsdk.call.OutgoingActivity
+import cc.cans.canscloud.sdk.Notifiable
+import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
+import org.linphone.core.Call
 
 class NotificationsManager(private val context: Context) {
 
     companion object {
         const val INTENT_REMOTE_ADDRESS = "REMOTE_ADDRESS"
         private const val MISSED_CALL_TAG = "Missed call"
-        private const val MISSED_CALLS_NOTIF_ID = 10
+        private const val MISSED_CALLS_NOTIF_ID = 2
+
     }
+    private val callNotificationsMap: HashMap<String, Notifiable> = HashMap()
 
     private val notificationManager: NotificationManagerCompat by lazy {
         NotificationManagerCompat.from(context)
@@ -43,28 +49,24 @@ class NotificationsManager(private val context: Context) {
         override fun onCallState(state: CallState, message: String?) {
             Log.i("[NotificationsManager] onCallState: ", "$state")
             when (state) {
-                CallState.Idle -> {}
-                CallState.IncomingCall -> showIncomingCallNotification(context)
-                CallState.StartCall -> {}
-                CallState.CallOutgoing -> {}
-                CallState.StreamsRunning -> {}
-                CallState.Connected -> {
-                    dismissIncomingCallNotification()
+                CallState.IncomingCall -> displayIncomingCallNotification(context)
+                CallState.Error, CallState.CallEnd -> {
+                    dismissCallNotification()
                 }
-                CallState.Error -> {}
-                CallState.CallEnd -> {}
                 CallState.MissCall -> {
                     if (cansCenter().isCallLogMissed()) {
                         displayMissedCallNotification()
                     }
                 }
-                CallState.Unknown -> dismissIncomingCallNotification()
+                else -> {
+                    displayCallNotification(context)
+                }
             }
         }
 
         override fun onLastCallEnded() {
             Log.i("[NotificationsManager]", "onLastCallEnded")
-            dismissIncomingCallNotification()
+            dismissCallNotification()
         }
 
         override fun onAudioDeviceChanged() {
@@ -84,7 +86,10 @@ class NotificationsManager(private val context: Context) {
         cansCenter().addListener(listener)
     }
 
-    fun showIncomingCallNotification(context: Context) {
+    fun displayIncomingCallNotification(context: Context) {
+        val notifiable = getNotifiableForCall()
+        cancel(notifiable.notificationId)
+
         val incomingCallNotificationIntent = Intent(context, IncomingActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION)
 
@@ -97,15 +102,12 @@ class NotificationsManager(private val context: Context) {
             PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
         // Answer and Decline intents
 
         val answerIntent = Intent(context, AnswerCallReceiver::class.java)
         val answerPendingIntent = PendingIntent.getBroadcast(
             context,
-            0,
+            notifiable.notificationId,
             answerIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -113,10 +115,11 @@ class NotificationsManager(private val context: Context) {
         val declineIntent = Intent(context, DeclineCallReceiver::class.java)
         val declinePendingIntent = PendingIntent.getBroadcast(
             context,
-            1,
+            notifiable.notificationId,
             declineIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+
         val name = cansCenter().destinationUsername
 
         // Build the notification
@@ -136,7 +139,8 @@ class NotificationsManager(private val context: Context) {
             .setFullScreenIntent(pendingIntent, true)
             .setContentIntent(pendingIntent)
         // Show the notification
-        notificationManager.notify(1, builder.build())
+
+        notify(notifiable.notificationId, builder.build())
     }
 
     private fun displayMissedCallNotification() {
@@ -167,6 +171,107 @@ class NotificationsManager(private val context: Context) {
         notify(MISSED_CALLS_NOTIF_ID, notification, MISSED_CALL_TAG)
     }
 
+    fun displayCallNotification(context: Context) {
+        val notifiable = getNotifiableForCall()
+
+        val callActivity: Class<*> = when (cansCenter().callCans.state) {
+            Call.State.Paused, Call.State.Pausing, Call.State.PausedByRemote -> {
+                CallActivity::class.java
+            }
+            Call.State.OutgoingRinging, Call.State.OutgoingProgress, Call.State.OutgoingInit, Call.State.OutgoingEarlyMedia -> {
+                OutgoingActivity::class.java
+            }
+            else -> {
+                CallActivity::class.java
+            }
+        }
+
+        val serviceChannel = "${context.getString(R.string.app_name)} ${context.getString(cc.cans.canscloud.sdk.R.string.notification_channel_service_id)}"
+        val channelToUse = when (Compatibility.getChannelImportance(notificationManager, serviceChannel)) {
+            NotificationManagerCompat.IMPORTANCE_NONE -> {
+                "${context.getString(R.string.app_name)} ${context.getString(cc.cans.canscloud.sdk.R.string.notification_channel_incoming_call_id)}"
+            }
+            NotificationManagerCompat.IMPORTANCE_LOW -> {
+                // Expected, nothing to do
+                serviceChannel
+            }
+            else -> {
+                // If user disables & enabled back service notifications channel, importance won't be low anymore but default!
+                serviceChannel
+            }
+        }
+
+        val callNotificationIntent = Intent(context, callActivity)
+        callNotificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            notifiable.notificationId,
+            callNotificationIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        val displayName = ""
+
+        val stringResourceId: Int
+        val iconResourceId: Int
+
+        when (cansCenter().callCans.state) {
+            Call.State.Paused, Call.State.Pausing, Call.State.PausedByRemote -> {
+                stringResourceId = cc.cans.canscloud.sdk.R.string.call_notification_paused
+                iconResourceId = cc.cans.canscloud.sdk.R.drawable.topbar_call_paused_notification
+            }
+            Call.State.OutgoingRinging, Call.State.OutgoingProgress, Call.State.OutgoingInit, Call.State.OutgoingEarlyMedia -> {
+                stringResourceId = cc.cans.canscloud.sdk.R.string.call_notification_outgoing
+                iconResourceId = cc.cans.canscloud.sdk.R.drawable.topbar_call_notification
+            }
+            else -> {
+                stringResourceId = cc.cans.canscloud.sdk.R.string.call_notification_active
+                iconResourceId = cc.cans.canscloud.sdk.R.drawable.topbar_call_notification
+            }
+        }
+
+        val declineIntent = Intent(context, DeclineCallReceiver::class.java)
+        val declinePendingIntent = PendingIntent.getBroadcast(
+            context,
+            notifiable.notificationId,
+            declineIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val builder = NotificationCompat.Builder(
+            context,
+            channelToUse,
+        )
+            .setContentTitle(displayName)
+            .setContentText(context.getString(stringResourceId))
+            .setSmallIcon(iconResourceId)
+           // .setLargeIcon(roundPicture)
+            .setAutoCancel(false)
+            .setCategory(NotificationCompat.CATEGORY_CALL)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setWhen(System.currentTimeMillis())
+            .setShowWhen(true)
+            .setOngoing(true)
+            .setColor(ContextCompat.getColor(context, cc.cans.canscloud.sdk.R.color.notification_led_color))
+            .addAction(R.drawable.hang_up, "Decline", declinePendingIntent)
+
+
+        if (!cansCenter().corePreferences.preventInterfaceFromShowingUp) {
+            builder.setContentIntent(pendingIntent)
+        }
+
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+
+        notify(notifiable.notificationId, builder.build())
+    }
+
     private fun notify(id: Int, notification: Notification, tag: String? = null) {
         if (ActivityCompat.checkSelfPermission(
                 context,
@@ -178,13 +283,39 @@ class NotificationsManager(private val context: Context) {
         notificationManager.notify(tag, id, notification)
     }
 
-    fun dismissIncomingCallNotification() {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancel(1)
+    private fun getNotificationIdForCall(): Int {
+        return cansCenter().callCans.callLog.startDate.toInt()
+    }
+
+    private fun getNotifiableForCall(): Notifiable {
+        val address = cansCenter().callCans.remoteAddress.asStringUriOnly()
+        var notifiable: Notifiable? = callNotificationsMap[address]
+        if (notifiable == null) {
+            notifiable = Notifiable(getNotificationIdForCall())
+            notifiable.remoteAddress = cansCenter().callCans.remoteAddress.asStringUriOnly()
+
+            callNotificationsMap[address] = notifiable
+        }
+        return notifiable
+    }
+
+    fun dismissCallNotification() {
+        val address = cansCenter().destinationRemoteAddress
+        val notifiable: Notifiable? = callNotificationsMap[address]
+        if (notifiable != null) {
+            cancel(notifiable.notificationId)
+            callNotificationsMap.remove(address)
+        } else {
+            Log.w("[Notifications Manager] "," No notification found for call")
+        }
     }
 
     fun dismissMissedCallNotification() {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancel(MISSED_CALL_TAG, MISSED_CALLS_NOTIF_ID)
+        cancel(MISSED_CALLS_NOTIF_ID, MISSED_CALL_TAG)
+    }
+
+    fun cancel(id: Int, tag: String? = null) {
+        Log.i("[Notifications Manager] ","Canceling [$id] with tag [$tag]")
+        notificationManager.cancel(tag, id)
     }
 }

@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Vibrator
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.core.CorePreferences
+import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.CansTransport
 import org.linphone.core.Call
 import org.linphone.core.Core
@@ -15,6 +16,8 @@ interface Cans {
     var callCans: Call
 
     var mVibrator: Vibrator
+
+    val callState: CallState
 
     var corePreferences: CorePreferences
 
@@ -34,15 +37,23 @@ interface Cans {
 
     val durationTime: Int?
 
+    val startDateCall: Int
+
     val missedCallsCount: Int
 
     val countCalls: Int
+
+    val isBluetoothDevices : Boolean
 
     val isMicState: Boolean
 
     val isSpeakerState: Boolean
 
     val isBluetoothState: Boolean
+
+    val isHeadsetState: Boolean
+
+    val wasBluetoothPreviouslyAvailable: Boolean
 
     fun config(context: Context, appName: String)
 
@@ -62,15 +73,30 @@ interface Cans {
 
     fun startAnswerCall()
 
+    fun updateAudioRelated()
+
+    fun updateAudioRoutesState()
+
     fun toggleSpeaker()
 
     fun toggleMuteMicrophone()
 
-    fun forceSpeakerAudioRoute()
+    fun forceEarpieceAudioRoute()
 
-    fun forceBluetoothAudioRoute()
+    fun routeAudioToBluetooth()
+
+    fun routeAudioToHeadset()
+
+    fun routeAudioToSpeaker()
+
+
+    fun audioDevicesListUpdated()
 
     fun isCallLogMissed(): Boolean
+
+    fun isPauseState() : Boolean
+
+    fun isOutgoingState() : Boolean
 
     fun addListener(listener: CansListenerStub)
 
