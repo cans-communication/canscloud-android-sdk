@@ -9,7 +9,7 @@ import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityOutgoinglBinding
 import cc.cans.canscloud.demoappinsdk.viewmodel.OutgoingViewModel
 import cc.cans.canscloud.sdk.compatibility.Compatibility
-import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.utils.PermissionHelper
 
 class OutgoingActivity : AppCompatActivity() {
@@ -24,20 +24,20 @@ class OutgoingActivity : AppCompatActivity() {
 
         outgoingViewModel = ViewModelProvider(this)[OutgoingViewModel::class.java]
 
-        binding.textViewPhoneNumber.text = cans.destinationUsername
+        binding.textViewPhoneNumber.text = cansCenter().destinationUsername
 
         outgoingViewModel.isCallEnd.observe(this) {
             finish()
         }
 
         binding.buttonHangUp.setOnClickListener {
-            cans.terminateCall()
+            cansCenter().terminateCall()
             finish()
         }
 
         binding.micro.setOnClickListener {
-            cans.toggleMuteMicrophone()
-            if (cans.isMicState) {
+            cansCenter().toggleMuteMicrophone()
+            if (cansCenter().isMicState) {
                 binding.micro.setImageResource(R.drawable.ongoing_mute_select)
             } else {
                 binding.micro.setImageResource(R.drawable.ongoing_mute_default)
@@ -45,8 +45,8 @@ class OutgoingActivity : AppCompatActivity() {
         }
 
         binding.speaker.setOnClickListener {
-            cans.toggleSpeaker()
-            if (cans.isSpeakerState) {
+            cansCenter().toggleSpeaker()
+            if (cansCenter().isSpeakerState) {
                 binding.speaker.setImageResource(R.drawable.ongoing_speaker_selected)
             } else {
                 binding.speaker.setImageResource(R.drawable.ongoing_speaker_default)
@@ -59,12 +59,12 @@ class OutgoingActivity : AppCompatActivity() {
     private fun checkPermissions() {
         val permissionsRequiredList = arrayListOf<String>()
 
-        if (!PermissionHelper.get().hasRecordAudioPermission()) {
+        if (!PermissionHelper.singletonHolder().get().hasRecordAudioPermission()) {
             android.util.Log.i("[$TAG]","Asking for RECORD_AUDIO permission")
             permissionsRequiredList.add(Manifest.permission.RECORD_AUDIO)
         }
 
-        if (Build.VERSION.SDK_INT >= (Build.VERSION_CODES.S) && !PermissionHelper.get().hasBluetoothConnectPermission()) {
+        if (Build.VERSION.SDK_INT >= (Build.VERSION_CODES.S) && !PermissionHelper.singletonHolder().get().hasBluetoothConnectPermission()) {
             android.util.Log.i("[$TAG]","Asking for BLUETOOTH_CONNECT permission")
             permissionsRequiredList.add(Compatibility.BLUETOOTH_CONNECT)
         }

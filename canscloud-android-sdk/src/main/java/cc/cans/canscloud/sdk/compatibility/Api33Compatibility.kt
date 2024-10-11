@@ -24,11 +24,13 @@ import android.annotation.TargetApi
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
+import androidx.annotation.Keep
 import androidx.fragment.app.Fragment
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 
 @TargetApi(33)
 class Api33Compatibility {
+    @Keep
     companion object {
         fun requestPostNotificationsPermission(activity: Activity, code: Int) {
             activity.requestPermissions(

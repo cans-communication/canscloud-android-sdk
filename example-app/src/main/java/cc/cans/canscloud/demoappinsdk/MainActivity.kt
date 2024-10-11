@@ -9,7 +9,7 @@ import androidx.core.view.WindowCompat
 import cc.cans.canscloud.demoappinsdk.CansApplication.Companion.coreContext
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityMainBinding
-import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.utils.PermissionHelper
 import cc.cans.canscloud.sdk.models.CansTransport
@@ -25,7 +25,7 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        cans.register(
+        cansCenter().register(
             "40102",
             "p40102CANS",
             "cns.cans.cc",
@@ -73,10 +73,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkPermissions() {
-        if (!PermissionHelper.get().hasReadPhoneStatePermission()) {
+        if (!PermissionHelper.singletonHolder().get().hasReadPhoneStatePermission()) {
             android.util.Log.i("[$TAG]","Asking for READ_PHONE_STATE permission")
             requestPermissions(arrayOf(Manifest.permission.READ_PHONE_STATE), 0)
-        } else if (!PermissionHelper.get().hasPostNotificationsPermission()) {
+        } else if (!PermissionHelper.singletonHolder().get().hasPostNotificationsPermission()) {
             // Don't check the following the previous permission is being asked
             android.util.Log.i("[$TAG]","Asking for POST_NOTIFICATIONS permission")
             Compatibility.requestPostNotificationsPermission(this, 2)
@@ -99,9 +99,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkTelecomManagerPermissions() {
-        if (!cans.corePreferences.useTelecomManager) {
+        if (!cansCenter().corePreferences.useTelecomManager) {
             android.util.Log.i("[$TAG]","Telecom Manager feature is disabled")
-            if (cans.corePreferences.manuallyDisabledTelecomManager) {
+            if (cansCenter().corePreferences.manuallyDisabledTelecomManager) {
                 android.util.Log.w("[$TAG]"," User has manually disabled Telecom Manager feature")
             } else {
                 if (Compatibility.hasTelecomManagerPermissions(this)) {
@@ -118,10 +118,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun enableTelecomManager() {
         android.util.Log.i("[$TAG]"," Telecom Manager permissions granted")
-        if (!TelecomHelper.exists()) {
+        if (!TelecomHelper.singletonHolder().exists()) {
             android.util.Log.i("[$TAG]"," Creating Telecom Helper")
             if (Compatibility.hasTelecomManagerFeature(this)) {
-                TelecomHelper.create(this)
+                TelecomHelper.singletonHolder().create(this)
             } else {
                 android.util.Log.e(
                     "[$TAG]"," Telecom Helper can't be created, device doesn't support connection service!"
@@ -130,6 +130,6 @@ class MainActivity : AppCompatActivity() {
         } else {
             android.util.Log.e("[$TAG]"," Telecom Manager was already created ?!")
         }
-        cans.corePreferences.useTelecomManager = true
+        cansCenter().corePreferences.useTelecomManager = true
     }
 }

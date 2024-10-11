@@ -19,37 +19,45 @@
  */
 package cc.cans.canscloud.sdk.compatibility
 
-import android.Manifest
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
+import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.ImageDecoder
 import android.net.Uri
-import androidx.annotation.Keep
-import cc.cans.canscloud.sdk.compatibility.Compatibility
-import org.linphone.core.tools.Log
+import android.os.Build
+import android.os.Vibrator
+import android.provider.MediaStore
+import android.provider.Settings
 
-@TargetApi(29)
-class Api29Compatibility {
-    @Keep
+@Suppress("DEPRECATION")
+@TargetApi(21)
+class Api21Compatibility {
     companion object {
-        fun hasTelecomManagerPermission(context: Context): Boolean {
-            return Compatibility.hasPermission(context, Manifest.permission.READ_PHONE_STATE) &&
-                    Compatibility.hasPermission(context, Manifest.permission.MANAGE_OWN_CALLS)
+        @SuppressLint("MissingPermission")
+        fun getDeviceName(context: Context): String {
+            val adapter = BluetoothAdapter.getDefaultAdapter()
+            var name = adapter?.name
+            if (name == null) {
+                name = Settings.Secure.getString(
+                    context.contentResolver,
+                    "bluetooth_name"
+                )
+            }
+            if (name == null) {
+                name = Build.MANUFACTURER + " " + Build.MODEL
+            }
+            return name
         }
 
-        fun hasReadPhoneStatePermission(context: Context): Boolean {
-            val granted = Compatibility.hasPermission(context, Manifest.permission.READ_PHONE_STATE)
-            if (granted) {
-                Log.d("[Permission Helper] Permission READ_PHONE_STATE is granted")
-            } else {
-                Log.w("[Permission Helper] Permission READ_PHONE_STATE is denied")
-            }
-            return granted
+        @SuppressLint("MissingPermission")
+        fun eventVibration(vibrator: Vibrator) {
+            val pattern = longArrayOf(0, 100, 100)
+            vibrator.vibrate(pattern, -1)
         }
 
         fun getBitmapFromUri(context: Context, uri: Uri): Bitmap {
-            return ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri))
+            return MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
         }
     }
 }

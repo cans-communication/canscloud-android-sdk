@@ -24,7 +24,7 @@ import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
 import android.telecom.*
-import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import org.linphone.core.Call
 import org.linphone.core.Core
 import org.linphone.core.CoreListenerStub
@@ -43,7 +43,7 @@ class TelecomConnectionService : ConnectionService() {
             Log.i("[$TAG] call [${call.callLog.callId}] state changed: $state")
             when (call.state) {
                 Call.State.OutgoingProgress -> {
-                    for (connection in TelecomHelper.get().connections) {
+                    for (connection in TelecomHelper.singletonHolder().get().connections) {
                         if (connection.callId.isEmpty()) {
                             Log.i("$TAG] Updating connection with call ID: ${call.callLog.callId}")
                             connection.callId = core.currentCall?.callLog?.callId.orEmpty()
@@ -60,10 +60,10 @@ class TelecomConnectionService : ConnectionService() {
         }
 
         override fun onLastCallEnded(core: Core) {
-            val connectionsCount = TelecomHelper.get().connections.size
+            val connectionsCount = TelecomHelper.singletonHolder().get().connections.size
             if (connectionsCount > 0) {
                 Log.w("[$TAG] Last call ended, there is $connectionsCount connections still alive")
-                for (connection in TelecomHelper.get().connections) {
+                for (connection in TelecomHelper.singletonHolder().get().connections) {
                     Log.w("[$TAG] Destroying zombie connection ${connection.callId}")
                     connection.setDisconnected(DisconnectCause(DisconnectCause.OTHER))
                     connection.destroy()
@@ -76,12 +76,12 @@ class TelecomConnectionService : ConnectionService() {
         super.onCreate()
 
         Log.i("[$TAG] onCreate()")
-        cans.core.addListener(listener)
+        cansCenter().core.addListener(listener)
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
         Log.i("[$TAG] onUnbind()")
-        cans.core.removeListener(listener)
+        cansCenter().core.removeListener(listener)
 
         return super.onUnbind(intent)
     }
@@ -90,7 +90,7 @@ class TelecomConnectionService : ConnectionService() {
         connectionManagerPhoneAccount: PhoneAccountHandle,
         request: ConnectionRequest,
     ): Connection {
-        if (cans.core.callsNb == 0) {
+        if (cansCenter().core.callsNb == 0) {
             Log.w("[$TAG] No call in Core, aborting outgoing connection!")
             return Connection.createCanceledConnection()
         }
@@ -104,7 +104,7 @@ class TelecomConnectionService : ConnectionService() {
             var callId = extras.getString("Call-ID")
             val displayName = extras.getString("DisplayName")
             if (callId == null) {
-                callId = cans.core.currentCall?.callLog?.callId.orEmpty()
+                callId = cansCenter().core.currentCall?.callLog?.callId.orEmpty()
             }
             Log.i("[$TAG] Outgoing connection is for call [$callId] with display name [$displayName]")
 
@@ -122,7 +122,7 @@ class TelecomConnectionService : ConnectionService() {
             connection.setCallerDisplayName(displayName, TelecomManager.PRESENTATION_ALLOWED)
             Log.i("[$TAG] Address is $providedHandle")
 
-            TelecomHelper.get().connections.add(connection)
+            TelecomHelper.singletonHolder().get().connections.add(connection)
             connection
         } else {
             Log.e("[$TAG] Error: $accountHandle $componentName")
@@ -139,7 +139,7 @@ class TelecomConnectionService : ConnectionService() {
         connectionManagerPhoneAccount: PhoneAccountHandle,
         request: ConnectionRequest,
     ): Connection {
-        if (cans.core.callsNb == 0) {
+        if (cansCenter().core.callsNb == 0) {
             Log.w("[$TAG] No call in Core, aborting incoming connection!")
             return Connection.createCanceledConnection()
         }
@@ -154,7 +154,7 @@ class TelecomConnectionService : ConnectionService() {
             var callId = incomingExtras?.getString("Call-ID")
             val displayName = incomingExtras?.getString("DisplayName")
             if (callId == null) {
-                callId = cans.core.currentCall?.callLog?.callId.orEmpty()
+                callId = cansCenter().core.currentCall?.callLog?.callId.orEmpty()
             }
             Log.i("[$TAG] Incoming connection is for call [$callId] with display name [$displayName]")
 
@@ -167,7 +167,7 @@ class TelecomConnectionService : ConnectionService() {
             connection.setCallerDisplayName(displayName, TelecomManager.PRESENTATION_ALLOWED)
             Log.i("[$TAG] Address is $providedHandle")
 
-            TelecomHelper.get().connections.add(connection)
+            TelecomHelper.singletonHolder().get().connections.add(connection)
             connection
         } else {
             Log.e("[$TAG] Error: $accountHandle $componentName")
@@ -182,26 +182,26 @@ class TelecomConnectionService : ConnectionService() {
 
     private fun onCallError(call: Call) {
         val callId = call.callLog.callId
-        val connection = TelecomHelper.get().findConnectionForCallId(callId.orEmpty())
+        val connection = TelecomHelper.singletonHolder().get().findConnectionForCallId(callId.orEmpty())
         if (connection == null) {
             Log.e("[$TAG] Failed to find connection for call id: $callId")
             return
         }
 
-        TelecomHelper.get().connections.remove(connection)
+        TelecomHelper.singletonHolder().get().connections.remove(connection)
         connection.setDisconnected(DisconnectCause(DisconnectCause.ERROR))
         connection.destroy()
     }
 
     private fun onCallEnded(call: Call) {
         val callId = call.callLog.callId
-        val connection = TelecomHelper.get().findConnectionForCallId(callId.orEmpty())
+        val connection = TelecomHelper.singletonHolder().get().findConnectionForCallId(callId.orEmpty())
         if (connection == null) {
             Log.e("[$TAG] Failed to find connection for call id: $callId")
             return
         }
 
-        TelecomHelper.get().connections.remove(connection)
+        TelecomHelper.singletonHolder().get().connections.remove(connection)
         val reason = call.reason
         Log.i("[$TAG] Call [$callId] ended with reason: $reason, destroying connection")
         connection.setDisconnected(DisconnectCause(DisconnectCause.LOCAL))
@@ -210,7 +210,7 @@ class TelecomConnectionService : ConnectionService() {
 
     private fun onCallConnected(call: Call) {
         val callId = call.callLog.callId
-        val connection = TelecomHelper.get().findConnectionForCallId(callId.orEmpty())
+        val connection = TelecomHelper.singletonHolder().get().findConnectionForCallId(callId.orEmpty())
         if (connection == null) {
             Log.e("[$TAG] Failed to find connection for call id: $callId")
             return

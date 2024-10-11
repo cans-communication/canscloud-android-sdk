@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import cc.cans.canscloud.sdk.callback.CansListenerStub
-import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
 
@@ -16,12 +16,11 @@ class CallsViewModel : ViewModel() {
 
     private val listener = object : CansListenerStub {
         override fun onAudioDeviceChanged() {
-            setAudio()
+            isSpeaker.value = cansCenter().isSpeakerState
+            isBluetooth.value = cansCenter().isBluetoothState
         }
 
-        override fun onAudioDevicesListUpdated() {
-            setAudio()
-        }
+        override fun onAudioDevicesListUpdated() {}
 
         override fun onCallState(
             state: CallState,
@@ -32,7 +31,7 @@ class CallsViewModel : ViewModel() {
                 CallState.CallOutgoing -> {}
                 CallState.IncomingCall -> {}
                 CallState.StartCall ->  {}
-                CallState.Connected ->  callDuration.value = cans.durationTime
+                CallState.Connected ->  callDuration.value = cansCenter().durationTime
                 CallState.Error -> {}
                 CallState.CallEnd -> {}
                 CallState.MissCall -> {}
@@ -55,29 +54,16 @@ class CallsViewModel : ViewModel() {
     }
 
     init {
-        cans.addListener(listener)
-        callDuration.value = cans.durationTime
-    }
+        isSpeaker.value = cansCenter().isSpeakerState
+        isBluetooth.value = cansCenter().isBluetoothState
+        cansCenter().updateAudioRelated()
 
-    fun setAudio() {
-        if (cans.isBluetoothState) {
-            isBluetooth.value = true
-        } else {
-            isBluetooth.value = false
-            setSpeaker()
-        }
-    }
-
-    fun setSpeaker() {
-        if (cans.isSpeakerState) {
-            isSpeaker.value = true
-        } else {
-            isSpeaker.value = false
-        }
+        cansCenter().addListener(listener)
+        callDuration.value = cansCenter().durationTime
     }
 
     override fun onCleared() {
-        cans.removeListener(listener)
+        cansCenter().removeListener(listener)
         super.onCleared()
     }
 }

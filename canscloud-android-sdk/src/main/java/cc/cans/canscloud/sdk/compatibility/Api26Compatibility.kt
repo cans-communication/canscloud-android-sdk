@@ -23,11 +23,14 @@ import android.Manifest
 import android.app.*
 import android.content.Context
 import android.content.pm.PackageManager
+import androidx.annotation.Keep
+import androidx.core.app.NotificationManagerCompat
 import androidx.fragment.app.Fragment
 import cc.cans.canscloud.sdk.telecom.NativeCallWrapper
 import org.linphone.core.tools.Log
 
 class Api26Compatibility {
+    @Keep
     companion object {
         fun changeAudioRouteForTelecomManager(connection: NativeCallWrapper, route: Int): Boolean {
             Log.i("[Telecom Helper] Changing audio route [$route] on connection ${connection.callId}")
@@ -43,6 +46,14 @@ class Api26Compatibility {
 
             connection.setAudioRoute(route)
             return true
+        }
+
+        fun getChannelImportance(
+            notificationManager: NotificationManagerCompat,
+            channelId: String,
+        ): Int {
+            val channel = notificationManager.getNotificationChannel(channelId)
+            return channel?.importance ?: NotificationManagerCompat.IMPORTANCE_NONE
         }
 
         fun requestTelecomManagerPermission(activity: Activity, code: Int) {

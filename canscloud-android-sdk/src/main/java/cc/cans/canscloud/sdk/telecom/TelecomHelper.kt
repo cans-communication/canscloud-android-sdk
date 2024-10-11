@@ -30,7 +30,7 @@ import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
 import android.telecom.TelecomManager.*
 import cc.cans.canscloud.sdk.R
-import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cans
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.utils.SingletonHolder
 import cc.cans.canscloud.sdk.utils.PermissionHelper
 import org.linphone.core.Call
@@ -40,7 +40,14 @@ import org.linphone.core.tools.Log
 import java.lang.Exception
 
 class TelecomHelper private constructor(context: Context) {
-    companion object : SingletonHolder<TelecomHelper, Context>(::TelecomHelper)
+    companion object {
+        private var holder = SingletonHolder<TelecomHelper, Context>(::TelecomHelper)
+
+        @JvmStatic
+        fun singletonHolder(): SingletonHolder<TelecomHelper, Context> {
+            return holder
+        }
+    }
 
     private val telecomManager: TelecomManager = context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
 
@@ -70,12 +77,12 @@ class TelecomHelper private constructor(context: Context) {
     }
 
     init {
-        cans.core.addListener(listener)
+        cansCenter().core.addListener(listener)
         Log.i("[Telecom Helper] Created")
     }
 
     fun destroy() {
-        cans.core.removeListener(listener)
+        cansCenter().core.removeListener(listener)
         Log.i("[Telecom Helper] Destroyed")
     }
 
@@ -101,7 +108,7 @@ class TelecomHelper private constructor(context: Context) {
 
     @SuppressLint("MissingPermission")
     fun findExistingAccount(context: Context): PhoneAccount? {
-        if (PermissionHelper.required(context).hasReadPhoneStateOrPhoneNumbersPermission()) {
+        if (PermissionHelper.singletonHolder().required(context).hasReadPhoneStateOrPhoneNumbersPermission()) {
             var account: PhoneAccount? = null
             val phoneAccountHandleList: List<PhoneAccountHandle> =
                 telecomManager.selfManagedPhoneAccounts
@@ -146,8 +153,8 @@ class TelecomHelper private constructor(context: Context) {
         )
         // Take care that identity may be parsed, otherwise Android OS may crash during startup
         // and user will have to do a factory reset...
-        val identity =  cans.core.defaultAccount?.params?.identityAddress?.asStringUriOnly()
-            ?:  cans.core.createPrimaryContactParsed()?.asStringUriOnly()
+        val identity = cansCenter().core.defaultAccount?.params?.identityAddress?.asStringUriOnly()
+            ?:  cansCenter().core.createPrimaryContactParsed()?.asStringUriOnly()
             ?: "sip:linphone.android@sip.linphone.org"
 
         val address = Uri.parse(identity)

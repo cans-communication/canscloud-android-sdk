@@ -13,13 +13,23 @@
 #}
 
 # Keep class names but obfuscate method bodies
--keepnames class * {
-    <methods>;
+
+
+# Keep all classes and public methods in the closed-source SDK
+-keep class cc.cans.canscloud.sdk.** {
+    <init>();      # Keep constructors
+    public *;      # Keep public methods
 }
 
-# Obfuscate everything else (fields, method bodies, etc.)
--dontwarn *
--dontoptimize
 
+# Keep all annotations
+-keepattributes *Annotation*
 
+# Optionally, keep Kotlin metadata (useful for reflection)
+-keep class kotlin.Metadata { *; }
 
+-dontshrink
+-printseeds
+-verbose
+-useuniqueclassmembernames
+-printmapping mapping.txt
