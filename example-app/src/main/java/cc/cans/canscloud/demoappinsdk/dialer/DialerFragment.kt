@@ -1,6 +1,7 @@
 package cc.cans.canscloud.demoappinsdk.dialer
 
 import android.os.Bundle
+import android.text.Editable
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -58,11 +59,15 @@ class DialerFragment : Fragment() {
             if (binding.editTextPhoneNumber.text.isNotEmpty()) {
                 cansCenter().startCall(binding.editTextPhoneNumber.text.toString())
             } else {
-                Toast.makeText(
-                    requireContext(),
-                    getString(R.string.start_call_error),
-                    Toast.LENGTH_SHORT
-                ).show()
+                if (cansCenter().lastOutgoingCallLog != "") {
+                    binding.editTextPhoneNumber.text = Editable.Factory.getInstance().newEditable(cansCenter().lastOutgoingCallLog)
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        getString(R.string.start_call_error),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
 
