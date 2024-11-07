@@ -114,6 +114,16 @@ class CansCenter : Cans {
     override val destinationUsername: String
         get() = core.currentCall?.remoteAddress?.username ?: ""
 
+    override val lastOutgoingCallLog: String
+        get() {
+            val callLog = core.lastOutgoingCallLog
+            if (callLog != null) {
+                return CansUtils.getDisplayableAddress(callLog.remoteAddress).substringBefore("@")
+                    .substringAfter("sip:")
+            }
+            return ""
+        }
+
     override val durationTime: Int?
         get() = core.currentCall?.duration
 
@@ -565,4 +575,7 @@ class CansCenter : Cans {
         listeners.remove(listener)
     }
 
+    override fun removeAllListener() {
+        listeners.clear()
+    }
 }

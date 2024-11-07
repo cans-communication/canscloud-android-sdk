@@ -35,6 +35,8 @@ interface Cans {
 
     val destinationUsername: String
 
+    val lastOutgoingCallLog: String
+
     val durationTime: Int?
 
     val startDateCall: Int
@@ -89,7 +91,6 @@ interface Cans {
 
     fun routeAudioToSpeaker()
 
-
     fun audioDevicesListUpdated()
 
     fun isCallLogMissed(): Boolean
@@ -101,4 +102,6 @@ interface Cans {
     fun addListener(listener: CansListenerStub)
 
     fun removeListener(listener: CansListenerStub)
+
+    fun removeAllListener()
 }
