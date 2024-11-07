@@ -10,6 +10,7 @@ import android.telephony.TelephonyManager.NETWORK_TYPE_IDEN
 import androidx.annotation.Keep
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.CansCenter
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import org.linphone.core.Address
 
 class CansUtils {
@@ -34,7 +35,7 @@ class CansUtils {
 
         fun getDisplayableAddress(address: Address?): String {
             if (address == null) return "[null]"
-            return if (cans.corePreferences.replaceSipUriByUsername) {
+            return if (cansCenter().corePreferences.replaceSipUriByUsername) {
                 address.username ?: address.asStringUriOnly()
             } else {
                 val copy = address.clone()
