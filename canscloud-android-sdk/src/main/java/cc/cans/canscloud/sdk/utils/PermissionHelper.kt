@@ -21,7 +21,6 @@ package cc.cans.canscloud.sdk.utils
 
 import android.Manifest
 import android.content.Context
-import androidx.annotation.Keep
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import org.linphone.core.tools.Log
 
