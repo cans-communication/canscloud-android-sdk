@@ -50,6 +50,7 @@ class OutgoingViewModel : ViewModel() {
     }
 
     init {
+        cansCenter().isSpeakerState
         cansCenter().addListener(listener)
     }
 

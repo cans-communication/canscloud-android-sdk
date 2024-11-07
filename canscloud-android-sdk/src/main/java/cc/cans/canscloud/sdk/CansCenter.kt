@@ -1,12 +1,17 @@
 package cc.cans.canscloud.sdk
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothProfile
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.media.AudioManager
 import android.net.Uri
 import android.os.Vibrator
 import android.widget.Toast
@@ -28,6 +33,7 @@ import org.linphone.core.ProxyConfig
 import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import android.util.Log
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import cc.cans.canscloud.sdk.compatibility.Compatibility
@@ -51,6 +57,8 @@ class CansCenter : Cans {
     override lateinit var callCans: Call
     override lateinit var mVibrator: Vibrator
     override lateinit var callState: CallState
+
+    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
     var appName: String? = null
     var audioRoutesEnabled: Boolean = false
@@ -106,6 +114,16 @@ class CansCenter : Cans {
     override val destinationUsername: String
         get() = core.currentCall?.remoteAddress?.username ?: ""
 
+    override val lastOutgoingCallLog: String
+        get() {
+            val callLog = core.lastOutgoingCallLog
+            if (callLog != null) {
+                return CansUtils.getDisplayableAddress(callLog.remoteAddress).substringBefore("@")
+                    .substringAfter("sip:")
+            }
+            return ""
+        }
+
     override val durationTime: Int?
         get() = core.currentCall?.duration
 
@@ -133,7 +151,7 @@ class CansCenter : Cans {
         get() = AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
 
     override val isBluetoothState: Boolean
-        get() = AudioRouteUtils.isBluetoothAudioRouteAvailable()
+        get() = audioManager.isBluetoothScoOn
 
     override val isHeadsetState: Boolean
         get() = AudioRouteUtils.isHeadsetAudioRouteAvailable()
@@ -481,11 +499,8 @@ class CansCenter : Cans {
     }
 
     override fun updateAudioRoutesState() {
-        val bluetoothDeviceAvailable = AudioRouteUtils.isBluetoothAudioRouteAvailable()
-        audioRoutesEnabled = bluetoothDeviceAvailable
-        if (!bluetoothDeviceAvailable) {
-            audioRoutesEnabled = false
-        }
+        val bluetoothAdapter: BluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        audioRoutesEnabled = bluetoothAdapter.isEnabled
     }
 
     override fun forceEarpieceAudioRoute() {
@@ -502,6 +517,8 @@ class CansCenter : Cans {
 
     override fun routeAudioToBluetooth() {
         AudioRouteUtils.routeAudioToBluetooth()
+        audioManager.startBluetoothSco()
+        audioManager.isBluetoothScoOn = true
     }
 
     override fun routeAudioToSpeaker() {
@@ -510,12 +527,24 @@ class CansCenter : Cans {
 
     override fun audioDevicesListUpdated() {
         updateAudioRoutesState()
-
         if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
             AudioRouteUtils.routeAudioToHeadset()
-        } else if (corePreferences.routeAudioToBluetoothIfAvailable) {
-            if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
-                AudioRouteUtils.routeAudioToBluetooth()
+        } else if (!isBluetoothState && corePreferences.routeAudioToBluetoothIfAvailable) {
+            val bluetoothAdapter: BluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+            if (bluetoothAdapter.isEnabled) {
+                if (ActivityCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.BLUETOOTH_CONNECT
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) {
+                    val connectedDevices =
+                        bluetoothAdapter.getProfileConnectionState(BluetoothProfile.HEADSET)
+                    if (connectedDevices == BluetoothProfile.STATE_CONNECTED) {
+                        println("[bluetoothAdapter] Audio devices list updated ${bluetoothAdapter.name}")
+                        audioManager.startBluetoothSco()
+                        audioManager.isBluetoothScoOn = true
+                    }
+                }
             }
         }
     }
@@ -546,4 +575,7 @@ class CansCenter : Cans {
         listeners.remove(listener)
     }
 
+    override fun removeAllListener() {
+        listeners.clear()
+    }
 }
