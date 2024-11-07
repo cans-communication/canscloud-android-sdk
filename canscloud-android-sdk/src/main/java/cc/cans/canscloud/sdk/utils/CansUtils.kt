@@ -8,10 +8,16 @@ import android.telephony.TelephonyManager.NETWORK_TYPE_EDGE
 import android.telephony.TelephonyManager.NETWORK_TYPE_GPRS
 import android.telephony.TelephonyManager.NETWORK_TYPE_IDEN
 import androidx.annotation.Keep
+import cc.cans.canscloud.sdk.Cans
+import cc.cans.canscloud.sdk.CansCenter
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
+import org.linphone.core.Address
 
 class CansUtils {
     @Keep
     companion object {
+        private val cans: Cans = CansCenter()
+
         @SuppressLint("MissingPermission")
         fun checkIfNetworkHasLowBandwidth(context: Context): Boolean {
             val connMgr =
@@ -25,6 +31,17 @@ class CansUtils {
             }
             // In doubt return false
             return false
+        }
+
+        fun getDisplayableAddress(address: Address?): String {
+            if (address == null) return "[null]"
+            return if (cansCenter().corePreferences.replaceSipUriByUsername) {
+                address.username ?: address.asStringUriOnly()
+            } else {
+                val copy = address.clone()
+                copy.clean() // To remove gruu if any
+                copy.asStringUriOnly()
+            }
         }
     }
 }
