@@ -2,17 +2,13 @@ package cc.cans.canscloud.sdk
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.media.AudioManager
-import android.net.Uri
 import android.os.Vibrator
 import android.widget.Toast
 import androidx.core.app.NotificationManagerCompat
@@ -34,16 +30,10 @@ import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import android.util.Log
 import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
-import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
-import cc.cans.canscloud.sdk.utils.ImageUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
-import org.linphone.core.Event
-import org.linphone.core.Friend
 import org.linphone.core.LogCollectionState
 import org.linphone.core.LogLevel
 import org.linphone.core.tools.compatibility.DeviceUtils
@@ -57,9 +47,6 @@ class CansCenter : Cans {
     override lateinit var callCans: Call
     override lateinit var mVibrator: Vibrator
     override lateinit var callState: CallState
-
-    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-
     var appName: String? = null
     var audioRoutesEnabled: Boolean = false
 
@@ -68,6 +55,7 @@ class CansCenter : Cans {
 
     @SuppressLint("StaticFieldLeak")
     override lateinit var context: Context
+    private var audioManager: AudioManager? = null
 
     private val notificationManager: NotificationManagerCompat by lazy {
         NotificationManagerCompat.from(context)
@@ -151,7 +139,7 @@ class CansCenter : Cans {
         get() = AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
 
     override val isBluetoothState: Boolean
-        get() = audioManager.isBluetoothScoOn
+        get() = audioManager?.isBluetoothScoOn == true
 
     override val isHeadsetState: Boolean
         get() = AudioRouteUtils.isHeadsetAudioRouteAvailable()
@@ -289,7 +277,7 @@ class CansCenter : Cans {
         core.isVibrationOnIncomingCallEnabled = true
         core.isNativeRingingEnabled = true
         mVibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-
+        audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     }
 
     private fun createNotificationChannels(
@@ -517,8 +505,8 @@ class CansCenter : Cans {
 
     override fun routeAudioToBluetooth() {
         AudioRouteUtils.routeAudioToBluetooth()
-        audioManager.startBluetoothSco()
-        audioManager.isBluetoothScoOn = true
+        audioManager?.startBluetoothSco()
+        audioManager?.isBluetoothScoOn = true
     }
 
     override fun routeAudioToSpeaker() {
@@ -541,8 +529,8 @@ class CansCenter : Cans {
                         bluetoothAdapter.getProfileConnectionState(BluetoothProfile.HEADSET)
                     if (connectedDevices == BluetoothProfile.STATE_CONNECTED) {
                         println("[bluetoothAdapter] Audio devices list updated ${bluetoothAdapter.name}")
-                        audioManager.startBluetoothSco()
-                        audioManager.isBluetoothScoOn = true
+                        audioManager?.startBluetoothSco()
+                        audioManager?.isBluetoothScoOn = true
                     }
                 }
             }
