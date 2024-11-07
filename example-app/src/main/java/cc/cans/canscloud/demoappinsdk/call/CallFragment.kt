@@ -61,7 +61,6 @@ class CallFragment : Fragment() {
             }
         }
 
-        callsViewModel.setAudio()
         callsViewModel.isBluetooth.observe(viewLifecycleOwner) {
             if (it) {
                 binding.bluetooth.visibility = View.VISIBLE
@@ -100,7 +99,7 @@ class CallFragment : Fragment() {
         }
 
         binding.bluetooth.setOnClickListener {
-            cansCenter().forceBluetoothAudioRoute()
+            cansCenter().routeAudioToBluetooth()
         }
 
         checkPermissions()
