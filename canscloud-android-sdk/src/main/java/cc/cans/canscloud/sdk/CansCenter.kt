@@ -49,6 +49,7 @@ class CansCenter : Cans {
     override lateinit var callState: CallState
     var appName: String? = null
     var audioRoutesEnabled: Boolean = false
+    var destinationCall : String = ""
 
     @SuppressLint("StaticFieldLeak")
     override lateinit var corePreferences: CorePreferences
@@ -100,7 +101,7 @@ class CansCenter : Cans {
         get() = callCans.remoteAddress.asStringUriOnly()
 
     override val destinationUsername: String
-        get() = core.currentCall?.remoteAddress?.username ?: ""
+        get() = destinationCall
 
     override val lastOutgoingCallLog: String
         get() {
@@ -169,8 +170,9 @@ class CansCenter : Cans {
             // which includes new incoming/outgoing calls
             callCans = call
             mVibrator.cancel()
+            destinationCall =  call.remoteAddress.username ?: ""
 
-            Log.w("Cansdestination: state: ", "${call.remoteAddress.username}")
+            Log.w("onCallStateChanged: ", "${state}")
 
             when (state) {
                 Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> {
