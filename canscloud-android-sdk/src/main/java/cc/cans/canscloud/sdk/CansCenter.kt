@@ -134,7 +134,7 @@ class CansCenter : Cans {
         get() = audioRoutesEnabled
 
     override val isMicState: Boolean
-        get() = core.currentCall?.microphoneMuted == true
+        get() = !core.isMicEnabled
 
     override val isSpeakerState: Boolean
         get() = AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
@@ -472,14 +472,8 @@ class CansCenter : Cans {
             return
         }
 
-        val call = core.currentCall
-        if (call != null && call.conference != null) {
-            val micMuted = call.conference?.microphoneMuted ?: false
-            call.conference?.microphoneMuted = !micMuted
-        } else {
-            val micMuted = call?.microphoneMuted ?: false
-            call?.microphoneMuted = !micMuted
-        }
+        val micEnabled = core.isMicEnabled
+        core.isMicEnabled = !micEnabled
     }
 
     override fun updateAudioRelated() {
