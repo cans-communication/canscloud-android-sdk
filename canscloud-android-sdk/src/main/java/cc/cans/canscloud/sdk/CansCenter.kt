@@ -551,8 +551,7 @@ class CansCenter : Cans {
                         (
                                 callCans.callLog.status == Call.Status.Missed ||
                                         callCans.callLog.status == Call.Status.Aborted ||
-                                        callCans.callLog.status == Call.Status.EarlyAborted ||
-                                        callCans.callLog.status == Call.Status.Declined
+                                        callCans.callLog.status == Call.Status.EarlyAborted
                                 )
                 )
     }
