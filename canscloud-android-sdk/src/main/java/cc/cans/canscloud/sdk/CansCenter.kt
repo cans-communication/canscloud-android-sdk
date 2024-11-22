@@ -437,7 +437,6 @@ class CansCenter : Cans {
             Log.e("[CansSDK]", "Couldn't find call from remote address $remoteSipAddress")
             return
         }
-        Toast.makeText(context, "Call Answered", Toast.LENGTH_SHORT).show()
         answerCall(call)
     }
 

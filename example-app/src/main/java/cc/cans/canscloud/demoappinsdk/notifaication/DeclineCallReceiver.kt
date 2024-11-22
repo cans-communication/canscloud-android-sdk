@@ -9,6 +9,5 @@ import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 class DeclineCallReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         cansCenter().terminateCall()
-        Toast.makeText(context, "DeclineCallReceiver", Toast.LENGTH_SHORT).show()
     }
 }
