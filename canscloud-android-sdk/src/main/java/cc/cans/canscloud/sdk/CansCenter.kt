@@ -169,10 +169,9 @@ class CansCenter : Cans {
             // This function will be called each time a call state changes,
             // which includes new incoming/outgoing calls
             callCans = call
-            mVibrator.cancel()
             destinationCall =  call.remoteAddress.username ?: ""
 
-            Log.w("onCallStateChanged: ", "${state}")
+            Log.w("onCallStateChanged2: ", "${state}")
 
             when (state) {
                 Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> {
@@ -189,6 +188,7 @@ class CansCenter : Cans {
                 }
 
                 Call.State.StreamsRunning -> {
+                    mVibrator.cancel()
                     setListenerCall(CallState.StreamsRunning)
                 }
 
@@ -197,10 +197,12 @@ class CansCenter : Cans {
                 }
 
                 Call.State.Error -> {
+                    mVibrator.cancel()
                     setListenerCall(CallState.Error)
                 }
 
                 Call.State.End -> {
+                    mVibrator.cancel()
                     setListenerCall(CallState.CallEnd)
                 }
 
