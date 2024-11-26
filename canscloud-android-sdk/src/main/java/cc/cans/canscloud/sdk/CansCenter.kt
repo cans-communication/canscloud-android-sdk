@@ -2,6 +2,7 @@ package cc.cans.canscloud.sdk
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.bluetooth.BluetoothAdapter
@@ -9,8 +10,8 @@ import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioManager
+import android.os.Build
 import android.os.Vibrator
-import android.widget.Toast
 import androidx.core.app.NotificationManagerCompat
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.core.CorePreferences
@@ -30,8 +31,10 @@ import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import android.util.Log
 import androidx.core.app.ActivityCompat
+import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
+import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
 import org.linphone.core.LogCollectionState
@@ -50,6 +53,7 @@ class CansCenter : Cans {
     var appName: String? = null
     var audioRoutesEnabled: Boolean = false
     var destinationCall : String = ""
+    var TAG = "CansCenter"
 
     @SuppressLint("StaticFieldLeak")
     override lateinit var corePreferences: CorePreferences
@@ -549,6 +553,82 @@ class CansCenter : Cans {
                                         callCans.callLog.status == Call.Status.EarlyAborted
                                 )
                 )
+    }
+
+    override fun requestPermissionPhone(activity: Activity) {
+        if (!PermissionHelper.singletonHolder().get().hasReadPhoneStatePermission()) {
+            Log.i("[$TAG]","Asking for READ_PHONE_STATE permission")
+            activity.requestPermissions(arrayOf(Manifest.permission.READ_PHONE_STATE , Manifest.permission.RECORD_AUDIO), 0)
+        } else if (!PermissionHelper.singletonHolder().get().hasPostNotificationsPermission()) {
+            // Don't check the following the previous permission is being asked
+            Log.i("[$TAG]","Asking for POST_NOTIFICATIONS permission")
+            Compatibility.requestPostNotificationsPermission(activity, 2)
+        }
+
+        // See https://developer.android.com/about/versions/14/behavior-changes-14#fgs-types
+        if (Build.VERSION.SDK_INT >= (Build.VERSION_CODES.UPSIDE_DOWN_CAKE)) {
+            val fullScreenIntentPermission = Compatibility.hasFullScreenIntentPermission(
+                activity
+            )
+            if (!fullScreenIntentPermission) {
+                Compatibility.requestFullScreenIntentPermission(activity)
+            }
+        }
+    }
+
+    override fun requestPermissionAudio(activity: Activity) {
+        val permissionsRequiredList = arrayListOf<String>()
+
+        if (!PermissionHelper.singletonHolder().get().hasRecordAudioPermission()) {
+            Log.i("[$TAG]","Asking for RECORD_AUDIO permission")
+            permissionsRequiredList.add(Manifest.permission.RECORD_AUDIO)
+        }
+
+        if (Build.VERSION.SDK_INT >= (Build.VERSION_CODES.S) && !PermissionHelper.singletonHolder().get().hasBluetoothConnectPermission()) {
+            Log.i("[$TAG]","Asking for BLUETOOTH_CONNECT permission")
+            permissionsRequiredList.add(Compatibility.BLUETOOTH_CONNECT)
+        }
+
+        if (permissionsRequiredList.isNotEmpty()) {
+            val permissionsRequired = arrayOfNulls<String>(permissionsRequiredList.size)
+            permissionsRequiredList.toArray(permissionsRequired)
+            activity.requestPermissions(permissionsRequired, 3)
+        }
+    }
+
+    override fun enableTelecomManager(activity: Activity) {
+        Log.i("[$TAG]"," Telecom Manager permissions granted")
+        if (! TelecomHelper.singletonHolder().exists()) {
+            Log.i("[$TAG]"," Creating Telecom Helper")
+            if (Compatibility.hasTelecomManagerFeature(activity)) {
+                TelecomHelper.singletonHolder().create(activity)
+            } else {
+                Log.e(
+                    "[$TAG]"," Telecom Helper can't be created, device doesn't support connection service!"
+                )
+            }
+        } else {
+            Log.e("[$TAG]"," Telecom Manager was already created ?!")
+        }
+        cansCenter().corePreferences.useTelecomManager = true
+    }
+
+    override fun checkTelecomManagerPermissions(activity: Activity) {
+        if (!cansCenter().corePreferences.useTelecomManager) {
+            Log.i("[$TAG]","Telecom Manager feature is disabled")
+            if (cansCenter().corePreferences.manuallyDisabledTelecomManager) {
+                Log.w("[$TAG]"," User has manually disabled Telecom Manager feature")
+            } else {
+                if (Compatibility.hasTelecomManagerPermissions(activity)) {
+                    enableTelecomManager(activity)
+                } else {
+                    Log.i("[$TAG]"," Asking for Telecom Manager permissions")
+                    Compatibility.requestTelecomManagerPermissions(activity, 1)
+                }
+            }
+        } else {
+            Log.i("[$TAG]"," Telecom Manager feature is already enabled")
+        }
     }
 
     override fun addListener(listener: CansListenerStub) {
