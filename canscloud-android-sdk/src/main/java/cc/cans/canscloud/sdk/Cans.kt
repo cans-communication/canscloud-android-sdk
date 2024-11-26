@@ -68,7 +68,13 @@ interface Cans {
         transport: CansTransport
     )
 
-    fun permissionPhone(activity: Activity)
+    fun requestPermissionPhone(activity: Activity)
+
+    fun requestPermissionAudio(activity: Activity)
+
+    fun enableTelecomManager(activity: Activity)
+
+    fun checkTelecomManagerPermissions(activity: Activity)
 
     fun removeAccount()
 
