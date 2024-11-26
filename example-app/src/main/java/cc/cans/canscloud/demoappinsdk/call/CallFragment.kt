@@ -1,7 +1,5 @@
 package cc.cans.canscloud.demoappinsdk.call
 
-import android.Manifest
-import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import androidx.fragment.app.Fragment
@@ -12,10 +10,7 @@ import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.demoappinsdk.databinding.FragmentCallBinding
 import cc.cans.canscloud.demoappinsdk.viewmodel.CallsViewModel
-import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
-import cc.cans.canscloud.sdk.utils.PermissionHelper
-import org.linphone.core.tools.Log
 
 /**
  * A simple [Fragment] subclass.
@@ -102,26 +97,6 @@ class CallFragment : Fragment() {
             cansCenter().routeAudioToBluetooth()
         }
 
-        checkPermissions()
-    }
-
-    private fun checkPermissions() {
-        val permissionsRequiredList = arrayListOf<String>()
-
-        if (!PermissionHelper.singletonHolder().get().hasRecordAudioPermission()) {
-            Log.i("[$TAG]","Asking for RECORD_AUDIO permission")
-            permissionsRequiredList.add(Manifest.permission.RECORD_AUDIO)
-        }
-
-        if (Build.VERSION.SDK_INT >= (Build.VERSION_CODES.S) && !PermissionHelper.singletonHolder().get().hasBluetoothConnectPermission()) {
-            Log.i("[$TAG]","Asking for BLUETOOTH_CONNECT permission")
-            permissionsRequiredList.add(Compatibility.BLUETOOTH_CONNECT)
-        }
-
-        if (permissionsRequiredList.isNotEmpty()) {
-            val permissionsRequired = arrayOfNulls<String>(permissionsRequiredList.size)
-            permissionsRequiredList.toArray(permissionsRequired)
-            requestPermissions(permissionsRequired, 0)
-        }
+        cansCenter().requestPermissionAudio(requireActivity())
     }
 }
