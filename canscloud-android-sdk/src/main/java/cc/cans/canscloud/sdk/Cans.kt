@@ -1,5 +1,6 @@
 package cc.cans.canscloud.sdk
 
+import android.app.Activity
 import android.content.Context
 import android.os.Vibrator
 import cc.cans.canscloud.sdk.callback.CansListenerStub
@@ -66,6 +67,8 @@ interface Cans {
         port: String,
         transport: CansTransport
     )
+
+    fun permissionPhone(activity: Activity)
 
     fun removeAccount()
 

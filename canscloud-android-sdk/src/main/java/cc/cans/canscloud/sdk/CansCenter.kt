@@ -2,6 +2,7 @@ package cc.cans.canscloud.sdk
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.bluetooth.BluetoothAdapter
@@ -9,6 +10,7 @@ import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioManager
+import android.os.Build
 import android.os.Vibrator
 import android.widget.Toast
 import androidx.core.app.NotificationManagerCompat
@@ -30,6 +32,8 @@ import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import android.util.Log
 import androidx.core.app.ActivityCompat
+import androidx.core.app.ActivityCompat.requestPermissions
+import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
@@ -338,6 +342,27 @@ class CansCenter : Cans {
         channel.enableLights(true)
         channel.setShowBadge(true)
         notificationManager.createNotificationChannel(channel)
+    }
+
+    override fun permissionPhone(activity: Activity) {
+        if (!PermissionHelper.singletonHolder().get().hasReadPhoneStatePermission()) {
+            Log.i("[permissionPhone]","Asking for READ_PHONE_STATE permission")
+            activity.requestPermissions(arrayOf(Manifest.permission.READ_PHONE_STATE , Manifest.permission.RECORD_AUDIO), 0)
+        } else if (!PermissionHelper.singletonHolder().get().hasPostNotificationsPermission()) {
+            // Don't check the following the previous permission is being asked
+            Log.i("[permissionPhone]","Asking for POST_NOTIFICATIONS permission")
+            Compatibility.requestPostNotificationsPermission(activity, 2)
+        }
+
+        // See https://developer.android.com/about/versions/14/behavior-changes-14#fgs-types
+        if (Build.VERSION.SDK_INT >= (Build.VERSION_CODES.UPSIDE_DOWN_CAKE)) {
+            val fullScreenIntentPermission = Compatibility.hasFullScreenIntentPermission(
+                activity
+            )
+            if (!fullScreenIntentPermission) {
+                Compatibility.requestFullScreenIntentPermission(activity)
+            }
+        }
     }
 
     override fun register(
