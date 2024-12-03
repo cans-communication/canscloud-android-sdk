@@ -10,6 +10,10 @@ pluginManagement {
         maven {
             url "https://linphone.org/maven_repository"
         }
+
+        maven {
+            url "https://download.linphone.org/maven_repository"
+        }
     }
     plugins {
         id "io.github.gradle-nexus.publish-plugin" version "1.0.0"
@@ -26,6 +30,10 @@ dependencyResolutionManagement {
 
         maven {
             url "https://linphone.org/maven_repository"
+        }
+
+        maven {
+            url "https://download.linphone.org/maven_repository"
         }
     }
 }

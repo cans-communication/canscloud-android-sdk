@@ -5,6 +5,8 @@ import android.content.Context
 import android.os.Vibrator
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.core.CorePreferences
+import cc.cans.canscloud.sdk.core.CoreService
+import cc.cans.canscloud.sdk.core.NotificationsManager
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.CansTransport
 import org.linphone.core.Call
@@ -23,6 +25,10 @@ interface Cans {
     var corePreferences: CorePreferences
 
     var context: Context
+
+    var coreService: CoreService
+
+    var appName: String
 
     val account: String
 

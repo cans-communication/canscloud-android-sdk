@@ -64,6 +64,10 @@ class CoreContextSDK(
     private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val loggingService = Factory.instance().loggingService
 
+    val notificationsManager: NotificationsManager by lazy {
+        NotificationsManager(context)
+    }
+
     private val listener = object : CansListenerStub {
         override fun onRegistration(state: RegisterState, message: String?) {
             Log.i("[SharedMainViewModel]","onRegistration ${state}")
@@ -173,6 +177,8 @@ class CoreContextSDK(
         _lifecycleRegistry.currentState = Lifecycle.State.STARTED
 
         initPhoneStateListener()
+
+        notificationsManager.startForeground()
 
         _lifecycleRegistry.currentState = Lifecycle.State.RESUMED
         Log.i("[Context]"," Started")
