@@ -2,8 +2,6 @@ package cc.cans.canscloud.sdk.callback
 
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.RegisterState
-import org.linphone.core.Call
-import org.linphone.core.Core
 
 interface CansListenerStub {
    fun onRegistration(state : RegisterState, message: String? = null)

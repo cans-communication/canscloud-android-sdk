@@ -20,7 +20,6 @@
 package cc.cans.canscloud.sdk.core
 
 import android.content.Intent
-import cc.cans.canscloud.sdk.callback.CoreServiceListener
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import org.linphone.core.tools.Log
 import org.linphone.core.tools.service.CoreService
