@@ -30,11 +30,15 @@ import cc.cans.canscloud.sdk.compatibility.PhoneStateInterface
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.linphone.core.Factory
 import org.linphone.core.LogLevel
 import org.linphone.core.LoggingService
 import org.linphone.core.LoggingServiceListenerStub
 import org.linphone.core.Reason
+import org.linphone.core.RegistrationState
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 import java.security.KeyStore
@@ -437,6 +441,20 @@ class CoreContextSDK(
                 Log.i("[Context]", " VFS activated")
             } catch (e: Exception) {
                 Log.i("[Context]", " Unable to activate VFS encryption: $e")
+            }
+        }
+    }
+
+    fun checkIfForegroundServiceNotificationCanBeRemovedAfterDelay(delayInMs: Long) {
+        coroutineScope.launch {
+            withContext(Dispatchers.Default) {
+                delay(delayInMs)
+                withContext(Dispatchers.Main) {
+                    if (cansCenter().core.defaultAccount != null && cansCenter().core.defaultAccount?.state == RegistrationState.Ok) {
+                        org.linphone.core.tools.Log.i("[Context] Default account is registered, cancel foreground service notification if possible")
+                        notificationsManager.stopForegroundNotificationIfPossible()
+                    }
+                }
             }
         }
     }

@@ -4,7 +4,6 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
-import cc.cans.canscloud.demoappinsdk.CansApplication.Companion.coreContext
 import cc.cans.canscloud.demoappinsdk.databinding.ActivityMainBinding
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CansTransport
@@ -40,7 +39,7 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == 0) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 android.util.Log.i("[MainActivity]","READ_PHONE_STATE permission has been granted")
-                coreContext.initPhoneStateListener()
+                cansCenter().coreContext.initPhoneStateListener()
                 // If first permission has been granted, continue to ask for permissions,
                 // otherwise don't do it or it will loop indefinitely
                 cansCenter().requestPermissionPhone(this)

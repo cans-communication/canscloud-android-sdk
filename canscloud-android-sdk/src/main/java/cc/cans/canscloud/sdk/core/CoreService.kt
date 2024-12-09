@@ -21,20 +21,26 @@ package cc.cans.canscloud.sdk.core
 
 import android.content.Intent
 import cc.cans.canscloud.sdk.callback.CoreServiceListener
+import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import org.linphone.core.tools.Log
 import org.linphone.core.tools.service.CoreService
-
-private var coreServiceListenerStub = mutableListOf<CoreServiceListener>()
 
 class CoreService : CoreService() {
     override fun onCreate() {
         super.onCreate()
-        coreServiceListenerStub.forEach { it.onCreate() }
+        cansCenter().coreContext.notificationsManager.service = this
         Log.i("[Service] Created")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        coreServiceListenerStub.forEach { it.onStartCommand() }
+        if (cansCenter().corePreferences.keepServiceAlive) {
+            Log.i("[Service] Starting as foreground to keep app alive in background")
+            cansCenter().coreContext.notificationsManager.startForegroundToKeepAppAlive(this, false)
+        } else if (intent?.extras?.get("StartForeground") == true) {
+            Log.i("[Service] Starting as foreground due to device boot or app update")
+            cansCenter().coreContext.notificationsManager.startForegroundToKeepAppAlive(this, true)
+            cansCenter().coreContext.checkIfForegroundServiceNotificationCanBeRemovedAfterDelay(5000)
+        }
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -44,34 +50,31 @@ class CoreService : CoreService() {
 
     override fun showForegroundServiceNotification(isVideoCall: Boolean) {
         Log.i("[Service] Starting service as foreground")
-        coreServiceListenerStub.forEach { it.showForegroundServiceNotification() }
+        cansCenter().coreContext.notificationsManager.startCallForeground(this)
     }
 
     override fun hideForegroundServiceNotification() {
         Log.i("[Service] Stopping service as foreground")
-        coreServiceListenerStub.forEach { it.hideForegroundServiceNotification() }
+        cansCenter().coreContext.notificationsManager.stopCallForeground()
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        coreServiceListenerStub.forEach { it.onTaskRemoved() }
+        if (!cansCenter().corePreferences.keepServiceAlive) {
+            if (cansCenter().core.isInBackground) {
+                Log.i("[Service] Task removed, stopping Core")
+                cansCenter().coreContext.stop()
+            } else {
+                Log.w("[Service] Task removed but Core in not in background, skipping")
+            }
+        } else {
+            Log.i("[Service] Task removed but we were asked to keep the service alive, so doing nothing")
+        }
         super.onTaskRemoved(rootIntent)
     }
 
     override fun onDestroy() {
         Log.i("[Service] Stopping")
-        coreServiceListenerStub.forEach { it.onDestroy() }
+        cansCenter().coreContext.notificationsManager.service = null
         super.onDestroy()
-    }
-
-    fun addListener(listener: CoreServiceListener) {
-        coreServiceListenerStub.add(listener)
-    }
-
-    fun removeListener(listener: CoreServiceListener) {
-        coreServiceListenerStub.remove(listener)
-    }
-
-    fun removeAllListener() {
-        coreServiceListenerStub.clear()
     }
 }

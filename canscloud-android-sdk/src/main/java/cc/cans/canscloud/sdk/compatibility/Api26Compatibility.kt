@@ -22,6 +22,7 @@ package cc.cans.canscloud.sdk.compatibility
 import android.Manifest
 import android.app.*
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.annotation.Keep
 import androidx.core.app.NotificationManagerCompat
@@ -85,6 +86,10 @@ class Api26Compatibility {
             return context.packageManager.hasSystemFeature(
                 PackageManager.FEATURE_CONNECTION_SERVICE
             )
+        }
+
+        fun startForegroundService(context: Context, intent: Intent) {
+            context.startForegroundService(intent)
         }
     }
 }

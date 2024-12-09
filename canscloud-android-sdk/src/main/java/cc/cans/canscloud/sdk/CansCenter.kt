@@ -58,6 +58,8 @@ class CansCenter() : Cans {
     var destinationCall : String = ""
     var TAG = "CansCenter"
 
+    override lateinit var coreContext: CoreContextSDK
+
     @SuppressLint("StaticFieldLeak")
     override lateinit var corePreferences: CorePreferences
 
@@ -289,6 +291,9 @@ class CansCenter() : Cans {
         core.isNativeRingingEnabled = true
         mVibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+        coreContext = CoreContextSDK(context)
+        coreContext.start()
     }
 
     private fun createNotificationChannels(
@@ -385,6 +390,9 @@ class CansCenter() : Cans {
             core.defaultAccount = createAccount
             core.addListener(coreListenerStub)
             core.start()
+
+            corePreferences.keepServiceAlive = true
+            coreContext.notificationsManager.startForeground()
         }
     }
 

@@ -48,6 +48,7 @@ import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.CansCenter
 import cc.cans.canscloud.sdk.R
 import cc.cans.canscloud.sdk.callback.CansListenerStub
+import cc.cans.canscloud.sdk.callback.CoreServiceListener
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CallState
@@ -98,7 +99,7 @@ class NotificationsManager(private val context: Context) {
 
     }
 
-    private val notificationManager: NotificationManagerCompat by lazy {
+    val notificationManager: NotificationManagerCompat by lazy {
         NotificationManagerCompat.from(context)
     }
     private val callNotificationsMap: HashMap<String, Notifiable> = HashMap()
@@ -128,7 +129,6 @@ class NotificationsManager(private val context: Context) {
             val intent = Intent()
             intent.setClass(cansCenter().context, CoreService::class.java)
             try {
-              //  Compatibility.startForegroundService(cans.context, intent)
                 cansCenter().context.startForegroundService(intent)
             } catch (ise: IllegalStateException) {
                 Log.e("[Notifications Manager] Failed to start Service: $ise")
@@ -203,7 +203,35 @@ class NotificationsManager(private val context: Context) {
         listeners.forEach { it.onCallState(callState) }
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
+   // private var coreServiceListenerStub = mutableListOf<CoreServiceListener>()
+
+    private var coreServiceListenerStub = object : CoreServiceListener {
+        override fun onCreate() {
+            TODO("Not yet implemented")
+        }
+
+        override fun onStartCommand() {
+            TODO("Not yet implemented")
+        }
+
+        override fun showForegroundServiceNotification() {
+            TODO("Not yet implemented")
+        }
+
+        override fun hideForegroundServiceNotification() {
+            TODO("Not yet implemented")
+        }
+
+        override fun onTaskRemoved() {
+            TODO("Not yet implemented")
+        }
+
+        override fun onDestroy() {
+            TODO("Not yet implemented")
+        }
+
+    }
+
     private fun startForeground(coreService: CoreService) {
         service = coreService
 
@@ -231,59 +259,12 @@ class NotificationsManager(private val context: Context) {
             false
         }
 
-        startDataSyncForegroundService(
+        Compatibility.startDataSyncForegroundService(
             coreService,
             currentForegroundServiceNotificationId,
             notification,
             isActiveCall,
         )
-    }
-
-    @RequiresApi(Build.VERSION_CODES.S)
-    fun startDataSyncForegroundService(
-        service: Service,
-        notifId: Int,
-        notif: Notification,
-        isCallActive: Boolean,
-    ) {
-        val mask = if (isCallActive) {
-            Log.i(
-                "[Api34 Compatibility] Trying to start service as foreground using at least FOREGROUND_SERVICE_TYPE_PHONE_CALL or FOREGROUND_SERVICE_TYPE_DATA_SYNC",
-            )
-            var computeMask = ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL or ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-            if (PermissionHelper.singletonHolder().required(context).hasCameraPermission()) {
-                Log.i(
-                    "[Api34 Compatibility] CAMERA permission has been granted, adding FOREGROUND_SERVICE_TYPE_CAMERA",
-                )
-                computeMask = computeMask or ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
-            }
-            if (PermissionHelper.singletonHolder().required(context).hasRecordAudioPermission()) {
-                Log.i(
-                    "[Api34 Compatibility] RECORD_AUDIO permission has been granted, adding FOREGROUND_SERVICE_TYPE_MICROPHONE",
-                )
-                computeMask = computeMask or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
-            }
-            computeMask
-        } else {
-            Log.i(
-                "[Api34 Compatibility] Trying to start service as foreground using only FOREGROUND_SERVICE_TYPE_DATA_SYNC because no call at the time",
-            )
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-        }
-
-        try {
-            service.startForeground(
-                notifId,
-                notif,
-                mask,
-            )
-        } catch (fssnae: ForegroundServiceStartNotAllowedException) {
-            Log.e("[Api34 Compatibility] Can't start service as foreground! $fssnae")
-        } catch (se: SecurityException) {
-            Log.e("[Api34 Compatibility] Can't start service as foreground! $se")
-        } catch (e: Exception) {
-            Log.e("[Api34 Compatibility] Can't start service as foreground! $e")
-        }
     }
 
     fun startForegroundToKeepAppAlive(
@@ -305,12 +286,12 @@ class NotificationsManager(private val context: Context) {
             "[Notifications Manager] Starting service as foreground [$currentForegroundServiceNotificationId]",
         )
 
-//        Compatibility.startDataSyncForegroundService(
-//            coreService,
-//            currentForegroundServiceNotificationId,
-//            notification,
-//            false,
-//        )
+        Compatibility.startDataSyncForegroundService(
+            coreService,
+            currentForegroundServiceNotificationId,
+            notification,
+            false,
+        )
     }
 
     private fun startForeground(
@@ -326,12 +307,12 @@ class NotificationsManager(private val context: Context) {
             try {
                 currentForegroundServiceNotificationId = notificationId
 
-//                Compatibility.startCallForegroundService(
-//                    coreService,
-//                    currentForegroundServiceNotificationId,
-//                    callNotification,
-//                    isCallActive,
-//                )
+                Compatibility.startCallForegroundService(
+                    coreService,
+                    currentForegroundServiceNotificationId,
+                    callNotification,
+                    isCallActive,
+                )
             } catch (e: Exception) {
                 Log.e("[Notifications Manager] Foreground service wasn't allowed! $e")
                 currentForegroundServiceNotificationId = 0
@@ -400,7 +381,7 @@ class NotificationsManager(private val context: Context) {
             .setOngoing(true)
             .setColor(ContextCompat.getColor(context, R.color.primary_color))
 
-        builder.setContentIntent(pendingIntent)
+        //builder.setContentIntent(pendingIntent)
 
         serviceNotification = builder.build()
         return serviceNotification
