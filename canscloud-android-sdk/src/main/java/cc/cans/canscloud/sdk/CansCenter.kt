@@ -163,7 +163,7 @@ class CansCenter : Cans {
         ) {
             if (state == RegistrationState.Cleared && account == accountToDelete) {
                 deleteAccount(account)
-                listeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
+                listeners.forEach { it.onUnRegister() }
             } else {
                 if (state == RegistrationState.Ok) {
                     listeners.forEach { it.onRegistration(RegisterState.OK, message) }
