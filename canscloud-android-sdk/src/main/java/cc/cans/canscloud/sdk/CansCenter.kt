@@ -163,7 +163,7 @@ class CansCenter : Cans {
         ) {
             if (state == RegistrationState.Cleared && account == accountToDelete) {
                 deleteAccount(account)
-                listeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
+                listeners.forEach { it.onUnRegister() }
             } else {
                 if (state == RegistrationState.Ok) {
                     listeners.forEach { it.onRegistration(RegisterState.OK, message) }
@@ -200,7 +200,7 @@ class CansCenter : Cans {
             callCans = call
             destinationCall =  call.remoteAddress.username ?: ""
 
-            Log.w("onCallStateChanged2: ", "${state}")
+            Log.w("onCallStateChanged2: ", "${state} $message")
 
             when (state) {
                 Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> {
@@ -311,6 +311,8 @@ class CansCenter : Cans {
         core.isNativeRingingEnabled = true
         mVibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+        computeUserAgent()
     }
 
     private fun createNotificationChannels(
@@ -406,12 +408,23 @@ class CansCenter : Cans {
 
             core.defaultAccount = createAccount
             core.start()
+
         }
 
         for (account in core.accountList) {
             accountDefault = account
             accountDefault.addListener(accountListener)
         }
+    }
+
+    private fun computeUserAgent() {
+        val deviceName: String = corePreferences.deviceName
+        val appNameS: String = "${appName}: Android"
+        val userAgent = "$appNameS/ ($deviceName) LinphoneSDK"
+        val sdkVersion = context.getString(org.linphone.core.R.string.linphone_sdk_version)
+        val sdkBranch = context.getString(org.linphone.core.R.string.linphone_sdk_branch)
+        val sdkUserAgent = "$sdkVersion ($sdkBranch)"
+        core.setUserAgent(userAgent, sdkUserAgent)
     }
 
     private fun deleteAccount(account: Account) {
@@ -466,6 +479,18 @@ class CansCenter : Cans {
         params.mediaEncryption = MediaEncryption.None
         // If we wanted to start the call with video directly
         //params.enableVideo(true)
+
+        for (payload in core.audioPayloadTypes) {
+            when (payload.mimeType.uppercase()) {
+                "PCMU" -> {
+                    payload.enable(true)
+                }
+
+                "PCMA" -> {
+                    payload.enable(true)
+                }
+            }
+        }
 
         core.addListener(coreListenerStub)
         core.start()
