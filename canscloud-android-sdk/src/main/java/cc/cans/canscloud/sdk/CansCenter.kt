@@ -169,7 +169,7 @@ class CansCenter : Cans {
         ) {
             if (state == RegistrationState.Cleared && account == accountToDelete) {
                 deleteAccount(account)
-                listeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
+                listeners.forEach { it.onUnRegister() }
             } else {
                 if (state == RegistrationState.Ok) {
                     listeners.forEach { it.onRegistration(RegisterState.OK, message) }
@@ -209,7 +209,7 @@ class CansCenter : Cans {
             callCans = call
             destinationCall =  call.remoteAddress.username ?: ""
 
-            Log.w("onCallStateChanged2: ", "${state}")
+            Log.w("onCallStateChanged2: ", "${state} $message")
 
             when (state) {
                 Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> {
@@ -320,6 +320,8 @@ class CansCenter : Cans {
         core.isNativeRingingEnabled = true
         mVibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+        computeUserAgent()
     }
 
     private fun createNotificationChannels(
@@ -452,6 +454,16 @@ class CansCenter : Cans {
         proxyConfigToCheck = null
     }
 
+    private fun computeUserAgent() {
+        val deviceName: String = corePreferences.deviceName
+        val appNameS: String = "${appName}: Android"
+        val userAgent = "$appNameS/ ($deviceName) LinphoneSDK"
+        val sdkVersion = context.getString(org.linphone.core.R.string.linphone_sdk_version)
+        val sdkBranch = context.getString(org.linphone.core.R.string.linphone_sdk_branch)
+        val sdkUserAgent = "$sdkVersion ($sdkBranch)"
+        core.setUserAgent(userAgent, sdkUserAgent)
+    }
+
     private fun deleteAccount(account: Account) {
         val authInfo = account.findAuthInfo()
         if (authInfo != null) {
@@ -496,11 +508,11 @@ class CansCenter : Cans {
     }
 
     override fun startCall(to: String) {
-        var stringAddress = to
+        val stringAddress = to
 
         val address: Address? = core.interpretUrl(stringAddress)
         if (address == null) {
-            org.linphone.core.tools.Log.e("[Context] Failed to parse $stringAddress, abort outgoing call")
+            Log.e("[Context]", " Failed to parse $stringAddress, abort outgoing call")
          //   callErrorMessageResourceId.value = Event(context.getString(org.linphone.core.R.string.call_error_network_unreachable))
             return
         }
@@ -510,7 +522,7 @@ class CansCenter : Cans {
 
     fun startCall(address: Address, forceZRTP: Boolean = false, localAddress: Address? = null) {
         if (!core.isNetworkReachable) {
-            org.linphone.core.tools.Log.e("[Context] Network unreachable, abort outgoing call")
+            Log.e("[Context]", " Network unreachable, abort outgoing call")
            // callErrorMessageResourceId.value = Event(context.getString(org.linphone.core.R.string.call_error_network_unreachable))
             return
         }
@@ -518,27 +530,32 @@ class CansCenter : Cans {
         val params = core.createCallParams(null)
         if (params == null) {
             val call = core.inviteAddress(address)
-            org.linphone.core.tools.Log.w("[Context] Starting call $call without params")
+            Log.w("[Context]","Starting call $call without params")
             return
         }
 
         if (forceZRTP) {
             params.mediaEncryption = MediaEncryption.ZRTP
         }
-//        if (LinphoneUtils.checkIfNetworkHasLowBandwidth(context)) {
-//            org.linphone.core.tools.Log.w("[Context] Enabling low bandwidth mode!")
-//            params.isLowBandwidthEnabled = true
-//        }
-//        params.recordFile = LinphoneUtils.getRecordingFilePathForAddress(address)
+        if (CansUtils.checkIfNetworkHasLowBandwidth(context)) {
+            Log.w("[Context]", " Enabling low bandwidth mode!")
+            params.isLowBandwidthEnabled = true
+        }
 
-        if (localAddress != null) {
-            params.proxyConfig = core.proxyConfigList.find { proxyConfig ->
-                proxyConfig.identityAddress?.weakEqual(localAddress) ?: false
-            }
-            if (params.proxyConfig != null) {
-                org.linphone.core.tools.Log.i("[Context] Using proxy config matching address ${localAddress.asStringUriOnly()} as From")
+        for (payload in core.audioPayloadTypes) {
+            when (payload.mimeType.uppercase()) {
+                "PCMU" -> {
+                    payload.enable(true)
+                }
+
+                "PCMA" -> {
+                    payload.enable(true)
+                }
             }
         }
+
+        core.addListener(coreListenerStub)
+        core.start()
 
         if (corePreferences.sendEarlyMedia) {
             params.isEarlyMediaSendingEnabled = true
