@@ -77,7 +77,7 @@ class DialerFragment : Fragment() {
                 "p40107CANS",
                 "cns.cans.cc",
                 "8446",
-                CansTransport.UDP
+                CansTransport.TCP
             )
             sharedViewModel.register()
         }

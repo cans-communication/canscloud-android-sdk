@@ -37,6 +37,9 @@ import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
+import org.linphone.core.Account
+import org.linphone.core.AccountListenerStub
+import org.linphone.core.Event
 import org.linphone.core.LogCollectionState
 import org.linphone.core.LogLevel
 import org.linphone.core.tools.compatibility.DeviceUtils
@@ -53,7 +56,8 @@ class CansCenter : Cans {
     var appName: String? = null
     var audioRoutesEnabled: Boolean = false
     var destinationCall : String = ""
-    var TAG = "CansCenter"
+    private var TAG = "CansCenter"
+    lateinit var accountDefault: Account
 
     @SuppressLint("StaticFieldLeak")
     override lateinit var corePreferences: CorePreferences
@@ -149,6 +153,27 @@ class CansCenter : Cans {
     override val isHeadsetState: Boolean
         get() = AudioRouteUtils.isHeadsetAudioRouteAvailable()
 
+    private var accountToDelete: Account? = null
+
+    private val accountListener: AccountListenerStub = object : AccountListenerStub() {
+        override fun onRegistrationStateChanged(
+            account: Account,
+            state: RegistrationState,
+            message: String
+        ) {
+            if (state == RegistrationState.Cleared && account == accountToDelete) {
+                deleteAccount(account)
+                listeners.forEach { it.onUnRegister() }
+            } else {
+                if (state == RegistrationState.Ok) {
+                    listeners.forEach { it.onRegistration(RegisterState.OK, message) }
+                } else  if (state == RegistrationState.Failed){
+                    listeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
+                }
+            }
+        }
+    }
+
     private var coreListenerStub = object : CoreListenerStub() {
         override fun onRegistrationStateChanged(
             core: Core,
@@ -175,7 +200,7 @@ class CansCenter : Cans {
             callCans = call
             destinationCall =  call.remoteAddress.username ?: ""
 
-            Log.w("onCallStateChanged2: ", "${state}")
+            Log.w("onCallStateChanged2: ", "${state} $message")
 
             when (state) {
                 Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> {
@@ -277,8 +302,8 @@ class CansCenter : Cans {
         }
 
         core = Factory.instance().createCoreWithConfig(config, context)
-        core.start()
         core.addListener(coreListenerStub)
+        core.start()
         createNotificationChannels(context, notificationManager)
 
         core.ring = null
@@ -286,6 +311,8 @@ class CansCenter : Cans {
         core.isNativeRingingEnabled = true
         mVibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+        computeUserAgent()
     }
 
     private fun createNotificationChannels(
@@ -380,22 +407,60 @@ class CansCenter : Cans {
             //core.config.setBool("video", "auto_resize_preview_to_keep_ratio", true)
 
             core.defaultAccount = createAccount
-            core.addListener(coreListenerStub)
             core.start()
+
+        }
+
+        for (account in core.accountList) {
+            accountDefault = account
+            accountDefault.addListener(accountListener)
         }
     }
 
+    private fun computeUserAgent() {
+        val deviceName: String = corePreferences.deviceName
+        val appNameS: String = "${appName}: Android"
+        val userAgent = "$appNameS/ ($deviceName) LinphoneSDK"
+        val sdkVersion = context.getString(org.linphone.core.R.string.linphone_sdk_version)
+        val sdkBranch = context.getString(org.linphone.core.R.string.linphone_sdk_branch)
+        val sdkUserAgent = "$sdkVersion ($sdkBranch)"
+        core.setUserAgent(userAgent, sdkUserAgent)
+    }
+
+    private fun deleteAccount(account: Account) {
+        val authInfo = account.findAuthInfo()
+        if (authInfo != null) {
+            Log.i("[Account Settings] Found auth info $authInfo" ," removing it.")
+            core.removeAuthInfo(authInfo)
+        } else {
+            Log.w("[Account Settings]", "Couldn't find matching auth info...")
+        }
+
+        core.removeAccount(account)
+    }
+
+
     override fun removeAccount() {
         core.defaultAccount?.let { account ->
-            val authInfo = account.findAuthInfo()
-            if (authInfo != null) {
-                Log.i("[CansSDK]", "Found auth info $authInfo, removing it.")
-                core.removeAuthInfo(authInfo)
-            } else {
-                Log.w("[CansSDK]", "Couldn't find matching auth info...")
+            accountToDelete = account
+            val registered = account.state == RegistrationState.Ok
+            Log.i("[Account Settings]"," Account was default, let's look for a replacement")
+            for (accountIterator in core.accountList) {
+                if (account != accountIterator) {
+                    core.defaultAccount = accountIterator
+                    Log.i("[Account Settings]"," New default account is $accountIterator")
+                    break
+                }
             }
-            core.removeAccount(account)
-            listeners.forEach { it.onUnRegister() }
+
+            val params = account.params.clone()
+            params.isRegisterEnabled = false
+            account.params = params
+
+            if (!registered) {
+                Log.w("[Account Settings]", "Account isn't registered, don't unregister before removing it")
+                deleteAccount(account)
+            }
         }
     }
 
@@ -414,6 +479,18 @@ class CansCenter : Cans {
         params.mediaEncryption = MediaEncryption.None
         // If we wanted to start the call with video directly
         //params.enableVideo(true)
+
+        for (payload in core.audioPayloadTypes) {
+            when (payload.mimeType.uppercase()) {
+                "PCMU" -> {
+                    payload.enable(true)
+                }
+
+                "PCMA" -> {
+                    payload.enable(true)
+                }
+            }
+        }
 
         core.addListener(coreListenerStub)
         core.start()

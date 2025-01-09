@@ -7,6 +7,7 @@ import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.core.CorePreferences
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.CansTransport
+import org.linphone.core.Account
 import org.linphone.core.Call
 import org.linphone.core.Core
 
