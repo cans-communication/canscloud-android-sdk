@@ -38,11 +38,13 @@ import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
 import org.linphone.core.Account
+import org.linphone.core.AccountCreator
 import org.linphone.core.AccountListenerStub
 import org.linphone.core.Event
 import org.linphone.core.LogCollectionState
 import org.linphone.core.LogLevel
 import org.linphone.core.tools.compatibility.DeviceUtils
+import java.util.Locale
 
 data class Notifiable(val notificationId: Int) {
     var remoteAddress: String? = null
@@ -58,6 +60,9 @@ class CansCenter : Cans {
     var destinationCall : String = ""
     private var TAG = "CansCenter"
     lateinit var accountDefault: Account
+    lateinit var accountCreator: AccountCreator
+    private var proxyConfigToCheck: ProxyConfig? = null
+    private var useGenericSipAccount: Boolean = false
 
     @SuppressLint("StaticFieldLeak")
     override lateinit var corePreferences: CorePreferences
@@ -154,6 +159,7 @@ class CansCenter : Cans {
         get() = AudioRouteUtils.isHeadsetAudioRouteAvailable()
 
     private var accountToDelete: Account? = null
+    private var accountToCheck: Account? = null
 
     private val accountListener: AccountListenerStub = object : AccountListenerStub() {
         override fun onRegistrationStateChanged(
@@ -181,11 +187,14 @@ class CansCenter : Cans {
             state: RegistrationState,
             message: String
         ) {
-            Log.i("[CansSDK]", "Registration state is $state: $message")
-            if (state == RegistrationState.Ok) {
-                listeners.forEach { it.onRegistration(RegisterState.OK, message) }
-            } else if (state == RegistrationState.Failed) {
-                listeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
+            Log.i("[CansSDK]", "Registration state is $state: $message" )
+            if (cfg == proxyConfigToCheck) {
+                if (state == RegistrationState.Ok) {
+                    listeners.forEach { it.onRegistration(RegisterState.OK, message) }
+                } else if (state == RegistrationState.Failed) {
+                   // removeInvalidProxyConfig()
+                    listeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
+                }
             }
         }
 
@@ -369,6 +378,27 @@ class CansCenter : Cans {
         notificationManager.createNotificationChannel(channel)
     }
 
+    fun getAccountCreator(genericAccountCreator: Boolean = false): AccountCreator {
+        core.loadConfigFromXml(corePreferences.linphoneDefaultValuesPath)
+        accountCreator = core.createAccountCreator(corePreferences.xmlRpcServerUrl)
+        accountCreator.language = Locale.getDefault().language
+
+        if (genericAccountCreator != useGenericSipAccount) {
+            accountCreator.reset()
+            accountCreator.language = Locale.getDefault().language
+
+            if (genericAccountCreator) {
+                org.linphone.core.tools.Log.i("[Assistant] Loading default values")
+                core.loadConfigFromXml(corePreferences.defaultValuesPath)
+            } else {
+                org.linphone.core.tools.Log.i("[Assistant] Loading linphone default values")
+                core.loadConfigFromXml(corePreferences.linphoneDefaultValuesPath)
+            }
+            useGenericSipAccount = genericAccountCreator
+        }
+        return accountCreator
+    }
+
     override fun register(
         username: String,
         password: String,
@@ -376,42 +406,50 @@ class CansCenter : Cans {
         port: String,
         transport: CansTransport
     ) {
-        if ((username != this.username) || (domain != this.domain)) {
-            removeAccount()
+       // if ((username == this.username) || (domain == this.domain)) {
+        core.accountList.forEach { account ->
+            Log.i("[ListAccount]", "account: ${account.params.identityAddress?.asString()}")
+        }
+
             val serverAddress = "${domain}:${port}"
             val transportType = if (transport.name.lowercase() == "tcp") {
                 TransportType.Tcp
             } else {
                 TransportType.Udp
             }
+            accountCreator = getAccountCreator(true)
+            accountCreator.username = username
+            accountCreator.password = password
+            accountCreator.domain = serverAddress
+            accountCreator.displayName = ""
+            accountCreator.transport = transportType
 
-            val authInfo = Factory.instance()
-                .createAuthInfo(username, null, password, null, null, serverAddress, null)
+            val proxyConfig = accountCreator.createAccountInCore()
+        accountToCheck = proxyConfig
 
-            val params = core.createAccountParams()
-            val identity = Factory.instance().createAddress("sip:$username@$serverAddress")
-            params.identityAddress = identity
+        val params = core.createAccountParams()
+        val identity = Factory.instance().createAddress("sip:$username@$serverAddress")
+        params.identityAddress = identity
 
-            val address = Factory.instance().createAddress("sip:$serverAddress")
-            address?.transport = transportType
-            params.serverAddress = address
-            params.isRegisterEnabled = true
+        val address = Factory.instance().createAddress("sip:$serverAddress")
+        address?.transport = transportType
+        params.serverAddress = address
+        params.isRegisterEnabled = true
 
-            val createAccount = core.createAccount(params)
-            core.addAuthInfo(authInfo)
-            core.addAccount(createAccount)
-
-            // Asks the CaptureTextureView to resize to match the captured video's size ratio
-            //core.config.setBool("video", "auto_resize_preview_to_keep_ratio", true)
-
-            core.defaultAccount = createAccount
-            core.start()
-        }
-
-        for (account in core.accountList) {
-            accountDefault = account
+        val defaultAccount = core.defaultAccount
+        if (defaultAccount != null) {
+            accountDefault = defaultAccount
             accountDefault.addListener(accountListener)
         }
+    }
+
+    fun removeInvalidProxyConfig() {
+        val cfg = proxyConfigToCheck
+        cfg ?: return
+        val authInfo = cfg.findAuthInfo()
+        if (authInfo != null) core.removeAuthInfo(authInfo)
+        core.removeProxyConfig(cfg)
+        proxyConfigToCheck = null
     }
 
     private fun deleteAccount(account: Account) {
@@ -424,19 +462,24 @@ class CansCenter : Cans {
         }
 
         core.removeAccount(account)
+        Log.i("[Account Removal]", "Removed account: ${account.params.identityAddress?.asString()}")
     }
 
 
     override fun removeAccount() {
-        core.defaultAccount?.let { account ->
+        core.accountList.forEach { account ->
             accountToDelete = account
+
             val registered = account.state == RegistrationState.Ok
-            Log.i("[Account Settings]"," Account was default, let's look for a replacement")
-            for (accountIterator in core.accountList) {
-                if (account != accountIterator) {
-                    core.defaultAccount = accountIterator
-                    Log.i("[Account Settings]"," New default account is $accountIterator")
-                    break
+
+            if (core.defaultAccount == account) {
+                Log.i("[Account Settings]","Account was default, let's look for a replacement")
+                for (accountIterator in core.accountList) {
+                    if (account != accountIterator) {
+                        core.defaultAccount = accountIterator
+                        Log.i("[Account Settings]","New default account is $accountIterator")
+                        break
+                    }
                 }
             }
 
@@ -445,34 +488,64 @@ class CansCenter : Cans {
             account.params = params
 
             if (!registered) {
-                Log.w("[Account Settings]", "Account isn't registered, don't unregister before removing it")
+               Log.w("[Account Settings]","Account isn't registered, don't unregister before removing it")
                 deleteAccount(account)
             }
+            Log.i("[Account Removal]", "Removed account: ${account.params.identityAddress?.asString()}")
         }
     }
 
-    override fun startCall(addressToCall: String) {
-        val remoteAddress: Address? = core.interpretUrl(addressToCall)
-        remoteAddress
-            ?: return // If address parsing fails, we can't continue with outgoing call process
+    override fun startCall(to: String) {
+        var stringAddress = to
 
-        // We also need a CallParams object
-        // Create call params expects a Call object for incoming calls, but for outgoing we must use null safely
+        val address: Address? = core.interpretUrl(stringAddress)
+        if (address == null) {
+            org.linphone.core.tools.Log.e("[Context] Failed to parse $stringAddress, abort outgoing call")
+         //   callErrorMessageResourceId.value = Event(context.getString(org.linphone.core.R.string.call_error_network_unreachable))
+            return
+        }
+
+        startCall(address)
+    }
+
+    fun startCall(address: Address, forceZRTP: Boolean = false, localAddress: Address? = null) {
+        if (!core.isNetworkReachable) {
+            org.linphone.core.tools.Log.e("[Context] Network unreachable, abort outgoing call")
+           // callErrorMessageResourceId.value = Event(context.getString(org.linphone.core.R.string.call_error_network_unreachable))
+            return
+        }
+
         val params = core.createCallParams(null)
-        params ?: return // Same for params
+        if (params == null) {
+            val call = core.inviteAddress(address)
+            org.linphone.core.tools.Log.w("[Context] Starting call $call without params")
+            return
+        }
 
-        // We can now configure it
-        // Here we ask for no encryption but we could ask for ZRTP/SRTP/DTLS
-        params.mediaEncryption = MediaEncryption.None
-        // If we wanted to start the call with video directly
-        //params.enableVideo(true)
+        if (forceZRTP) {
+            params.mediaEncryption = MediaEncryption.ZRTP
+        }
+//        if (LinphoneUtils.checkIfNetworkHasLowBandwidth(context)) {
+//            org.linphone.core.tools.Log.w("[Context] Enabling low bandwidth mode!")
+//            params.isLowBandwidthEnabled = true
+//        }
+//        params.recordFile = LinphoneUtils.getRecordingFilePathForAddress(address)
 
-        core.addListener(coreListenerStub)
-        core.start()
+        if (localAddress != null) {
+            params.proxyConfig = core.proxyConfigList.find { proxyConfig ->
+                proxyConfig.identityAddress?.weakEqual(localAddress) ?: false
+            }
+            if (params.proxyConfig != null) {
+                org.linphone.core.tools.Log.i("[Context] Using proxy config matching address ${localAddress.asStringUriOnly()} as From")
+            }
+        }
 
-        // Finally we start the call
-        core.inviteAddressWithParams(remoteAddress, params)
-        // Call process can be followed in onCallStateChanged callback from core listener
+        if (corePreferences.sendEarlyMedia) {
+            params.isEarlyMediaSendingEnabled = true
+        }
+
+        val call = core.inviteAddressWithParams(address, params)
+        org.linphone.core.tools.Log.i("[Context] Starting call $call")
     }
 
     override fun terminateCall() {

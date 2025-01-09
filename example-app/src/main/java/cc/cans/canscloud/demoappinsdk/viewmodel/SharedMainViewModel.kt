@@ -79,7 +79,7 @@ class SharedMainViewModel : ViewModel() {
     }
 
     fun register(){
-        cansCenter().addListener(listener)
+     //   cansCenter().addListener(listener)
     }
 
     fun unregister(){
