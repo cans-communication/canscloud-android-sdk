@@ -61,7 +61,6 @@ class CansCenter : Cans {
     private var TAG = "CansCenter"
     private lateinit var accountDefault: Account
     private lateinit var accountCreator: AccountCreator
-    private var proxyConfigToCheck: ProxyConfig? = null
 
     @SuppressLint("StaticFieldLeak")
     override lateinit var corePreferences: CorePreferences
@@ -429,12 +428,20 @@ class CansCenter : Cans {
     }
 
     private fun removeInvalidProxyConfig() {
-        val cfg = proxyConfigToCheck
-        cfg ?: return
-        val authInfo = cfg.findAuthInfo()
+        val account = accountToCheck
+        account ?: return
+
+        val authInfo = account.findAuthInfo()
         if (authInfo != null) core.removeAuthInfo(authInfo)
-        core.removeProxyConfig(cfg)
-        proxyConfigToCheck = null
+        core.removeAccount(account)
+        accountToCheck = null
+
+        // Make sure there is a valid default account
+        val accounts = core.accountList
+        if (accounts.isNotEmpty() && core.defaultAccount == null) {
+            core.defaultAccount = accounts.first()
+            core.refreshRegisters()
+        }
     }
 
     private fun computeUserAgent() {
