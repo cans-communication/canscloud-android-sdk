@@ -20,11 +20,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         cansCenter().register(
-            "40102",
-            "p40102CANS",
-            "cns.cans.cc",
+            "1006",
+            "p1006",
+            "sitmms.cans.cc",
             "8446",
-            CansTransport.UDP
+            CansTransport.TCP
         )
 
         cansCenter().requestPermissionPhone(this)

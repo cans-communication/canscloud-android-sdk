@@ -39,9 +39,14 @@ import cc.cans.canscloud.sdk.core.NotificationsManager
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
+import org.linphone.core.Account
+import org.linphone.core.AccountCreator
+import org.linphone.core.AccountListenerStub
+import org.linphone.core.Event
 import org.linphone.core.LogCollectionState
 import org.linphone.core.LogLevel
 import org.linphone.core.tools.compatibility.DeviceUtils
+import java.util.Locale
 
 data class Notifiable(val notificationId: Int) {
     var remoteAddress: String? = null
@@ -55,8 +60,10 @@ class CansCenter() : Cans {
     override var coreService = CoreService()
     override var appName: String = ""
     var audioRoutesEnabled: Boolean = false
-    var destinationCall : String = ""
-    var TAG = "CansCenter"
+    var destinationCall: String = ""
+    private var TAG = "CansCenter"
+    private lateinit var accountDefault: Account
+    private lateinit var accountCreator: AccountCreator
 
     override lateinit var coreContext: CoreContextSDK
 
@@ -154,18 +161,43 @@ class CansCenter() : Cans {
     override val isHeadsetState: Boolean
         get() = AudioRouteUtils.isHeadsetAudioRouteAvailable()
 
-    private var coreListenerStub = object : CoreListenerStub() {
+    private var accountToDelete: Account? = null
+    private var accountToCheck: Account? = null
+
+    private val accountListener: AccountListenerStub = object : AccountListenerStub() {
         override fun onRegistrationStateChanged(
-            core: Core,
-            cfg: ProxyConfig,
+            account: Account,
             state: RegistrationState,
             message: String
         ) {
+            if (state == RegistrationState.Cleared && account == accountToDelete) {
+                deleteAccount(account)
+                listeners.forEach { it.onUnRegister() }
+            } else {
+                if (state == RegistrationState.Ok) {
+                    listeners.forEach { it.onRegistration(RegisterState.OK, message) }
+                } else if (state == RegistrationState.Failed) {
+                    listeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
+                }
+            }
+        }
+    }
+
+    private var coreListenerStub = object : CoreListenerStub() {
+        override fun onAccountRegistrationStateChanged(
+            core: Core,
+            account: Account,
+            state: RegistrationState?,
+            message: String
+        ) {
             Log.i("[CansSDK]", "Registration state is $state: $message")
-            if (state == RegistrationState.Ok) {
-                listeners.forEach { it.onRegistration(RegisterState.OK, message) }
-            } else if (state == RegistrationState.Failed) {
-                listeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
+            if (account == accountToCheck) {
+                if (state == RegistrationState.Ok) {
+                    listeners.forEach { it.onRegistration(RegisterState.OK, message) }
+                } else if (state == RegistrationState.Failed) {
+                    removeInvalidProxyConfig()
+                    listeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
+                }
             }
         }
 
@@ -178,9 +210,9 @@ class CansCenter() : Cans {
             // This function will be called each time a call state changes,
             // which includes new incoming/outgoing calls
             callCans = call
-            destinationCall =  call.remoteAddress.username ?: ""
+            destinationCall = call.remoteAddress.username ?: ""
 
-            Log.w("onCallStateChanged2: ", "${state}")
+            Log.w("onCallStateChanged2: ", "${state} $message")
 
             when (state) {
                 Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> {
@@ -282,8 +314,8 @@ class CansCenter() : Cans {
         }
 
         core = Factory.instance().createCoreWithConfig(config, context)
-        core.start()
         core.addListener(coreListenerStub)
+        core.start()
         createNotificationChannels(context, notificationManager)
 
         core.ring = null
@@ -294,6 +326,7 @@ class CansCenter() : Cans {
 
         coreContext = CoreContextSDK(context)
         coreContext.start()
+        computeUserAgent()
     }
 
     private fun createNotificationChannels(
@@ -305,11 +338,15 @@ class CansCenter() : Cans {
         createIncomingCallChannel(context, notificationManager)
     }
 
-    private fun createServiceChannel(context: Context, notificationManager: NotificationManagerCompat) {
+    private fun createServiceChannel(
+        context: Context,
+        notificationManager: NotificationManagerCompat
+    ) {
         // Create service notification channel
         val id = context.getString(R.string.notification_channel_service_id)
         val name = "$appName ${context.getString(R.string.notification_channel_service_name)}"
-        val description = "$appName ${context.getString(R.string.notification_channel_service_name)}"
+        val description =
+            "$appName ${context.getString(R.string.notification_channel_service_name)}"
         val channel = NotificationChannel(id, name, NotificationManager.IMPORTANCE_LOW)
         channel.description = description
         channel.enableVibration(false)
@@ -352,6 +389,18 @@ class CansCenter() : Cans {
         notificationManager.createNotificationChannel(channel)
     }
 
+    private fun getAccountCreator(): AccountCreator {
+        core.loadConfigFromXml(corePreferences.linphoneDefaultValuesPath)
+        accountCreator = core.createAccountCreator(corePreferences.xmlRpcServerUrl)
+        accountCreator.language = Locale.getDefault().language
+
+        accountCreator.reset()
+        accountCreator.language = Locale.getDefault().language
+
+        core.loadConfigFromXml(corePreferences.defaultValuesPath)
+        return accountCreator
+    }
+
     override fun register(
         username: String,
         password: String,
@@ -359,54 +408,115 @@ class CansCenter() : Cans {
         port: String,
         transport: CansTransport
     ) {
-        if ((username != this.username) || (domain != this.domain)) {
+
+        if ((username == this.username) || (domain == this.domain)) {
             removeAccount()
-            val serverAddress = "${domain}:${port}"
-            val transportType = if (transport.name.lowercase() == "tcp") {
-                TransportType.Tcp
-            } else {
-                TransportType.Udp
-            }
+            core.clearAccounts()
+        }
 
-            val authInfo = Factory.instance()
-                .createAuthInfo(username, null, password, null, null, serverAddress, null)
+        val serverAddress = "${domain}:${port}"
+        val transportType = if (transport.name.lowercase() == "tcp") {
+            TransportType.Tcp
+        } else {
+            TransportType.Udp
+        }
+        accountCreator = getAccountCreator()
+        accountCreator.username = username
+        accountCreator.password = password
+        accountCreator.domain = serverAddress
+        accountCreator.displayName = ""
+        accountCreator.transport = transportType
 
-            val params = core.createAccountParams()
-            val identity = Factory.instance().createAddress("sip:$username@$serverAddress")
-            params.identityAddress = identity
+        val proxyConfig = accountCreator.createAccountInCore()
+        accountToCheck = proxyConfig
 
-            val address = Factory.instance().createAddress("sip:$serverAddress")
-            address?.transport = transportType
-            params.serverAddress = address
-            params.isRegisterEnabled = true
+        core.addListener(coreListenerStub)
+        core.start()
 
-            val createAccount = core.createAccount(params)
-            core.addAuthInfo(authInfo)
-            core.addAccount(createAccount)
+        corePreferences.keepServiceAlive = true
+        coreContext.notificationsManager.startForeground()
+    }
 
-            // Asks the CaptureTextureView to resize to match the captured video's size ratio
-            //core.config.setBool("video", "auto_resize_preview_to_keep_ratio", true)
+    private fun removeInvalidProxyConfig() {
+        val account = accountToCheck
+        account ?: return
 
-            core.defaultAccount = createAccount
-            core.addListener(coreListenerStub)
-            core.start()
+        val authInfo = account.findAuthInfo()
+        if (authInfo != null) core.removeAuthInfo(authInfo)
+        core.removeAccount(account)
+        accountToCheck = null
 
-            corePreferences.keepServiceAlive = true
-            coreContext.notificationsManager.startForeground()
+        // Make sure there is a valid default account
+        val accounts = core.accountList
+        if (accounts.isNotEmpty() && core.defaultAccount == null) {
+            core.defaultAccount = accounts.first()
+            core.refreshRegisters()
         }
     }
 
+    private fun computeUserAgent() {
+        val deviceName: String = corePreferences.deviceName
+        val appNameS: String = "${appName}: Android"
+        val userAgent = "$appNameS/ ($deviceName) LinphoneSDK"
+        val sdkVersion = context.getString(org.linphone.core.R.string.linphone_sdk_version)
+        val sdkBranch = context.getString(org.linphone.core.R.string.linphone_sdk_branch)
+        val sdkUserAgent = "$sdkVersion ($sdkBranch)"
+        core.setUserAgent(userAgent, sdkUserAgent)
+    }
+
+    private fun deleteAccount(account: Account) {
+        val authInfo = account.findAuthInfo()
+        if (authInfo != null) {
+            Log.i("[Account Settings] Found auth info $authInfo", " removing it.")
+            core.removeAuthInfo(authInfo)
+        } else {
+            Log.w("[Account Settings]", "Couldn't find matching auth info...")
+        }
+
+        core.removeAccount(account)
+        accountToDelete = null
+        core.clearAccounts()
+        core.clearAllAuthInfo()
+
+        Log.i("[Account Removal]", "Removed account: ${account.params.identityAddress?.asString()}")
+    }
+
+
     override fun removeAccount() {
-        core.defaultAccount?.let { account ->
-            val authInfo = account.findAuthInfo()
-            if (authInfo != null) {
-                Log.i("[CansSDK]", "Found auth info $authInfo, removing it.")
-                core.removeAuthInfo(authInfo)
-            } else {
-                Log.w("[CansSDK]", "Couldn't find matching auth info...")
+        core.accountList.forEach { account ->
+            accountToDelete = account
+            accountDefault = account
+            accountDefault.addListener(accountListener)
+
+            Log.i(
+                "[Account Removal]",
+                "Removed account: ${account.params.identityAddress?.asString()}"
+            )
+
+            val registered = account.state == RegistrationState.Ok
+
+            if (core.defaultAccount == account) {
+                Log.i("[Account Settings]", "Account was default, let's look for a replacement")
+                for (accountIterator in core.accountList) {
+                    if (account != accountIterator) {
+                        core.defaultAccount = accountIterator
+                        Log.i("[Account Settings]", "New default account is $accountIterator")
+                        break
+                    }
+                }
             }
-            core.removeAccount(account)
-            listeners.forEach { it.onUnRegister() }
+
+            val params = account.params.clone()
+            params.isRegisterEnabled = false
+            account.params = params
+
+            if (!registered) {
+                Log.w(
+                    "[Account Settings]",
+                    "Account isn't registered, don't unregister before removing it"
+                )
+                deleteAccount(account)
+            }
         }
     }
 
@@ -425,6 +535,18 @@ class CansCenter() : Cans {
         params.mediaEncryption = MediaEncryption.None
         // If we wanted to start the call with video directly
         //params.enableVideo(true)
+
+        for (payload in core.audioPayloadTypes) {
+            when (payload.mimeType.uppercase()) {
+                "PCMU" -> {
+                    payload.enable(true)
+                }
+
+                "PCMA" -> {
+                    payload.enable(true)
+                }
+            }
+        }
 
         core.addListener(coreListenerStub)
         core.start()
@@ -467,11 +589,11 @@ class CansCenter() : Cans {
         call.acceptWithParams(params)
     }
 
-    override fun isPauseState() : Boolean {
+    override fun isPauseState(): Boolean {
         return core.currentCall?.state == Call.State.Paused || core.currentCall?.state == Call.State.Pausing || core.currentCall?.state == Call.State.PausedByRemote
     }
 
-    override fun isOutgoingState() : Boolean {
+    override fun isOutgoingState(): Boolean {
         return core.currentCall?.state == Call.State.OutgoingRinging || core.currentCall?.state == Call.State.OutgoingProgress || core.currentCall?.state == Call.State.OutgoingInit || core.currentCall?.state == Call.State.OutgoingEarlyMedia
     }
 
@@ -568,11 +690,16 @@ class CansCenter() : Cans {
 
     override fun requestPermissionPhone(activity: Activity) {
         if (!PermissionHelper.singletonHolder().get().hasReadPhoneStatePermission()) {
-            Log.i("[$TAG]","Asking for READ_PHONE_STATE permission")
-            activity.requestPermissions(arrayOf(Manifest.permission.READ_PHONE_STATE , Manifest.permission.RECORD_AUDIO), 0)
+            Log.i("[$TAG]", "Asking for READ_PHONE_STATE permission")
+            activity.requestPermissions(
+                arrayOf(
+                    Manifest.permission.READ_PHONE_STATE,
+                    Manifest.permission.RECORD_AUDIO
+                ), 0
+            )
         } else if (!PermissionHelper.singletonHolder().get().hasPostNotificationsPermission()) {
             // Don't check the following the previous permission is being asked
-            Log.i("[$TAG]","Asking for POST_NOTIFICATIONS permission")
+            Log.i("[$TAG]", "Asking for POST_NOTIFICATIONS permission")
             Compatibility.requestPostNotificationsPermission(activity, 2)
         }
 
@@ -591,12 +718,14 @@ class CansCenter() : Cans {
         val permissionsRequiredList = arrayListOf<String>()
 
         if (!PermissionHelper.singletonHolder().get().hasRecordAudioPermission()) {
-            Log.i("[$TAG]","Asking for RECORD_AUDIO permission")
+            Log.i("[$TAG]", "Asking for RECORD_AUDIO permission")
             permissionsRequiredList.add(Manifest.permission.RECORD_AUDIO)
         }
 
-        if (Build.VERSION.SDK_INT >= (Build.VERSION_CODES.S) && !PermissionHelper.singletonHolder().get().hasBluetoothConnectPermission()) {
-            Log.i("[$TAG]","Asking for BLUETOOTH_CONNECT permission")
+        if (Build.VERSION.SDK_INT >= (Build.VERSION_CODES.S) && !PermissionHelper.singletonHolder()
+                .get().hasBluetoothConnectPermission()
+        ) {
+            Log.i("[$TAG]", "Asking for BLUETOOTH_CONNECT permission")
             permissionsRequiredList.add(Compatibility.BLUETOOTH_CONNECT)
         }
 
@@ -608,37 +737,38 @@ class CansCenter() : Cans {
     }
 
     override fun enableTelecomManager(activity: Activity) {
-        Log.i("[$TAG]"," Telecom Manager permissions granted")
-        if (! TelecomHelper.singletonHolder().exists()) {
-            Log.i("[$TAG]"," Creating Telecom Helper")
+        Log.i("[$TAG]", " Telecom Manager permissions granted")
+        if (!TelecomHelper.singletonHolder().exists()) {
+            Log.i("[$TAG]", " Creating Telecom Helper")
             if (Compatibility.hasTelecomManagerFeature(activity)) {
                 TelecomHelper.singletonHolder().create(activity)
             } else {
                 Log.e(
-                    "[$TAG]"," Telecom Helper can't be created, device doesn't support connection service!"
+                    "[$TAG]",
+                    " Telecom Helper can't be created, device doesn't support connection service!"
                 )
             }
         } else {
-            Log.e("[$TAG]"," Telecom Manager was already created ?!")
+            Log.e("[$TAG]", " Telecom Manager was already created ?!")
         }
         cansCenter().corePreferences.useTelecomManager = true
     }
 
     override fun checkTelecomManagerPermissions(activity: Activity) {
         if (!cansCenter().corePreferences.useTelecomManager) {
-            Log.i("[$TAG]","Telecom Manager feature is disabled")
+            Log.i("[$TAG]", "Telecom Manager feature is disabled")
             if (cansCenter().corePreferences.manuallyDisabledTelecomManager) {
-                Log.w("[$TAG]"," User has manually disabled Telecom Manager feature")
+                Log.w("[$TAG]", " User has manually disabled Telecom Manager feature")
             } else {
                 if (Compatibility.hasTelecomManagerPermissions(activity)) {
                     enableTelecomManager(activity)
                 } else {
-                    Log.i("[$TAG]"," Asking for Telecom Manager permissions")
+                    Log.i("[$TAG]", " Asking for Telecom Manager permissions")
                     Compatibility.requestTelecomManagerPermissions(activity, 1)
                 }
             }
         } else {
-            Log.i("[$TAG]"," Telecom Manager feature is already enabled")
+            Log.i("[$TAG]", " Telecom Manager feature is already enabled")
         }
     }
 
