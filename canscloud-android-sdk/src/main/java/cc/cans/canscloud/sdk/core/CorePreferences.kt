@@ -26,21 +26,27 @@ class CorePreferences constructor(private val context: Context) {
         private const val encryptedSharedPreferencesFile = "encrypted.pref"
     }
 
-    val encryptedSharedPreferences: SharedPreferences? = try {
+    val encryptedSharedPreferences: SharedPreferences? by lazy {
         val masterKey: MasterKey = MasterKey.Builder(
             context,
-            MasterKey.DEFAULT_MASTER_KEY_ALIAS,
+            MasterKey.DEFAULT_MASTER_KEY_ALIAS
         ).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build()
-        EncryptedSharedPreferences.create(
-            context,
-            encryptedSharedPreferencesFile,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-        )
-    } catch (kse: KeyStoreException) {
-        Log.e("[VFS] Keystore exception: $kse")
-        null
+
+        try {
+            EncryptedSharedPreferences.create(
+                context,
+                encryptedSharedPreferencesFile,
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (kse: KeyStoreException) {
+            Log.e("[VFS] Keystore exception: $kse")
+            null
+        } catch (e: Exception) {
+            Log.e("[VFS] Exception: $e")
+            null
+        }
     }
 
     var vfsEnabled: Boolean
@@ -97,7 +103,7 @@ class CorePreferences constructor(private val context: Context) {
         }
 
     var keepServiceAlive: Boolean
-        get() = config.getBool("app", "keep_service_alive", false)
+        get() = config.getBool("app", "keep_service_alive", true)
         set(value) {
             config.setBool("app", "keep_service_alive", value)
         }

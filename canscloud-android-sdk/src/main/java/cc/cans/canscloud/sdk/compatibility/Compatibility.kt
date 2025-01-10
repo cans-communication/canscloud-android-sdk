@@ -20,10 +20,14 @@
 package cc.cans.canscloud.sdk.compatibility
 
 import android.app.Activity
+import android.app.Notification
+import android.app.Service
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
 import android.telephony.TelephonyManager
 import androidx.annotation.Keep
 import androidx.core.app.NotificationManagerCompat
@@ -177,6 +181,55 @@ class Compatibility {
                 return Api26Compatibility.changeAudioRouteForTelecomManager(connection, route)
             }
             return false
+        }
+
+        fun startForegroundService(context: Context, intent: Intent) {
+            if (Version.sdkAboveOrEqual(Version.API31_ANDROID_12)) {
+                Api31Compatibility.startForegroundService(context, intent)
+            } else if (Version.sdkAboveOrEqual(Version.API26_O_80)) {
+                Api26Compatibility.startForegroundService(context, intent)
+            } else {
+                Api21Compatibility.startForegroundService(context, intent)
+            }
+        }
+
+        fun startCallForegroundService(
+            service: Service,
+            notifId: Int,
+            notif: Notification,
+            isCallActive: Boolean,
+        ) {
+            if (Version.sdkAboveOrEqual(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)) {
+                Api34Compatibility.startCallForegroundService(service, notifId, notif, isCallActive)
+            } else {
+                startForegroundService(service, notifId, notif)
+            }
+        }
+
+        fun startDataSyncForegroundService(
+            service: Service,
+            notifId: Int,
+            notif: Notification,
+            isCallActive: Boolean,
+        ) {
+            if (Version.sdkAboveOrEqual(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)) {
+                Api34Compatibility.startDataSyncForegroundService(
+                    service,
+                    notifId,
+                    notif,
+                    isCallActive,
+                )
+            } else {
+                startForegroundService(service, notifId, notif)
+            }
+        }
+
+        fun startForegroundService(service: Service, notifId: Int, notif: Notification?) {
+            if (Version.sdkAboveOrEqual(Version.API31_ANDROID_12)) {
+                Api31Compatibility.startForegroundService(service, notifId, notif)
+            } else {
+                Api21Compatibility.startForegroundService(service, notifId, notif)
+            }
         }
     }
 }
