@@ -21,8 +21,11 @@ package cc.cans.canscloud.sdk.compatibility
 
 import android.annotation.SuppressLint
 import android.annotation.TargetApi
+import android.app.Notification
+import android.app.Service
 import android.bluetooth.BluetoothAdapter
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
@@ -58,6 +61,14 @@ class Api21Compatibility {
 
         fun getBitmapFromUri(context: Context, uri: Uri): Bitmap {
             return MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+        }
+
+        fun startForegroundService(context: Context, intent: Intent) {
+            context.startService(intent)
+        }
+
+        fun startForegroundService(service: Service, notifId: Int, notif: Notification?) {
+            service.startForeground(notifId, notif)
         }
     }
 }

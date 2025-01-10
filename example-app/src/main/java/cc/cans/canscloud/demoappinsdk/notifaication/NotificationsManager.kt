@@ -29,11 +29,10 @@ class NotificationsManager(private val context: Context) {
         const val INTENT_REMOTE_ADDRESS = "REMOTE_ADDRESS"
         private const val MISSED_CALL_TAG = "Missed call"
         private const val MISSED_CALLS_NOTIF_ID = 2
-
     }
     private val callNotificationsMap: HashMap<String, Notifiable> = HashMap()
 
-    private val notificationManager: NotificationManagerCompat by lazy {
+    val notificationManager: NotificationManagerCompat by lazy {
         NotificationManagerCompat.from(context)
     }
 

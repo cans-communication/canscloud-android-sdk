@@ -21,8 +21,13 @@ package cc.cans.canscloud.sdk.compatibility
 
 import android.Manifest
 import android.annotation.TargetApi
+import android.app.ForegroundServiceStartNotAllowedException
+import android.app.Notification
+import android.app.Service
 import android.content.Context
+import android.content.Intent
 import androidx.annotation.Keep
+import org.linphone.core.tools.Log
 
 @TargetApi(31)
 class Api31Compatibility {
@@ -30,6 +35,30 @@ class Api31Compatibility {
     companion object {
         fun hasBluetoothConnectPermission(context: Context): Boolean {
             return Compatibility.hasPermission(context, Manifest.permission.BLUETOOTH_CONNECT)
+        }
+
+        fun startForegroundService(context: Context, intent: Intent) {
+            try {
+                context.startForegroundService(intent)
+            } catch (fssnae: ForegroundServiceStartNotAllowedException) {
+                Log.e("[Api31 Compatibility] Can't start service as foreground! $fssnae")
+            } catch (se: SecurityException) {
+                Log.e("[Api31 Compatibility] Can't start service as foreground! $se")
+            } catch (e: Exception) {
+                Log.e("[Api31 Compatibility] Can't start service as foreground! $e")
+            }
+        }
+
+        fun startForegroundService(service: Service, notifId: Int, notif: Notification?) {
+            try {
+                service.startForeground(notifId, notif)
+            } catch (fssnae: ForegroundServiceStartNotAllowedException) {
+                Log.e("[Api31 Compatibility] Can't start service as foreground! $fssnae")
+            } catch (se: SecurityException) {
+                Log.e("[Api31 Compatibility] Can't start service as foreground! $se")
+            } catch (e: Exception) {
+                Log.e("[Api31 Compatibility] Can't start service as foreground! $e")
+            }
         }
     }
 }

@@ -9,6 +9,10 @@
     <string name="next">Next</string>
     <string name="previous">Previous</string>
     <string name="user_agent_app_name" translatable="false">&appName;Android</string>
+    <string name="service_name">&appName; Service</string>
+    <string name="service_auto_start_description">&appName; has been started automatically</string>
+    <string name="service_description">This is required to receive calls while in background</string>
+    <string name="sync_account_name">&appName; contacts</string>
 
     <!-- Common -->
     <string name="error">Error</string>

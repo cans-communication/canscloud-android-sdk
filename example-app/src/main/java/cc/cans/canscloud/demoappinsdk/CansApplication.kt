@@ -19,21 +19,14 @@
  */
 package cc.cans.canscloud.demoappinsdk
 
-import android.annotation.SuppressLint
 import android.app.Application
 import androidx.lifecycle.LifecycleObserver
 import cc.cans.canscloud.demoappinsdk.core.CoreContext
 import cc.cans.canscloud.demoappinsdk.notifaication.NotificationsManager
-import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import org.linphone.core.tools.Log
 
 class CansApplication : Application(), LifecycleObserver {
-    companion object {
-        @SuppressLint("StaticFieldLeak")
-        lateinit var coreContext: CoreContextSDK
-    }
-
     override fun onCreate() {
         super.onCreate()
 
@@ -41,8 +34,6 @@ class CansApplication : Application(), LifecycleObserver {
         android.util.Log.i("[$appName]", "Application is being created")
         cansCenter().config(applicationContext, appName)
         CoreContext(this)
-        coreContext = CoreContextSDK(this)
-        coreContext.start()
         NotificationsManager(this)
         Log.i("[Application] Created")
     }

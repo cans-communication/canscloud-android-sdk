@@ -30,11 +30,15 @@ import cc.cans.canscloud.sdk.compatibility.PhoneStateInterface
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.linphone.core.Factory
 import org.linphone.core.LogLevel
 import org.linphone.core.LoggingService
 import org.linphone.core.LoggingServiceListenerStub
 import org.linphone.core.Reason
+import org.linphone.core.RegistrationState
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 import java.security.KeyStore
@@ -63,6 +67,10 @@ class CoreContextSDK(
     private var previousCallState = CallState.Idle
     private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val loggingService = Factory.instance().loggingService
+
+    val notificationsManager: NotificationsManager by lazy {
+        NotificationsManager(context)
+    }
 
     private val listener = object : CansListenerStub {
         override fun onRegistration(state: RegisterState, message: String?) {
@@ -173,6 +181,8 @@ class CoreContextSDK(
         _lifecycleRegistry.currentState = Lifecycle.State.STARTED
 
         initPhoneStateListener()
+
+        notificationsManager.startForeground()
 
         _lifecycleRegistry.currentState = Lifecycle.State.RESUMED
         Log.i("[Context]"," Started")
@@ -431,6 +441,20 @@ class CoreContextSDK(
                 Log.i("[Context]", " VFS activated")
             } catch (e: Exception) {
                 Log.i("[Context]", " Unable to activate VFS encryption: $e")
+            }
+        }
+    }
+
+    fun checkIfForegroundServiceNotificationCanBeRemovedAfterDelay(delayInMs: Long) {
+        coroutineScope.launch {
+            withContext(Dispatchers.Default) {
+                delay(delayInMs)
+                withContext(Dispatchers.Main) {
+                    if (cansCenter().core.defaultAccount != null && cansCenter().core.defaultAccount?.state == RegistrationState.Ok) {
+                        org.linphone.core.tools.Log.i("[Context] Default account is registered, cancel foreground service notification if possible")
+                        notificationsManager.stopForegroundNotificationIfPossible()
+                    }
+                }
             }
         }
     }

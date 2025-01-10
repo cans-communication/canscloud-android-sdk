@@ -34,6 +34,8 @@ import androidx.core.app.ActivityCompat
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
+import cc.cans.canscloud.sdk.core.CoreService
+import cc.cans.canscloud.sdk.core.NotificationsManager
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
@@ -50,17 +52,20 @@ data class Notifiable(val notificationId: Int) {
     var remoteAddress: String? = null
 }
 
-class CansCenter : Cans {
+class CansCenter() : Cans {
     override lateinit var core: Core
     override lateinit var callCans: Call
     override lateinit var mVibrator: Vibrator
     override lateinit var callState: CallState
-    var appName: String? = null
+    override var coreService = CoreService()
+    override var appName: String = ""
     var audioRoutesEnabled: Boolean = false
     var destinationCall: String = ""
     private var TAG = "CansCenter"
     private lateinit var accountDefault: Account
     private lateinit var accountCreator: AccountCreator
+
+    override lateinit var coreContext: CoreContextSDK
 
     @SuppressLint("StaticFieldLeak")
     override lateinit var corePreferences: CorePreferences
@@ -319,6 +324,8 @@ class CansCenter : Cans {
         mVibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
+        coreContext = CoreContextSDK(context)
+        coreContext.start()
         computeUserAgent()
     }
 
@@ -336,7 +343,7 @@ class CansCenter : Cans {
         notificationManager: NotificationManagerCompat
     ) {
         // Create service notification channel
-        val id = "$appName ${context.getString(R.string.notification_channel_service_id)}"
+        val id = context.getString(R.string.notification_channel_service_id)
         val name = "$appName ${context.getString(R.string.notification_channel_service_name)}"
         val description =
             "$appName ${context.getString(R.string.notification_channel_service_name)}"
@@ -425,6 +432,9 @@ class CansCenter : Cans {
 
         core.addListener(coreListenerStub)
         core.start()
+
+        corePreferences.keepServiceAlive = true
+        coreContext.notificationsManager.startForeground()
     }
 
     private fun removeInvalidProxyConfig() {
