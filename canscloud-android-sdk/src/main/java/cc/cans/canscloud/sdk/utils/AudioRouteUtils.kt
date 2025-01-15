@@ -247,7 +247,7 @@ class AudioRouteUtils {
             Log.i(
                 "[Audio Route Helper] Playback audio device currently in use is [${audioDevice.deviceName} (${audioDevice.driverName}) ${audioDevice.type}]"
             )
-            return audioDevice.type == AudioDevice.Type.Bluetooth || audioDevice.type == AudioDevice.Type.HearingAid
+            return audioDevice.type == AudioDevice.Type.Bluetooth
         }
 
         fun isBluetoothAudioRouteAvailable(): Boolean {

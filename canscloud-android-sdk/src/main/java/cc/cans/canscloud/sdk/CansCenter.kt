@@ -156,7 +156,7 @@ class CansCenter() : Cans {
         get() = AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
 
     override val isBluetoothState: Boolean
-        get() = audioManager?.isBluetoothScoOn == true
+        get() =  AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
 
     override val isHeadsetState: Boolean
         get() = AudioRouteUtils.isHeadsetAudioRouteAvailable()
