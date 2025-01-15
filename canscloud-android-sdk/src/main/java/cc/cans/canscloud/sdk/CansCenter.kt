@@ -156,7 +156,7 @@ class CansCenter() : Cans {
         get() = AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
 
     override val isBluetoothState: Boolean
-        get() = audioManager?.isBluetoothScoOn == true
+        get() =  AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
 
     override val isHeadsetState: Boolean
         get() = AudioRouteUtils.isHeadsetAudioRouteAvailable()
@@ -648,15 +648,12 @@ class CansCenter() : Cans {
     }
 
     override fun audioDevicesListUpdated() {
-        updateAudioRoutesState()
-        if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
-            AudioRouteUtils.routeAudioToHeadset()
-        } else if (!isBluetoothState && corePreferences.routeAudioToBluetoothIfAvailable) {
+        if (!isBluetoothState && corePreferences.routeAudioToBluetoothIfAvailable) {
             val bluetoothAdapter: BluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
             if (bluetoothAdapter.isEnabled) {
                 if (ActivityCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.BLUETOOTH_CONNECT
+                        coreContext.context,
+                        Manifest.permission.BLUETOOTH_CONNECT,
                     ) == PackageManager.PERMISSION_GRANTED
                 ) {
                     val connectedDevices =
@@ -665,10 +662,19 @@ class CansCenter() : Cans {
                         println("[bluetoothAdapter] Audio devices list updated ${bluetoothAdapter.name}")
                         audioManager?.startBluetoothSco()
                         audioManager?.isBluetoothScoOn = true
+                        AudioRouteUtils.routeAudioToBluetooth()
+                    } else {
+                        if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
+                            AudioRouteUtils.routeAudioToHeadset()
+                        }
+                        println("[bluetoothAdapter] Audio devices list updated no connect")
                     }
                 }
             }
+        } else if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
+            AudioRouteUtils.routeAudioToHeadset()
         }
+        updateAudioRoutesState()
     }
 
     private fun vibrator() {
