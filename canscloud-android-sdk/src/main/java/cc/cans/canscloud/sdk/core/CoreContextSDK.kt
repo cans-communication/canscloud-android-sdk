@@ -33,6 +33,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.linphone.core.Call
 import org.linphone.core.Factory
 import org.linphone.core.LogLevel
 import org.linphone.core.LoggingService
@@ -100,11 +101,7 @@ class CoreContextSDK(
                 CallState.Connected -> {}
                 CallState.StreamsRunning -> {
                     if (cans.core.callsNb == 1 && previousCallState == CallState.Connected) {
-                        if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
-                            AudioRouteUtils.routeAudioToHeadset(cans.callCans)
-                        } else if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
-                            AudioRouteUtils.routeAudioToBluetooth(cans.callCans)
-                        }
+                        AudioRouteUtils.routeAudio()
                     }
                 }
                 CallState.Error -> {}
