@@ -64,6 +64,8 @@ interface Cans {
 
     val isBluetoothState: Boolean
 
+    val isBluetoothAudioRouteAvailable: Boolean
+
     val isHeadsetState: Boolean
 
     val wasBluetoothPreviouslyAvailable: Boolean

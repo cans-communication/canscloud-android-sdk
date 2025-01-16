@@ -158,6 +158,9 @@ class CansCenter() : Cans {
     override val isBluetoothState: Boolean
         get() =  AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
 
+    override val isBluetoothAudioRouteAvailable: Boolean
+        get() = AudioRouteUtils.isBluetoothAudioRouteAvailable()
+
     override val isHeadsetState: Boolean
         get() = AudioRouteUtils.isHeadsetAudioRouteAvailable()
 

@@ -19,8 +19,15 @@
  */
 package cc.cans.canscloud.sdk.utils
 
+import android.Manifest
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothProfile
+import android.content.Context
+import android.content.pm.PackageManager
+import android.media.AudioManager
 import android.telecom.CallAudioState
 import androidx.annotation.Keep
+import androidx.core.app.ActivityCompat
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import org.linphone.core.AudioDevice
@@ -134,6 +141,35 @@ class AudioRouteUtils {
                 else -> {
                     Log.e("[AudioDevice] No type audio device")
                 }
+            }
+        }
+
+        fun routeAudio() {
+            val audioManager = cansCenter().context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            if (isBluetoothAudioRouteCurrentlyUsed() && cansCenter().corePreferences.routeAudioToBluetoothIfAvailable) {
+                val bluetoothAdapter: BluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+                if (bluetoothAdapter.isEnabled) {
+                    if (ActivityCompat.checkSelfPermission(
+                            cansCenter().context,
+                            Manifest.permission.BLUETOOTH_CONNECT,
+                        ) == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        val connectedDevices =
+                            bluetoothAdapter.getProfileConnectionState(BluetoothProfile.HEADSET)
+                        if (connectedDevices == BluetoothProfile.STATE_CONNECTED) {
+                            println("[bluetoothAdapter] Audio devices list updated ${bluetoothAdapter.name}")
+                            audioManager.startBluetoothSco()
+                            audioManager.isBluetoothScoOn = true
+                        } else {
+                            if (isHeadsetAudioRouteAvailable()) {
+                                routeAudioToHeadset()
+                            }
+                            println("[bluetoothAdapter] Audio devices list updated no connect")
+                        }
+                    }
+                }
+            } else if (isHeadsetAudioRouteAvailable()) {
+                routeAudioToHeadset()
             }
         }
 
