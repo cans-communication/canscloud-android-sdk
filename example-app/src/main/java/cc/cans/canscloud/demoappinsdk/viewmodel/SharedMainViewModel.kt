@@ -26,6 +26,11 @@ class SharedMainViewModel : ViewModel() {
                     statusRegister.value = R.string.register_fail
                     isRegister.value = false
                 }
+
+                RegisterState.None -> {
+                    statusRegister.value = R.string.un_register
+                    isRegister.value = false
+                }
             }
         }
 
