@@ -113,6 +113,15 @@ class CansCenter() : Cans {
             return ""
         }
 
+    override val defaultStateRegister: RegisterState
+        get() {
+            return when (core.defaultAccount?.state) {
+                RegistrationState.Ok -> RegisterState.OK
+                RegistrationState.None -> RegisterState.None
+                else -> RegisterState.FAIL
+            }
+        }
+
     override val destinationRemoteAddress: String
         get() = callCans.remoteAddress.asStringUriOnly()
 
