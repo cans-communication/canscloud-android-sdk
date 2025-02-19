@@ -10,6 +10,7 @@ import cc.cans.canscloud.sdk.core.CoreService
 import cc.cans.canscloud.sdk.core.NotificationsManager
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.CansTransport
+import cc.cans.canscloud.sdk.models.RegisterState
 import org.linphone.core.Account
 import org.linphone.core.Call
 import org.linphone.core.Core
@@ -41,6 +42,8 @@ interface Cans {
     val domain: String
 
     val port: String
+
+    val defaultStateRegister: RegisterState
 
     val destinationRemoteAddress: String
 
