@@ -31,6 +31,10 @@ import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import android.util.Log
 import androidx.core.app.ActivityCompat
+import cc.cans.canscloud.data.ProvisioningData
+import cc.cans.canscloud.data.ProvisioningInterceptor
+import cc.cans.canscloud.data.ProvisioningResult
+import cc.cans.canscloud.data.ProvisioningService
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
@@ -39,6 +43,8 @@ import cc.cans.canscloud.sdk.core.NotificationsManager
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
+import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
 import org.linphone.core.Account
 import org.linphone.core.AccountCreator
 import org.linphone.core.AccountListenerStub
@@ -46,6 +52,8 @@ import org.linphone.core.Event
 import org.linphone.core.LogCollectionState
 import org.linphone.core.LogLevel
 import org.linphone.core.tools.compatibility.DeviceUtils
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import java.util.Locale
 
 data class Notifiable(val notificationId: Int) {
@@ -66,6 +74,7 @@ class CansCenter() : Cans {
     private lateinit var accountCreator: AccountCreator
 
     override lateinit var coreContext: CoreContextSDK
+    private var proxyConfigToCheck: ProxyConfig? = null
 
     @SuppressLint("StaticFieldLeak")
     override lateinit var corePreferences: CorePreferences
@@ -115,11 +124,18 @@ class CansCenter() : Cans {
 
     override val defaultStateRegister: RegisterState
         get() {
-            return when (core.defaultAccount?.state) {
-                RegistrationState.Ok -> RegisterState.OK
-                RegistrationState.None -> RegisterState.None
-                else -> RegisterState.FAIL
+            val state: RegistrationState
+            val defaultAccount = cansCenter().core.defaultAccount
+            if (defaultAccount != null) {
+                state = defaultAccount.state
+
+                return when (state) {
+                    RegistrationState.Ok -> RegisterState.OK
+                    RegistrationState.None -> RegisterState.None
+                    else -> RegisterState.FAIL
+                }
             }
+            return RegisterState.None
         }
 
     override val destinationRemoteAddress: String
@@ -165,7 +181,7 @@ class CansCenter() : Cans {
         get() = AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
 
     override val isBluetoothState: Boolean
-        get() =  AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
+        get() = AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
 
     override val isBluetoothAudioRouteAvailable: Boolean
         get() = AudioRouteUtils.isBluetoothAudioRouteAvailable()
@@ -204,6 +220,30 @@ class CansCenter() : Cans {
         ) {
             Log.i("[CansSDK]", "Registration state is $state: $message")
             if (account == accountToCheck) {
+                if (state == RegistrationState.Ok) {
+                    listeners.forEach { it.onRegistration(RegisterState.OK, message) }
+                } else if (state == RegistrationState.Failed) {
+                    removeInvalidProxyConfig()
+                    listeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
+                }
+            } else {
+                if (account == core.defaultAccount) {
+                    listeners.forEach { it.onRegistration(RegisterState.OK, message) }
+                } else if (core.accountList.isEmpty()) {
+                    listeners.forEach { it.onRegistration(RegisterState.None, message) }
+                }
+            }
+        }
+
+        override fun onRegistrationStateChanged(
+            core: Core,
+            cfg: ProxyConfig,
+            state: RegistrationState,
+            message: String,
+        ) {
+            Log.i("defaultStateRegister2:","${cansCenter().defaultStateRegister}")
+            if (cfg == proxyConfigToCheck) {
+                org.linphone.core.tools.Log.i("[Assistant] [Account Login] Registration state is $state: $message")
                 if (state == RegistrationState.Ok) {
                     listeners.forEach { it.onRegistration(RegisterState.OK, message) }
                 } else if (state == RegistrationState.Failed) {
@@ -615,6 +655,137 @@ class CansCenter() : Cans {
         } else {
             routeAudioToSpeaker()
         }
+    }
+
+    override fun registerAccount(username: String, password: String, domain: String) {
+
+        accountCreator = getAccountCreator()
+        val result = accountCreator.setUsername(username)
+        if (result != AccountCreator.UsernameStatus.Ok) {
+            org.linphone.core.tools.Log.e("[Assistant] [Account Login] Error [${result.name}] setting the username: ${username}")
+//            usernameError.value = result.name
+//            waitForServerAnswer.value = false
+            return
+        }
+        org.linphone.core.tools.Log.i("[Assistant] [Account Login] Username is ${accountCreator.username}")
+
+        val result2 = accountCreator.setPassword(password)
+        if (result2 != AccountCreator.PasswordStatus.Ok) {
+            org.linphone.core.tools.Log.e("[Assistant] [Account Login] Error [${result2.name}] setting the password")
+//            passwordError.value = result2.name
+//            waitForServerAnswer.value = false
+            return
+        }
+
+        val result3 = accountCreator.setDomain(domain)
+        if (result3 != AccountCreator.DomainStatus.Ok) {
+            org.linphone.core.tools.Log.e("[Assistant] [Account Login] Error [${result3.name}] setting the domain")
+//            domainError.value = result3.name
+//            waitForServerAnswer.value = false
+            return
+        }
+
+        val okHttpClient: OkHttpClient = OkHttpClient.Builder()
+            .addInterceptor(ProvisioningInterceptor())
+            .addNetworkInterceptor(
+                ProvisioningInterceptor(),
+            )
+            .build()
+
+        val retrofit: Retrofit = Retrofit.Builder()
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .baseUrl("https://voxxycloud.com/Cpanel/")
+            .build()
+
+        val provisioningService: ProvisioningService =
+            retrofit.create(ProvisioningService::class.java)
+
+        val requestBody = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("idToken", "")
+            .addFormDataPart("action", "provision")
+            .addFormDataPart("username", username)
+            .addFormDataPart("password", password)
+            .build()
+
+        val url = "https://" + domain + "/Cpanel/provision/mobile/"
+
+        val callProvisioningData: retrofit2.Call<ProvisioningData?>? =
+            provisioningService.getProvisioningData(url, requestBody)
+
+        callProvisioningData?.let { callProvisioning ->
+            callProvisioning.enqueue(
+                object : retrofit2.Callback<ProvisioningData?> {
+                    override fun onResponse(
+                        call: retrofit2.Call<ProvisioningData?>,
+                        response: retrofit2.Response<ProvisioningData?>,
+                    ) {
+                        org.linphone.core.tools.Log.e("Response success", response.message())
+                        if (response.isSuccessful) {
+                            response.body().let { body ->
+                                val provisioningData: ProvisioningData? = body
+                                provisioningData?.let { provisioning ->
+                                    val results: List<ProvisioningResult> = provisioning.results
+                                    if (results.isNotEmpty()) {
+                                        val result = results[0]
+                                        accountCreator.username = result.extension?.trim()
+                                        accountCreator.password = result.secret?.trim()
+                                        accountCreator.domain = result.domain?.trim()
+                                        if (result.transport?.lowercase() == "tcp") {
+                                            accountCreator.transport = TransportType.Tcp
+                                        } else {
+                                            accountCreator.transport = TransportType.Udp
+                                        }
+                                        val proxyConfig = accountCreator.createAccountInCore()
+                                        accountToCheck = proxyConfig
+
+                                        core.addListener(coreListenerStub)
+                                        core.start()
+
+                                        if (!createProxyConfig()) {
+                                            Log.i(
+                                                "createProxyConfig",
+                                                "Error: Failed to create account object"
+                                            )
+//                                            waitForServerAnswer.value = false
+//                                            coreContext.core.removeListener(coreListener)
+//                                            onErrorEvent.value = Event("Error: Failed to create account object")
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            return
+                        }
+                    }
+
+                    override fun onFailure(
+                        call: retrofit2.Call<ProvisioningData?>,
+                        t: Throwable,
+                    ) {
+                        org.linphone.core.tools.Log.e("Response fail", t.message)
+
+                    }
+                },
+            )
+        }
+    }
+
+    private fun createProxyConfig(): Boolean {
+        val proxyConfig: ProxyConfig? = accountCreator.createProxyConfig()
+        proxyConfigToCheck = proxyConfig
+
+        if (proxyConfig == null) {
+            org.linphone.core.tools.Log.e("[Assistant] [Account Login] Account creator couldn't create proxy config")
+            //  onErrorEvent.value = Event("Error: Failed to create account object")
+            return false
+        }
+
+        proxyConfig.isPushNotificationAllowed = true
+
+        org.linphone.core.tools.Log.i("[Assistant] [Account Login] Proxy config created")
+        return true
     }
 
     override fun toggleMuteMicrophone() {

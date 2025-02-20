@@ -83,6 +83,8 @@ interface Cans {
         transport: CansTransport
     )
 
+    fun registerAccount(username: String, password: String, domain: String)
+
     fun requestPermissionPhone(activity: Activity)
 
     fun requestPermissionAudio(activity: Activity)
