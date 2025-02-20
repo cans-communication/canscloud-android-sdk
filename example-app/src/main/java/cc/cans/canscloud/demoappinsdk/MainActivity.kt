@@ -19,13 +19,16 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        cansCenter().register(
-            "1006",
-            "p1006",
-            "sitmms.cans.cc",
-            "8446",
-            CansTransport.TCP
-        )
+//        cansCenter().register(
+//            "1006",
+//            "p1006",
+//            "sitmms.cans.cc",
+//            "8446",
+//            CansTransport.TCP
+//        )
+
+
+        //cansCenter().registerAccount("706", "p39706C@NS", "cns.cans.cc")
 
         cansCenter().requestPermissionPhone(this)
     }

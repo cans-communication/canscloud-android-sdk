@@ -13,6 +13,8 @@ import cc.cans.canscloud.demoappinsdk.databinding.FragmentDialerBinding
 import cc.cans.canscloud.demoappinsdk.viewmodel.SharedMainViewModel
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CansTransport
+import cc.cans.canscloud.sdk.models.RegisterState
+import org.linphone.core.RegistrationState
 
 
 /**
@@ -44,6 +46,8 @@ class DialerFragment : Fragment() {
         sharedViewModel.missedCallsCount.observe(viewLifecycleOwner) {
             binding.misscall.text = "MissCall : $it"
         }
+
+        sharedViewModel.register()
 
         sharedViewModel.statusRegister.observe(viewLifecycleOwner) {
             binding.registerStatus.text = getString(it)
