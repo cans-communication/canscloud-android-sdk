@@ -43,6 +43,8 @@ interface Cans {
 
     val port: String
 
+    val proxy: String
+
     val defaultStateRegister: RegisterState
 
     val destinationRemoteAddress: String

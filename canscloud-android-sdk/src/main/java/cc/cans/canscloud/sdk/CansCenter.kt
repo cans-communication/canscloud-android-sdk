@@ -122,6 +122,14 @@ class CansCenter() : Cans {
             return ""
         }
 
+    override val proxy: String
+        get() {
+            core.defaultAccount?.params?.serverAddress?.asStringUriOnly()?.let {
+                return it
+            }
+            return ""
+        }
+
     override val defaultStateRegister: RegisterState
         get() {
             val state: RegistrationState
