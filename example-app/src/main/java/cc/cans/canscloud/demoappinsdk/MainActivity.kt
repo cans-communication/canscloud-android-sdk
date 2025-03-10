@@ -28,7 +28,7 @@ class MainActivity : AppCompatActivity() {
 //        )
 
 
-        //cansCenter().registerAccount("706", "p39706C@NS", "cns.cans.cc")
+        cansCenter().registerAccount("706", "p39706C@NSPP", "cns.cans.cc")
 
         cansCenter().requestPermissionPhone(this)
     }
