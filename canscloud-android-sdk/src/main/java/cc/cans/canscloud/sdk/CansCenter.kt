@@ -670,26 +670,23 @@ class CansCenter() : Cans {
         accountCreator = getAccountCreator()
         val result = accountCreator.setUsername(username)
         if (result != AccountCreator.UsernameStatus.Ok) {
-            org.linphone.core.tools.Log.e("[Assistant] [Account Login] Error [${result.name}] setting the username: ${username}")
-//            usernameError.value = result.name
-//            waitForServerAnswer.value = false
+            Log.e("[Assistant]"," [Account Login] Error [${result.name}] setting the username: ${username}")
+            listeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
-        org.linphone.core.tools.Log.i("[Assistant] [Account Login] Username is ${accountCreator.username}")
+        Log.i("[Assistant]","[Account Login] Username is ${accountCreator.username}")
 
         val result2 = accountCreator.setPassword(password)
         if (result2 != AccountCreator.PasswordStatus.Ok) {
-            org.linphone.core.tools.Log.e("[Assistant] [Account Login] Error [${result2.name}] setting the password")
-//            passwordError.value = result2.name
-//            waitForServerAnswer.value = false
+            Log.e("[Assistant]", " [Account Login] Error [${result2.name}] setting the password")
+            listeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
 
         val result3 = accountCreator.setDomain(domain)
         if (result3 != AccountCreator.DomainStatus.Ok) {
-            org.linphone.core.tools.Log.e("[Assistant] [Account Login] Error [${result3.name}] setting the domain")
-//            domainError.value = result3.name
-//            waitForServerAnswer.value = false
+            Log.e("[Assistant]"," [Account Login] Error [${result3.name}] setting the domain")
+            listeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
 
@@ -729,7 +726,7 @@ class CansCenter() : Cans {
                         call: retrofit2.Call<ProvisioningData?>,
                         response: retrofit2.Response<ProvisioningData?>,
                     ) {
-                        org.linphone.core.tools.Log.e("Response success", response.message())
+                        Log.e("Response success", response.message())
                         if (response.isSuccessful) {
                             response.body().let { body ->
                                 val provisioningData: ProvisioningData? = body
@@ -756,14 +753,13 @@ class CansCenter() : Cans {
                                                 "createProxyConfig",
                                                 "Error: Failed to create account object"
                                             )
-//                                            waitForServerAnswer.value = false
-//                                            coreContext.core.removeListener(coreListener)
-//                                            onErrorEvent.value = Event("Error: Failed to create account object")
+                                            listeners.forEach { it.onRegistration(RegisterState.FAIL) }
                                         }
                                     }
                                 }
                             }
                         } else {
+                            listeners.forEach { it.onRegistration(RegisterState.FAIL) }
                             return
                         }
                     }
@@ -772,8 +768,8 @@ class CansCenter() : Cans {
                         call: retrofit2.Call<ProvisioningData?>,
                         t: Throwable,
                     ) {
-                        org.linphone.core.tools.Log.e("Response fail", t.message)
-
+                        listeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                        Log.e("Response fail", "${t.message}")
                     }
                 },
             )
@@ -785,14 +781,14 @@ class CansCenter() : Cans {
         proxyConfigToCheck = proxyConfig
 
         if (proxyConfig == null) {
-            org.linphone.core.tools.Log.e("[Assistant] [Account Login] Account creator couldn't create proxy config")
+            Log.e("[Assistant]","[Account Login] Account creator couldn't create proxy config")
             //  onErrorEvent.value = Event("Error: Failed to create account object")
             return false
         }
 
         proxyConfig.isPushNotificationAllowed = true
 
-        org.linphone.core.tools.Log.i("[Assistant] [Account Login] Proxy config created")
+        Log.i("[Assistant]"," [Account Login] Proxy config created")
         return true
     }
 
