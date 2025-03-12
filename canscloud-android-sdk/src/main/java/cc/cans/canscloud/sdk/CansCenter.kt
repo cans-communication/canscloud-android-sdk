@@ -468,6 +468,10 @@ class CansCenter() : Cans {
         port: String,
         transport: CansTransport
     ) {
+        if (username.isEmpty() || password.isEmpty() || domain.isEmpty() || port.isEmpty()) {
+            listeners.forEach { it.onRegistration(RegisterState.FAIL) }
+            return
+        }
 
         if ((username == this.username) || (domain == this.domain)) {
             removeAccount()
@@ -666,6 +670,10 @@ class CansCenter() : Cans {
     }
 
     override fun registerAccount(username: String, password: String, domain: String) {
+        if (username.isEmpty() || password.isEmpty() || domain.isEmpty()) {
+            listeners.forEach { it.onRegistration(RegisterState.FAIL) }
+            return
+        }
 
         accountCreator = getAccountCreator()
         val result = accountCreator.setUsername(username)
