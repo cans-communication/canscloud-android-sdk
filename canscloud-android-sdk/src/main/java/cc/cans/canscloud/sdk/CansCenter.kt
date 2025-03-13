@@ -92,8 +92,8 @@ class CansCenter() : Cans {
     }
 
     private var listeners = mutableListOf<CansListenerStub>()
-    override val callLogs = MutableLiveData<ArrayList<GroupedCallLogData>>()
-    override val missedCallLogs = MutableLiveData<ArrayList<GroupedCallLogData>>()
+    override val callLogs = ArrayList<GroupedCallLogData>()
+    override val missedCallLogs = ArrayList<GroupedCallLogData>()
 
     override val account: String
         get() {
@@ -1058,16 +1058,16 @@ class CansCenter() : Cans {
             list.add(previousCallLogGroup)
         }
 
-        callLogs.value = list
+        callLogs.addAll(list)
 
-        callLogs.value?.let {
+        callLogs.let {
             Log.i("missedCallLogs1: ", "${it.size}")
         }
     }
 
 
     override fun updateMissedCallLogs() {
-        missedCallLogs.value.orEmpty().forEach(GroupedCallLogData::destroy)
+        missedCallLogs.orEmpty().forEach(GroupedCallLogData::destroy)
 
         val missedList = arrayListOf<GroupedCallLogData>()
         var previousMissedCallLogGroup: GroupedCallLogData? = null
@@ -1123,9 +1123,9 @@ class CansCenter() : Cans {
                 missedList.add(previousMissedCallLogGroup)
             }
 
-            missedCallLogs.value = missedList
+            missedCallLogs.addAll(missedList)
 
-            missedCallLogs.value?.let {
+            missedCallLogs.let {
                 Log.i("missedCallLogs: ", "${it.size}")
             }
         }
