@@ -20,8 +20,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         cansCenter().register(
-            "",
-            "",
+            "1007",
+            "p1007",
             "sitmms.cans.cc",
             "8446",
             CansTransport.TCP
