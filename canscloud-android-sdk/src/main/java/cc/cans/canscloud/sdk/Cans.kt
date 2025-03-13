@@ -78,9 +78,9 @@ interface Cans {
 
     val wasBluetoothPreviouslyAvailable: Boolean
 
-    val callLogs: MutableLiveData<ArrayList<GroupedCallLogData>>
+    val callLogs: ArrayList<GroupedCallLogData>
 
-    val missedCallLogs: MutableLiveData<ArrayList<GroupedCallLogData>>
+    val missedCallLogs:ArrayList<GroupedCallLogData>
 
     fun config(context: Context, appName: String)
 
