@@ -19,7 +19,6 @@ import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.CansTransport
 import cc.cans.canscloud.sdk.models.RegisterState
 import cc.cans.canscloud.sdk.utils.CansUtils
-import org.linphone.core.Address
 import org.linphone.core.AudioDevice
 import org.linphone.core.Call
 import org.linphone.core.Core
@@ -31,6 +30,7 @@ import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import android.util.Log
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.MutableLiveData
 import cc.cans.canscloud.data.ProvisioningData
 import cc.cans.canscloud.data.ProvisioningInterceptor
 import cc.cans.canscloud.data.ProvisioningResult
@@ -39,16 +39,20 @@ import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.core.CoreService
-import cc.cans.canscloud.sdk.core.NotificationsManager
+import cc.cans.canscloud.sdk.data.GroupedCallLogData
+import cc.cans.canscloud.sdk.models.CansAddress
+import cc.cans.canscloud.sdk.models.HistoryModel
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
+import cc.cans.canscloud.sdk.utils.TimestampUtils
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import org.linphone.core.Account
 import org.linphone.core.AccountCreator
 import org.linphone.core.AccountListenerStub
-import org.linphone.core.Event
+import org.linphone.core.Address
+import org.linphone.core.CallLog
 import org.linphone.core.LogCollectionState
 import org.linphone.core.LogLevel
 import org.linphone.core.tools.compatibility.DeviceUtils
@@ -88,6 +92,8 @@ class CansCenter() : Cans {
     }
 
     private var listeners = mutableListOf<CansListenerStub>()
+    override val callLogs = MutableLiveData<ArrayList<GroupedCallLogData>>()
+    override val missedCallLogs = MutableLiveData<ArrayList<GroupedCallLogData>>()
 
     override val account: String
         get() {
@@ -272,6 +278,8 @@ class CansCenter() : Cans {
             callCans = call
             destinationCall = call.remoteAddress.username ?: ""
 
+            updateCallLogs()
+            updateMissedCallLogs()
             Log.w("onCallStateChanged2: ", "${state} $message")
 
             when (state) {
@@ -884,7 +892,20 @@ class CansCenter() : Cans {
                         (
                                 callCans.callLog.status == Call.Status.Missed ||
                                         callCans.callLog.status == Call.Status.Aborted ||
-                                        callCans.callLog.status == Call.Status.EarlyAborted
+                                        callCans.callLog.status == Call.Status.EarlyAborted ||
+                                        callCans.callLog.status == Call.Status.Declined
+                                )
+                )
+    }
+
+    fun isCallLogMissed(callLog: CallLog): Boolean {
+        return (
+                callLog.dir == Call.Dir.Incoming &&
+                        (
+                                callLog.status == Call.Status.Missed ||
+                                        callLog.status == Call.Status.Aborted ||
+                                        callLog.status == Call.Status.EarlyAborted ||
+                                        callLog.status == Call.Status.Declined
                                 )
                 )
     }
@@ -971,6 +992,181 @@ class CansCenter() : Cans {
         } else {
             Log.i("[$TAG]", " Telecom Manager feature is already enabled")
         }
+    }
+
+    override fun updateCallLogs(){
+        val list = arrayListOf<GroupedCallLogData>()
+        var previousCallLogGroup: GroupedCallLogData? = null
+
+        for (callLog in core.callLogs) {
+            val localAddress = CansAddress(
+                port = callLog.localAddress.port,
+                domain = callLog.localAddress.domain ?: "",
+                username = callLog.localAddress.username ?: "",
+                password = callLog.localAddress.password ?: "",
+                transport = transport(callLog.localAddress.transport),
+                displayName = callLog.localAddress.displayName ?: "")
+
+            val remoteAddress = CansAddress(
+                port = callLog.remoteAddress.port,
+                domain = callLog.remoteAddress.domain ?: "",
+                username = callLog.remoteAddress.username ?: "",
+                password = callLog.remoteAddress.password ?: "",
+                transport = transport(callLog.localAddress.transport),
+                displayName = callLog.remoteAddress.displayName ?: "")
+
+            val historyModel = HistoryModel(
+                phoneNumber = callLog.remoteAddress.username ?: "",
+                name = callLog.remoteAddress.displayName ?: "",
+                state = onCallState(callLog),
+                time = TimestampUtils.convertMillisToTime(callLog.startDate),
+                date = TimestampUtils.formatDate(context, callLog.startDate),
+                startDate = callLog.startDate,
+                duration = duration(callLog),
+                localAddress = localAddress,
+                remoteAddress = remoteAddress)
+
+            if (previousCallLogGroup == null) {
+                previousCallLogGroup = GroupedCallLogData(historyModel)
+            } else if (addressEqual(previousCallLogGroup.lastCallLog.localAddress, localAddress) &&
+                addressEqual(previousCallLogGroup.lastCallLog.remoteAddress, remoteAddress)
+            ) {
+                val previousStatus = previousCallLogGroup.lastCallLog.state
+                if (previousStatus == onCallState(callLog)) {
+                    if (TimestampUtils.isSameDay(
+                            previousCallLogGroup.lastCallLog.startDate,
+                            callLog.startDate,
+                        )
+                    ) {
+                        previousCallLogGroup.callLogs.add(historyModel)
+                        previousCallLogGroup.lastCallLog = historyModel
+                    } else {
+                        list.add(previousCallLogGroup)
+                        previousCallLogGroup = GroupedCallLogData(historyModel)
+                    }
+                } else {
+                    list.add(previousCallLogGroup)
+                    previousCallLogGroup = GroupedCallLogData(historyModel)
+                }
+            } else {
+                list.add(previousCallLogGroup)
+                previousCallLogGroup = GroupedCallLogData(historyModel)
+            }
+        }
+
+        if (previousCallLogGroup != null && !list.contains(previousCallLogGroup)) {
+            list.add(previousCallLogGroup)
+        }
+
+        callLogs.value = list
+
+        callLogs.value?.let {
+            Log.i("missedCallLogs1: ", "${it.size}")
+        }
+    }
+
+
+    override fun updateMissedCallLogs() {
+        missedCallLogs.value.orEmpty().forEach(GroupedCallLogData::destroy)
+
+        val missedList = arrayListOf<GroupedCallLogData>()
+        var previousMissedCallLogGroup: GroupedCallLogData? = null
+
+        for (callLog in core.callLogs) {
+            val localAddress = CansAddress(
+                port = callLog.localAddress.port,
+                domain = callLog.localAddress.domain ?: "",
+                username = callLog.localAddress.username ?: "",
+                password = callLog.localAddress.password ?: "",
+                transport = transport(callLog.localAddress.transport),
+                displayName = callLog.localAddress.displayName ?: "")
+
+            val remoteAddress = CansAddress(
+                port = callLog.remoteAddress.port,
+                domain = callLog.remoteAddress.domain ?: "",
+                username = callLog.remoteAddress.username ?: "",
+                password = callLog.remoteAddress.password ?: "",
+                transport = transport(callLog.localAddress.transport),
+                displayName = callLog.remoteAddress.displayName ?: "")
+
+            val historyModel = HistoryModel(
+                phoneNumber = callLog.remoteAddress.username ?: "",
+                name = callLog.remoteAddress.displayName ?: "",
+                state = onCallState(callLog),
+                time = TimestampUtils.convertMillisToTime(callLog.startDate),
+                date = TimestampUtils.formatDate(context, callLog.startDate),
+                startDate = callLog.startDate,
+                duration = duration(callLog),
+                localAddress = localAddress,
+                remoteAddress = remoteAddress)
+
+            if (historyModel.state == CallState.MissCall) {
+                if (previousMissedCallLogGroup == null) {
+                    previousMissedCallLogGroup = GroupedCallLogData(historyModel)
+                } else if (addressEqual(previousMissedCallLogGroup.lastCallLog.localAddress, localAddress) &&
+                    addressEqual(previousMissedCallLogGroup.lastCallLog.remoteAddress, remoteAddress)
+                ) {
+                    if (TimestampUtils.isSameDay(previousMissedCallLogGroup.lastCallLog.startDate, callLog.startDate)) {
+                        previousMissedCallLogGroup.callLogs.add(historyModel)
+                        previousMissedCallLogGroup.lastCallLog = historyModel
+                    } else {
+                        missedList.add(previousMissedCallLogGroup)
+                        previousMissedCallLogGroup = GroupedCallLogData(historyModel)
+                    }
+                } else {
+                    missedList.add(previousMissedCallLogGroup)
+                    previousMissedCallLogGroup = GroupedCallLogData(historyModel)
+                }
+            }
+
+            if (previousMissedCallLogGroup != null && !missedList.contains(previousMissedCallLogGroup)) {
+                missedList.add(previousMissedCallLogGroup)
+            }
+
+            missedCallLogs.value = missedList
+
+            missedCallLogs.value?.let {
+                Log.i("missedCallLogs: ", "${it.size}")
+            }
+        }
+    }
+
+   private fun duration(it: CallLog): String {
+       return if (isCallLogMissed(it)) {
+            ""
+        } else {
+            TimestampUtils.durationCallingTime(it.duration)
+        }
+    }
+
+     private fun onCallState(callLog: CallLog): CallState {
+         return if (callLog.dir == Call.Dir.Incoming) {
+             if (isCallLogMissed(callLog)) {
+                 CallState.MissCall
+             } else {
+                 CallState.IncomingCall
+             }
+         } else {
+             CallState.CallOutgoing
+         }
+    }
+
+    private fun transport(transport: TransportType): CansTransport {
+        return when(transport) {
+            TransportType.Tcp -> CansTransport.TCP
+            TransportType.Udp -> CansTransport.UDP
+            TransportType.Tls -> CansTransport.TLS
+            TransportType.Dtls -> CansTransport.TCP
+        }
+    }
+
+    private fun addressEqual(address1: CansAddress, address2: CansAddress): Boolean {
+        return address1.port == address2.port &&
+            address1.domain == address2.domain &&
+            address1.password == address2.password &&
+            address1.displayName == address2.displayName &&
+            address1.transport == address2.transport &&
+            address1.username == address2.username
     }
 
     override fun addListener(listener: CansListenerStub) {

@@ -3,13 +3,16 @@ package cc.cans.canscloud.sdk
 import android.app.Activity
 import android.content.Context
 import android.os.Vibrator
+import androidx.lifecycle.MutableLiveData
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CorePreferences
 import cc.cans.canscloud.sdk.core.CoreService
 import cc.cans.canscloud.sdk.core.NotificationsManager
+import cc.cans.canscloud.sdk.data.GroupedCallLogData
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.CansTransport
+import cc.cans.canscloud.sdk.models.HistoryModel
 import cc.cans.canscloud.sdk.models.RegisterState
 import org.linphone.core.Account
 import org.linphone.core.Call
@@ -75,6 +78,10 @@ interface Cans {
 
     val wasBluetoothPreviouslyAvailable: Boolean
 
+    val callLogs: MutableLiveData<ArrayList<GroupedCallLogData>>
+
+    val missedCallLogs: MutableLiveData<ArrayList<GroupedCallLogData>>
+
     fun config(context: Context, appName: String)
 
     fun register(
@@ -126,6 +133,10 @@ interface Cans {
     fun isPauseState() : Boolean
 
     fun isOutgoingState() : Boolean
+
+    fun updateCallLogs()
+
+    fun updateMissedCallLogs()
 
     fun addListener(listener: CansListenerStub)
 
