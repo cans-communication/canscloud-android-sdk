@@ -1067,8 +1067,6 @@ class CansCenter() : Cans {
 
 
     override fun updateMissedCallLogs() {
-        missedCallLogs.orEmpty().forEach(GroupedCallLogData::destroy)
-
         val missedList = arrayListOf<GroupedCallLogData>()
         var previousMissedCallLogGroup: GroupedCallLogData? = null
 
