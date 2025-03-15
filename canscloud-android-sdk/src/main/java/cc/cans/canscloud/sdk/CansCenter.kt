@@ -997,6 +997,7 @@ class CansCenter() : Cans {
     override fun updateCallLogs(){
         val list = arrayListOf<GroupedCallLogData>()
         var previousCallLogGroup: GroupedCallLogData? = null
+        callLogs.clear()
 
         for (callLog in core.callLogs) {
             val localAddress = CansAddress(
@@ -1061,7 +1062,7 @@ class CansCenter() : Cans {
         callLogs.addAll(list)
 
         callLogs.let {
-            Log.i("missedCallLogs1: ", "${it.size}")
+            Log.i("CallLogs1: ", "${it.size}")
         }
     }
 
@@ -1069,6 +1070,7 @@ class CansCenter() : Cans {
     override fun updateMissedCallLogs() {
         val missedList = arrayListOf<GroupedCallLogData>()
         var previousMissedCallLogGroup: GroupedCallLogData? = null
+        missedCallLogs.clear()
 
         for (callLog in core.callLogs) {
             val localAddress = CansAddress(
