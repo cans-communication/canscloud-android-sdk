@@ -46,6 +46,7 @@ import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
 import cc.cans.canscloud.sdk.utils.TimestampUtils
+import com.google.gson.Gson
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import org.linphone.core.Account
@@ -279,7 +280,6 @@ class CansCenter() : Cans {
             destinationCall = call.remoteAddress.username ?: ""
 
             updateCallLogs()
-            updateMissedCallLogs()
             Log.w("onCallStateChanged2: ", "${state} $message")
 
             when (state) {
@@ -306,11 +306,13 @@ class CansCenter() : Cans {
                 }
 
                 Call.State.Error -> {
+                    updateMissedCallLogs()
                     mVibrator.cancel()
                     setListenerCall(CallState.Error)
                 }
 
                 Call.State.End -> {
+                    updateMissedCallLogs()
                     mVibrator.cancel()
                     setListenerCall(CallState.CallEnd)
                 }
@@ -1013,7 +1015,7 @@ class CansCenter() : Cans {
                 domain = callLog.remoteAddress.domain ?: "",
                 username = callLog.remoteAddress.username ?: "",
                 password = callLog.remoteAddress.password ?: "",
-                transport = transport(callLog.localAddress.transport),
+                transport = transport(callLog.remoteAddress.transport),
                 displayName = callLog.remoteAddress.displayName ?: "")
 
             val historyModel = HistoryModel(
@@ -1068,9 +1070,11 @@ class CansCenter() : Cans {
 
 
     override fun updateMissedCallLogs() {
-        val missedList = arrayListOf<GroupedCallLogData>()
+        val missedList : ArrayList<GroupedCallLogData> = arrayListOf()
         var previousMissedCallLogGroup: GroupedCallLogData? = null
         missedCallLogs.clear()
+
+        Log.i("[$TAG]","updateMissedCallLogs: ${core.callLogs.size}")
 
         for (callLog in core.callLogs) {
             val localAddress = CansAddress(
@@ -1086,7 +1090,7 @@ class CansCenter() : Cans {
                 domain = callLog.remoteAddress.domain ?: "",
                 username = callLog.remoteAddress.username ?: "",
                 password = callLog.remoteAddress.password ?: "",
-                transport = transport(callLog.localAddress.transport),
+                transport = transport(callLog.remoteAddress.transport),
                 displayName = callLog.remoteAddress.displayName ?: "")
 
             val historyModel = HistoryModel(
@@ -1118,17 +1122,20 @@ class CansCenter() : Cans {
                     previousMissedCallLogGroup = GroupedCallLogData(historyModel)
                 }
             }
-
-            if (previousMissedCallLogGroup != null && !missedList.contains(previousMissedCallLogGroup)) {
-                missedList.add(previousMissedCallLogGroup)
-            }
-
-            missedCallLogs.addAll(missedList)
-
-            missedCallLogs.let {
-                Log.i("missedCallLogs: ", "${it.size}")
-            }
         }
+
+        if (previousMissedCallLogGroup != null && !missedList.contains(previousMissedCallLogGroup)) {
+            missedList.add(previousMissedCallLogGroup)
+        }
+
+        missedCallLogs.addAll(missedList)
+
+        missedCallLogs.let {
+            Log.i("missedCallLogs: ", "${it.size}")
+        }
+
+        val json = Gson().toJson(missedCallLogs)
+        Log.i("[$TAG]","missCallLogs: ${json.toString()}")
     }
 
    private fun duration(it: CallLog): String {
@@ -1161,8 +1168,7 @@ class CansCenter() : Cans {
     }
 
     private fun addressEqual(address1: CansAddress, address2: CansAddress): Boolean {
-        return address1.port == address2.port &&
-            address1.domain == address2.domain &&
+        return address1.domain == address2.domain &&
             address1.password == address2.password &&
             address1.displayName == address2.displayName &&
             address1.transport == address2.transport &&
