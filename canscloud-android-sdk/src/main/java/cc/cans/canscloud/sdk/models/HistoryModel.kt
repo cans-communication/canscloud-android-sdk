@@ -1,6 +1,7 @@
 package cc.cans.canscloud.sdk.models
 
 import androidx.annotation.Keep
+import org.linphone.core.Address
 
 @Keep
 data class HistoryModel(
@@ -11,6 +12,7 @@ data class HistoryModel(
     var date: String,
     var startDate: Long,
     var duration: String,
-    var localAddress: CansAddress,
-    var remoteAddress: CansAddress
+    var localAddress: Address,
+    var remoteAddress: Address,
+    var listCall: Int? = 0
 )
