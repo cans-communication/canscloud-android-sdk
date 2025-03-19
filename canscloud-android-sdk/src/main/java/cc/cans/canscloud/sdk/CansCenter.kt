@@ -1026,13 +1026,13 @@ class CansCenter() : Cans {
                 date = TimestampUtils.formatDate(context, callLog.startDate),
                 startDate = callLog.startDate,
                 duration = duration(callLog),
-                localAddress = localAddress,
-                remoteAddress = remoteAddress)
+                localAddress = callLog.localAddress,
+                remoteAddress = callLog.remoteAddress)
 
             if (previousCallLogGroup == null) {
                 previousCallLogGroup = GroupedCallLogData(historyModel)
-            } else if (addressEqual(previousCallLogGroup.lastCallLog.localAddress, localAddress) &&
-                addressEqual(previousCallLogGroup.lastCallLog.remoteAddress, remoteAddress)
+            } else if (previousCallLogGroup.lastCallLog.localAddress.weakEqual(callLog.localAddress) &&
+                previousCallLogGroup.lastCallLog.remoteAddress.weakEqual(callLog.remoteAddress)
             ) {
                 val previousStatus = previousCallLogGroup.lastCallLog.state
                 if (previousStatus == onCallState(callLog)) {
@@ -1074,8 +1074,6 @@ class CansCenter() : Cans {
         var previousMissedCallLogGroup: GroupedCallLogData? = null
         missedCallLogs.clear()
 
-        Log.i("[$TAG]","updateMissedCallLogs: ${core.callLogs.size}")
-
         for (callLog in core.callLogs) {
             val localAddress = CansAddress(
                 port = callLog.localAddress.port,
@@ -1101,14 +1099,14 @@ class CansCenter() : Cans {
                 date = TimestampUtils.formatDate(context, callLog.startDate),
                 startDate = callLog.startDate,
                 duration = duration(callLog),
-                localAddress = localAddress,
-                remoteAddress = remoteAddress)
+                localAddress = callLog.localAddress,
+                remoteAddress = callLog.remoteAddress)
 
             if (historyModel.state == CallState.MissCall) {
                 if (previousMissedCallLogGroup == null) {
                     previousMissedCallLogGroup = GroupedCallLogData(historyModel)
-                } else if (addressEqual(previousMissedCallLogGroup.lastCallLog.localAddress, localAddress) &&
-                    addressEqual(previousMissedCallLogGroup.lastCallLog.remoteAddress, remoteAddress)
+                } else if (previousMissedCallLogGroup.lastCallLog.localAddress.weakEqual(callLog.localAddress) &&
+                    previousMissedCallLogGroup.lastCallLog.remoteAddress.weakEqual(callLog.remoteAddress)
                 ) {
                     if (TimestampUtils.isSameDay(previousMissedCallLogGroup.lastCallLog.startDate, callLog.startDate)) {
                         previousMissedCallLogGroup.callLogs.add(historyModel)
@@ -1130,9 +1128,13 @@ class CansCenter() : Cans {
 
         missedCallLogs.addAll(missedList)
 
-        missedCallLogs.let {
-            Log.i("missedCallLogs: ", "${it.size}")
+        val callLogs: ArrayList<HistoryModel> = arrayListOf()
+        missedCallLogs.forEach {
+            it.lastCallLog.listCall = it.callLogs.size
+            callLogs.add(it.lastCallLog)
         }
+
+        Log.i("missedCallLogs11: ", "${core.callLogs.size}")
 
         val json = Gson().toJson(missedCallLogs)
         Log.i("[$TAG]","missCallLogs: ${json.toString()}")
