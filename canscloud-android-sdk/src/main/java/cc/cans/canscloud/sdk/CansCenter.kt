@@ -1002,22 +1002,6 @@ class CansCenter() : Cans {
         callLogs.clear()
 
         for (callLog in core.callLogs) {
-            val localAddress = CansAddress(
-                port = callLog.localAddress.port,
-                domain = callLog.localAddress.domain ?: "",
-                username = callLog.localAddress.username ?: "",
-                password = callLog.localAddress.password ?: "",
-                transport = transport(callLog.localAddress.transport),
-                displayName = callLog.localAddress.displayName ?: "")
-
-            val remoteAddress = CansAddress(
-                port = callLog.remoteAddress.port,
-                domain = callLog.remoteAddress.domain ?: "",
-                username = callLog.remoteAddress.username ?: "",
-                password = callLog.remoteAddress.password ?: "",
-                transport = transport(callLog.remoteAddress.transport),
-                displayName = callLog.remoteAddress.displayName ?: "")
-
             val historyModel = HistoryModel(
                 phoneNumber = callLog.remoteAddress.username ?: "",
                 name = callLog.remoteAddress.displayName ?: "",
@@ -1063,8 +1047,10 @@ class CansCenter() : Cans {
 
         callLogs.addAll(list)
 
-        callLogs.let {
-            Log.i("CallLogs1: ", "${it.size}")
+        val callLogsAll: ArrayList<HistoryModel> = arrayListOf()
+        callLogs.forEach {
+            it.lastCallLog.listCall = it.callLogs.size
+            callLogsAll.add(it.lastCallLog)
         }
     }
 
@@ -1075,22 +1061,6 @@ class CansCenter() : Cans {
         missedCallLogs.clear()
 
         for (callLog in core.callLogs) {
-            val localAddress = CansAddress(
-                port = callLog.localAddress.port,
-                domain = callLog.localAddress.domain ?: "",
-                username = callLog.localAddress.username ?: "",
-                password = callLog.localAddress.password ?: "",
-                transport = transport(callLog.localAddress.transport),
-                displayName = callLog.localAddress.displayName ?: "")
-
-            val remoteAddress = CansAddress(
-                port = callLog.remoteAddress.port,
-                domain = callLog.remoteAddress.domain ?: "",
-                username = callLog.remoteAddress.username ?: "",
-                password = callLog.remoteAddress.password ?: "",
-                transport = transport(callLog.remoteAddress.transport),
-                displayName = callLog.remoteAddress.displayName ?: "")
-
             val historyModel = HistoryModel(
                 phoneNumber = callLog.remoteAddress.username ?: "",
                 name = callLog.remoteAddress.displayName ?: "",
@@ -1133,11 +1103,6 @@ class CansCenter() : Cans {
             it.lastCallLog.listCall = it.callLogs.size
             callLogs.add(it.lastCallLog)
         }
-
-        Log.i("missedCallLogs11: ", "${core.callLogs.size}")
-
-        val json = Gson().toJson(missedCallLogs)
-        Log.i("[$TAG]","missCallLogs: ${json.toString()}")
     }
 
    private fun duration(it: CallLog): String {
