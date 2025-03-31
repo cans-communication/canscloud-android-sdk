@@ -138,6 +138,8 @@ interface Cans {
 
     fun updateMissedCallLogs()
 
+    fun getCallLog()
+
     fun addListener(listener: CansListenerStub)
 
     fun removeListener(listener: CansListenerStub)

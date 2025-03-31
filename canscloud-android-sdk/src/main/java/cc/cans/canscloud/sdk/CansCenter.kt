@@ -40,6 +40,7 @@ import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.core.CoreService
 import cc.cans.canscloud.sdk.data.GroupedCallLogData
+import cc.cans.canscloud.sdk.data.repository.CallLogRepository
 import cc.cans.canscloud.sdk.models.CansAddress
 import cc.cans.canscloud.sdk.models.HistoryModel
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
@@ -256,7 +257,7 @@ class CansCenter() : Cans {
             state: RegistrationState,
             message: String,
         ) {
-            Log.i("defaultStateRegister2:","${cansCenter().defaultStateRegister}")
+            Log.i("defaultStateRegister2:", "${cansCenter().defaultStateRegister}")
             if (cfg == proxyConfigToCheck) {
                 org.linphone.core.tools.Log.i("[Assistant] [Account Login] Registration state is $state: $message")
                 if (state == RegistrationState.Ok) {
@@ -688,11 +689,14 @@ class CansCenter() : Cans {
         accountCreator = getAccountCreator()
         val result = accountCreator.setUsername(username)
         if (result != AccountCreator.UsernameStatus.Ok) {
-            Log.e("[Assistant]"," [Account Login] Error [${result.name}] setting the username: ${username}")
+            Log.e(
+                "[Assistant]",
+                " [Account Login] Error [${result.name}] setting the username: ${username}"
+            )
             listeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
-        Log.i("[Assistant]","[Account Login] Username is ${accountCreator.username}")
+        Log.i("[Assistant]", "[Account Login] Username is ${accountCreator.username}")
 
         val result2 = accountCreator.setPassword(password)
         if (result2 != AccountCreator.PasswordStatus.Ok) {
@@ -703,7 +707,7 @@ class CansCenter() : Cans {
 
         val result3 = accountCreator.setDomain(domain)
         if (result3 != AccountCreator.DomainStatus.Ok) {
-            Log.e("[Assistant]"," [Account Login] Error [${result3.name}] setting the domain")
+            Log.e("[Assistant]", " [Account Login] Error [${result3.name}] setting the domain")
             listeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
@@ -799,14 +803,14 @@ class CansCenter() : Cans {
         proxyConfigToCheck = proxyConfig
 
         if (proxyConfig == null) {
-            Log.e("[Assistant]","[Account Login] Account creator couldn't create proxy config")
+            Log.e("[Assistant]", "[Account Login] Account creator couldn't create proxy config")
             //  onErrorEvent.value = Event("Error: Failed to create account object")
             return false
         }
 
         proxyConfig.isPushNotificationAllowed = true
 
-        Log.i("[Assistant]"," [Account Login] Proxy config created")
+        Log.i("[Assistant]", " [Account Login] Proxy config created")
         return true
     }
 
@@ -996,7 +1000,7 @@ class CansCenter() : Cans {
         }
     }
 
-    override fun updateCallLogs(){
+    override fun updateCallLogs() {
         val list = arrayListOf<GroupedCallLogData>()
         var previousCallLogGroup: GroupedCallLogData? = null
         callLogs.clear()
@@ -1011,7 +1015,8 @@ class CansCenter() : Cans {
                 startDate = callLog.startDate,
                 duration = duration(callLog),
                 localAddress = callLog.localAddress,
-                remoteAddress = callLog.remoteAddress)
+                remoteAddress = callLog.remoteAddress
+            )
 
             if (previousCallLogGroup == null) {
                 previousCallLogGroup = GroupedCallLogData(historyModel)
@@ -1056,7 +1061,7 @@ class CansCenter() : Cans {
 
 
     override fun updateMissedCallLogs() {
-        val missedList : ArrayList<GroupedCallLogData> = arrayListOf()
+        val missedList: ArrayList<GroupedCallLogData> = arrayListOf()
         var previousMissedCallLogGroup: GroupedCallLogData? = null
         missedCallLogs.clear()
 
@@ -1070,7 +1075,8 @@ class CansCenter() : Cans {
                 startDate = callLog.startDate,
                 duration = duration(callLog),
                 localAddress = callLog.localAddress,
-                remoteAddress = callLog.remoteAddress)
+                remoteAddress = callLog.remoteAddress
+            )
 
             if (historyModel.state == CallState.MissCall) {
                 if (previousMissedCallLogGroup == null) {
@@ -1078,7 +1084,11 @@ class CansCenter() : Cans {
                 } else if (previousMissedCallLogGroup.lastCallLog.localAddress.weakEqual(callLog.localAddress) &&
                     previousMissedCallLogGroup.lastCallLog.remoteAddress.weakEqual(callLog.remoteAddress)
                 ) {
-                    if (TimestampUtils.isSameDay(previousMissedCallLogGroup.lastCallLog.startDate, callLog.startDate)) {
+                    if (TimestampUtils.isSameDay(
+                            previousMissedCallLogGroup.lastCallLog.startDate,
+                            callLog.startDate
+                        )
+                    ) {
                         previousMissedCallLogGroup.callLogs.add(historyModel)
                         previousMissedCallLogGroup.lastCallLog = historyModel
                     } else {
@@ -1105,28 +1115,32 @@ class CansCenter() : Cans {
         }
     }
 
-   private fun duration(it: CallLog): String {
-       return if (isCallLogMissed(it)) {
+    override fun getCallLog() {
+        CallLogRepository.fetchCallLog()
+    }
+
+    private fun duration(it: CallLog): String {
+        return if (isCallLogMissed(it)) {
             ""
         } else {
             TimestampUtils.durationCallingTime(it.duration)
         }
     }
 
-     private fun onCallState(callLog: CallLog): CallState {
-         return if (callLog.dir == Call.Dir.Incoming) {
-             if (isCallLogMissed(callLog)) {
-                 CallState.MissCall
-             } else {
-                 CallState.IncomingCall
-             }
-         } else {
-             CallState.CallOutgoing
-         }
+    private fun onCallState(callLog: CallLog): CallState {
+        return if (callLog.dir == Call.Dir.Incoming) {
+            if (isCallLogMissed(callLog)) {
+                CallState.MissCall
+            } else {
+                CallState.IncomingCall
+            }
+        } else {
+            CallState.CallOutgoing
+        }
     }
 
     private fun transport(transport: TransportType): CansTransport {
-        return when(transport) {
+        return when (transport) {
             TransportType.Tcp -> CansTransport.TCP
             TransportType.Udp -> CansTransport.UDP
             TransportType.Tls -> CansTransport.TLS
@@ -1136,10 +1150,10 @@ class CansCenter() : Cans {
 
     private fun addressEqual(address1: CansAddress, address2: CansAddress): Boolean {
         return address1.domain == address2.domain &&
-            address1.password == address2.password &&
-            address1.displayName == address2.displayName &&
-            address1.transport == address2.transport &&
-            address1.username == address2.username
+                address1.password == address2.password &&
+                address1.displayName == address2.displayName &&
+                address1.transport == address2.transport &&
+                address1.username == address2.username
     }
 
     override fun addListener(listener: CansListenerStub) {
