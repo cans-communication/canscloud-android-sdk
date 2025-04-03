@@ -1010,6 +1010,7 @@ class CansCenter() : Cans {
                 date = TimestampUtils.formatDate(context, callLog.startDate),
                 startDate = callLog.startDate,
                 duration = duration(callLog),
+                callID = callLog.callId.toString(),
                 localAddress = callLog.localAddress,
                 remoteAddress = callLog.remoteAddress)
 
@@ -1069,6 +1070,7 @@ class CansCenter() : Cans {
                 date = TimestampUtils.formatDate(context, callLog.startDate),
                 startDate = callLog.startDate,
                 duration = duration(callLog),
+                callID = callLog.callId.toString(),
                 localAddress = callLog.localAddress,
                 remoteAddress = callLog.remoteAddress)
 

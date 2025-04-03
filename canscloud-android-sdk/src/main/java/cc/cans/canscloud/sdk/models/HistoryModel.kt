@@ -12,6 +12,7 @@ data class HistoryModel(
     var date: String,
     var startDate: Long,
     var duration: String,
+    var callID: String,
     var localAddress: Address,
     var remoteAddress: Address,
     var listCall: Int? = 0
