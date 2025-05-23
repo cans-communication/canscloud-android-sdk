@@ -1144,6 +1144,28 @@ class CansCenter() : Cans {
             address1.username == address2.username
     }
 
+    override fun transferNow(addressToCall: String) {
+        val currentCall = core.currentCall ?: core.calls.firstOrNull()
+        if (currentCall == null) {
+            org.linphone.core.tools.Log.e("[Context] Couldn't find a call to transfer")
+        } else {
+            val address = core.interpretUrl(addressToCall)
+            if (address != null) {
+                org.linphone.core.tools.Log.i("[Context] Transferring current call to $addressToCall")
+                currentCall.transferTo(address)
+            }
+        }
+    }
+
+    override fun askFirst() {
+        if (core.callsNb == 2) {
+            val calls = core.calls
+            val firstCall = calls.first()
+            val secondCall = calls[1]
+            firstCall.transferToAnother(secondCall)
+        }
+    }
+
     override fun addListener(listener: CansListenerStub) {
         listeners.add(listener)
     }
