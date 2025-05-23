@@ -143,4 +143,8 @@ interface Cans {
     fun removeListener(listener: CansListenerStub)
 
     fun removeAllListener()
+
+    fun transferNow(addressToCall: String)
+
+    fun askFirst()
 }
