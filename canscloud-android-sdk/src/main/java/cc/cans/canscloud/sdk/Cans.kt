@@ -144,7 +144,7 @@ interface Cans {
 
     fun removeAllListener()
 
-    fun transferNow(addressToCall: String)
+    fun transferNow(phoneNumber: String) : Boolean
 
-    fun askFirst()
+    fun askFirst(phoneNumber: String) : Boolean
 }
