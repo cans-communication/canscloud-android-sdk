@@ -40,6 +40,7 @@ import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.core.CoreService
 import cc.cans.canscloud.sdk.data.GroupedCallLogData
+import cc.cans.canscloud.sdk.models.CallModel
 import cc.cans.canscloud.sdk.models.CansAddress
 import cc.cans.canscloud.sdk.models.HistoryModel
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
@@ -95,6 +96,8 @@ class CansCenter() : Cans {
     private var listeners = mutableListOf<CansListenerStub>()
     override val callLogs = ArrayList<GroupedCallLogData>()
     override val missedCallLogs = ArrayList<GroupedCallLogData>()
+    override val callingLogs = ArrayList<CallModel>()
+    val callList = ArrayList<Call>()
 
     override val account: String
         get() {
@@ -289,6 +292,7 @@ class CansCenter() : Cans {
                 }
 
                 Call.State.OutgoingInit -> {
+                    addCallToPausedList(call)
                     setListenerCall(CallState.StartCall)
                 }
 
@@ -298,26 +302,45 @@ class CansCenter() : Cans {
 
                 Call.State.StreamsRunning -> {
                     mVibrator.cancel()
+                    updateCallToPausedList(call)
                     setListenerCall(CallState.StreamsRunning)
                 }
 
                 Call.State.Connected -> {
+                    if (core.callsNb > 1) {
+                        //addCallToPausedList(call)
+                    }
                     setListenerCall(CallState.Connected)
+                }
+
+                Call.State.Paused -> {
+                    if (core.callsNb > 1) {
+                        //addCallToPausedList(call)
+                    }
+                }
+
+                Call.State.Resuming ->  {
+                    if (core.callsNb > 1) {
+                        updateCallToPausedList(call)
+                    }
                 }
 
                 Call.State.Error -> {
                     updateMissedCallLogs()
                     mVibrator.cancel()
+                    removeCallToPausedList(call)
                     setListenerCall(CallState.Error)
                 }
 
                 Call.State.End -> {
                     updateMissedCallLogs()
                     mVibrator.cancel()
+                    removeCallToPausedList(call)
                     setListenerCall(CallState.CallEnd)
                 }
 
                 Call.State.Released -> {
+                    removeCallToPausedList(call)
                     setListenerCall(CallState.MissCall)
                 }
 
@@ -348,6 +371,56 @@ class CansCenter() : Cans {
             audioDevicesListUpdated()
             listeners.forEach { it.onAudioDevicesListUpdated() }
         }
+    }
+
+    private fun addCallToPausedList(call : Call) {
+        val isCall = callingLogs.any { it.phoneNumber == call.remoteAddress.username }
+        Log.i("callingLogs1: callId: ","${call.core.currentCall?.callLog?.callId}")
+        if (isCall) {
+            return
+        }
+        val address: String by lazy {
+            val sip = CansUtils.getDisplayableAddress(call.remoteAddress)
+            val domain = core.defaultAccount?.params?.domain.orEmpty()
+            val port = core.defaultAccount?.params?.identityAddress?.port.toString()
+            if (sip.startsWith("sip:509")) {
+                "sip:" + sip.substring(7, 16) + "@" + domain + ":" + port
+            } else if (sip.startsWith("sip:510")) {
+                "sip:" + sip.substring(7, 17) + "@" + domain + ":" + port
+            } else {
+                sip
+            }
+        }
+           val data = CallModel(
+               callID = call.callLog.callId ?: "",
+               address = address,
+               phoneNumber = call.remoteAddress.username ?: "",
+               name = call.remoteAddress.displayName ?: "",
+               isPaused = call.state == Call.State.Paused,
+               duration = call.duration.toString()
+           )
+        callingLogs.add(data)
+        callList.add(call)
+        Log.i("callingLogs add: ","${cansCenter().callingLogs.size}")
+    }
+
+    private fun updateCallToPausedList(call : Call) {
+        val callLog = callingLogs.find { it.callID == call.callLog.callId }
+        callLog?.isPaused = call.state == Call.State.Paused
+        callLog?.duration = call.duration.toString()
+        Log.i("callingLogs update: ","${cansCenter().callingLogs.size}")
+    }
+
+    private fun removeCallToPausedList(call : Call) {
+        val callLog = callingLogs.find { it.callID == call.callLog.callId }
+        callingLogs.remove(callLog)
+        callList.remove(call)
+
+        if (cansCenter().countCalls == 0) {
+            callingLogs.clear()
+            callList.clear()
+        }
+        Log.i("callingLogs remove: ","${cansCenter().callingLogs.size}")
     }
 
     private fun setListenerCall(callState: CallState) {

@@ -2,6 +2,7 @@ package cc.cans.canscloud.demoappinsdk.call
 
 import android.os.Bundle
 import android.os.SystemClock
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -43,6 +44,7 @@ class CallFragment : Fragment() {
 
         binding.textViewPhoneNumber.text = cansCenter().destinationUsername
 
+
         callsViewModel.isCallEnd.observe(viewLifecycleOwner) {
             requireActivity().finish()
         }
@@ -72,6 +74,11 @@ class CallFragment : Fragment() {
             } else {
                 binding.speaker.setImageResource(R.drawable.ongoing_speaker_default)
             }
+        }
+
+        binding.buttonCall.setOnClickListener {
+            cansCenter().startCall("0838927729")
+            Log.i("callingLogs........: ","${cansCenter().callingLogs.size}")
         }
 
         binding.buttonHangUp.setOnClickListener {
