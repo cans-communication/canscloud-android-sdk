@@ -10,6 +10,7 @@ import cc.cans.canscloud.sdk.core.CorePreferences
 import cc.cans.canscloud.sdk.core.CoreService
 import cc.cans.canscloud.sdk.core.NotificationsManager
 import cc.cans.canscloud.sdk.data.GroupedCallLogData
+import cc.cans.canscloud.sdk.models.CallModel
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.CansTransport
 import cc.cans.canscloud.sdk.models.HistoryModel
@@ -79,6 +80,8 @@ interface Cans {
     val wasBluetoothPreviouslyAvailable: Boolean
 
     val callLogs: ArrayList<GroupedCallLogData>
+
+    val callingLogs: ArrayList<CallModel>
 
     val missedCallLogs:ArrayList<GroupedCallLogData>
 

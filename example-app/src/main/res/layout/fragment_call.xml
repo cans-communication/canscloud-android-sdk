@@ -56,6 +56,17 @@
                 android:layout_marginStart="24dp"
                 android:contentDescription="@string/content_description_bluetooth"
                 android:src="@drawable/ongoing_route_bluetooth" />
+
+            <ImageButton
+                android:id="@+id/buttonCall"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/call"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
+                android:contentDescription="Hang Up"/>
         </LinearLayout>
 
         <Chronometer
