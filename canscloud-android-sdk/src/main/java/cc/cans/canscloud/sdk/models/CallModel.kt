@@ -9,5 +9,6 @@ data class CallModel(
     var phoneNumber: String,
     var name: String,
     var isPaused: Boolean,
+    var status: String,
     var duration: String,
 )

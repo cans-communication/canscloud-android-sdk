@@ -111,6 +111,12 @@ interface Cans {
 
     fun terminateCall()
 
+    fun pause(addressToCall: String)
+
+    fun resume(addressToCall: String)
+
+    fun terminate(addressToCall: String)
+
     fun startAnswerCall()
 
     fun updateAudioRelated()
