@@ -307,22 +307,15 @@ class CansCenter() : Cans {
                 }
 
                 Call.State.Connected -> {
-                    if (core.callsNb > 1) {
-                        //addCallToPausedList(call)
-                    }
                     setListenerCall(CallState.Connected)
                 }
 
                 Call.State.Paused -> {
-                    if (core.callsNb > 1) {
-                        //addCallToPausedList(call)
-                    }
+                    updateCallToPausedList(call)
                 }
 
                 Call.State.Resuming ->  {
-                    if (core.callsNb > 1) {
-                        updateCallToPausedList(call)
-                    }
+                    updateCallToPausedList(call)
                 }
 
                 Call.State.Error -> {
@@ -397,6 +390,7 @@ class CansCenter() : Cans {
                phoneNumber = call.remoteAddress.username ?: "",
                name = call.remoteAddress.displayName ?: "",
                isPaused = call.state == Call.State.Paused,
+               status = call.state.name,
                duration = call.duration.toString()
            )
         callingLogs.add(data)
@@ -405,9 +399,10 @@ class CansCenter() : Cans {
     }
 
     private fun updateCallToPausedList(call : Call) {
-        val callLog = callingLogs.find { it.callID == call.callLog.callId }
+        val callLog = callingLogs.find { it.phoneNumber == call.remoteAddress.username}
         callLog?.isPaused = call.state == Call.State.Paused
         callLog?.duration = call.duration.toString()
+        callLog?.status = call.state.name
         Log.i("callingLogs update: ","${cansCenter().callingLogs.size}")
     }
 
@@ -712,6 +707,21 @@ class CansCenter() : Cans {
 
         // Terminating a call is quite simple
         call.terminate()
+    }
+
+    override fun pause(addressToCall: String) {
+        val call = callList.find { it.remoteAddress.username == addressToCall }
+        call?.pause()
+    }
+
+    override fun resume(addressToCall: String) {
+        val call = callList.find { it.remoteAddress.username == addressToCall }
+        call?.resume()
+    }
+
+    override fun terminate(addressToCall: String) {
+        val call = callList.find { it.remoteAddress.username == addressToCall }
+        call?.terminate()
     }
 
     override fun startAnswerCall() {
