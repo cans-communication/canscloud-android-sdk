@@ -81,6 +81,14 @@ class CallFragment : Fragment() {
             Log.i("callingLogs........: ","${cansCenter().callingLogs.size}")
         }
 
+        binding.buttonHangUp2.setOnClickListener {
+            cansCenter().terminate("0838927729")
+        }
+
+        binding.buttonHangUp3.setOnClickListener {
+            cansCenter().terminate("1006")
+        }
+
         binding.buttonHangUp.setOnClickListener {
             cansCenter().terminateCall()
             requireActivity().finish()
