@@ -67,6 +67,28 @@
                 android:layout_alignParentBottom="true"
                 android:layout_centerHorizontal="true"
                 android:contentDescription="Hang Up"/>
+
+            <ImageButton
+                android:id="@+id/buttonHangUp2"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/hang_up"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
+                android:contentDescription="Hang Up"/>
+
+            <ImageButton
+                android:id="@+id/buttonHangUp3"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/hang_up"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
+                android:contentDescription="Hang Up"/>
         </LinearLayout>
 
         <Chronometer

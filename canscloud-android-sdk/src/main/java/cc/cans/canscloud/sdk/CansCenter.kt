@@ -407,7 +407,7 @@ class CansCenter() : Cans {
     }
 
     private fun removeCallToPausedList(call : Call) {
-        val callLog = callingLogs.find { it.callID == call.callLog.callId }
+        val callLog = callingLogs.find { it.phoneNumber == call.remoteAddress.username}
         callingLogs.remove(callLog)
         callList.remove(call)
 
@@ -721,6 +721,7 @@ class CansCenter() : Cans {
 
     override fun terminate(addressToCall: String) {
         val call = callList.find { it.remoteAddress.username == addressToCall }
+        Log.i("terminate: ", addressToCall)
         call?.terminate()
     }
 
