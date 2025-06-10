@@ -40,6 +40,7 @@ import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.core.CoreService
 import cc.cans.canscloud.sdk.data.GroupedCallLogData
+import cc.cans.canscloud.sdk.models.CallModel
 import cc.cans.canscloud.sdk.models.CansAddress
 import cc.cans.canscloud.sdk.models.HistoryModel
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
@@ -95,6 +96,8 @@ class CansCenter() : Cans {
     private var listeners = mutableListOf<CansListenerStub>()
     override val callLogs = ArrayList<GroupedCallLogData>()
     override val missedCallLogs = ArrayList<GroupedCallLogData>()
+    override val callingLogs = ArrayList<CallModel>()
+    val callList = ArrayList<Call>()
 
     override val account: String
         get() {
@@ -256,7 +259,7 @@ class CansCenter() : Cans {
             state: RegistrationState,
             message: String,
         ) {
-            Log.i("defaultStateRegister2:","${cansCenter().defaultStateRegister}")
+            Log.i("defaultStateRegister:","${cansCenter().defaultStateRegister}")
             if (cfg == proxyConfigToCheck) {
                 org.linphone.core.tools.Log.i("[Assistant] [Account Login] Registration state is $state: $message")
                 if (state == RegistrationState.Ok) {
@@ -274,56 +277,57 @@ class CansCenter() : Cans {
             state: Call.State?,
             message: String
         ) {
-            // This function will be called each time a call state changes,
-            // which includes new incoming/outgoing calls
             callCans = call
             destinationCall = call.remoteAddress.username ?: ""
 
             updateCallLogs()
-            Log.w("onCallStateChanged2: ", "${state} $message")
+            Log.w("onCallStateChanged: ", "$state : $message")
 
             when (state) {
                 Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> {
                     vibrator()
-                    setListenerCall(CallState.IncomingCall)
                 }
 
                 Call.State.OutgoingInit -> {
-                    setListenerCall(CallState.StartCall)
-                }
-
-                Call.State.OutgoingProgress -> {
-                    setListenerCall(CallState.CallOutgoing)
+                    addCallToPausedList(call)
                 }
 
                 Call.State.StreamsRunning -> {
                     mVibrator.cancel()
-                    setListenerCall(CallState.StreamsRunning)
+                    updateCallToPausedList(call)
                 }
 
-                Call.State.Connected -> {
-                    setListenerCall(CallState.Connected)
+                Call.State.Paused -> {
+                    updateCallToPausedList(call)
+                }
+
+                Call.State.Resuming ->  {
+                    updateCallToPausedList(call)
                 }
 
                 Call.State.Error -> {
                     updateMissedCallLogs()
                     mVibrator.cancel()
+                    removeCallToPausedList(call)
                     setListenerCall(CallState.Error)
                 }
 
                 Call.State.End -> {
                     updateMissedCallLogs()
                     mVibrator.cancel()
-                    setListenerCall(CallState.CallEnd)
+                    removeCallToPausedList(call)
                 }
 
                 Call.State.Released -> {
-                    setListenerCall(CallState.MissCall)
+                    removeCallToPausedList(call)
                 }
 
                 else -> {
-                    setListenerCall(CallState.Unknown)
                 }
+            }
+
+            if (state != null) {
+                setListenerCall(mapStatusCall(state))
             }
         }
 
@@ -350,7 +354,76 @@ class CansCenter() : Cans {
         }
     }
 
+    private fun mapStatusCall(state: Call.State): CallState {
+        return when (state) {
+            Call.State.IncomingEarlyMedia, Call.State.IncomingReceived ->  CallState.IncomingCall
+            Call.State.OutgoingInit -> CallState.StartCall
+            Call.State.OutgoingProgress ->  CallState.CallOutgoing
+            Call.State.StreamsRunning -> CallState.StreamsRunning
+            Call.State.Connected -> CallState.Connected
+            Call.State.Paused -> CallState.Pause
+            Call.State.Resuming ->  CallState.Resuming
+            Call.State.Error -> CallState.Error
+            Call.State.End ->  CallState.CallEnd
+            Call.State.Released -> CallState.MissCall
+            else -> CallState.Unknown
+        }
+    }
+
+    private fun addCallToPausedList(call : Call) {
+        val isCall = callingLogs.any { it.phoneNumber == call.remoteAddress.username }
+        Log.i("callingLogs1: callId: ","${call.core.currentCall?.callLog?.callId}")
+        if (isCall) {
+            return
+        }
+        val address: String by lazy {
+            val sip = CansUtils.getDisplayableAddress(call.remoteAddress)
+            val domain = core.defaultAccount?.params?.domain.orEmpty()
+            val port = core.defaultAccount?.params?.identityAddress?.port.toString()
+            if (sip.startsWith("sip:509")) {
+                "sip:" + sip.substring(7, 16) + "@" + domain + ":" + port
+            } else if (sip.startsWith("sip:510")) {
+                "sip:" + sip.substring(7, 17) + "@" + domain + ":" + port
+            } else {
+                sip
+            }
+        }
+           val data = CallModel(
+               callID = call.callLog.callId ?: "",
+               address = address,
+               phoneNumber = call.remoteAddress.username ?: "",
+               name = call.remoteAddress.displayName ?: "",
+               isPaused = call.state == Call.State.Paused,
+               status = mapStatusCall(call.state),
+               duration = call.duration.toString()
+           )
+        callingLogs.add(data)
+        callList.add(call)
+        Log.i("callingLogs add: ","${cansCenter().callingLogs.size}")
+    }
+
+    private fun updateCallToPausedList(call : Call) {
+        val callLog = callingLogs.find { it.phoneNumber == call.remoteAddress.username}
+        callLog?.isPaused = call.state == Call.State.Paused
+        callLog?.duration = call.duration.toString()
+        callLog?.status = mapStatusCall(call.state)
+        Log.i("callingLogs update: ","${cansCenter().callingLogs.size}")
+    }
+
+    private fun removeCallToPausedList(call : Call) {
+        val callLog = callingLogs.find { it.phoneNumber == call.remoteAddress.username}
+        callingLogs.remove(callLog)
+        callList.remove(call)
+
+        if (cansCenter().countCalls == 0) {
+            callingLogs.clear()
+            callList.clear()
+        }
+        Log.i("callingLogs remove: ","${cansCenter().callingLogs.size}")
+    }
+
     private fun setListenerCall(callState: CallState) {
+        Log.i("setListenerCall: ","$callState")
         this.callState = callState
         listeners.forEach { it.onCallState(callState) }
     }
@@ -639,6 +712,22 @@ class CansCenter() : Cans {
 
         // Terminating a call is quite simple
         call.terminate()
+    }
+
+    override fun pause(addressToCall: String) {
+        val call = callList.find { it.remoteAddress.username == addressToCall }
+        call?.pause()
+    }
+
+    override fun resume(addressToCall: String) {
+        val call = callList.find { it.remoteAddress.username == addressToCall }
+        call?.resume()
+    }
+
+    override fun terminate(addressToCall: String) {
+        val call = callList.find { it.remoteAddress.username == addressToCall }
+        Log.i("terminate: ", addressToCall)
+        call?.terminate()
     }
 
     override fun startAnswerCall() {

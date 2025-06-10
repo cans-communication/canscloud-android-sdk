@@ -53,6 +53,8 @@ class SharedMainViewModel : ViewModel() {
                 CallState.Error -> updateMissedCallCount()
                 CallState.CallEnd -> updateMissedCallCount()
                 CallState.MissCall -> {}
+                CallState.Pause -> {}
+                CallState.Resuming -> {}
                 CallState.Unknown -> {}
             }
         }
