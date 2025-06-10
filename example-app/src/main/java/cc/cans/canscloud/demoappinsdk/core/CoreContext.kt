@@ -64,6 +64,8 @@ class CoreContext(
                 CallState.Error -> {}
                 CallState.CallEnd -> {}
                 CallState.MissCall -> {}
+                CallState.Pause -> {}
+                CallState.Resuming -> {}
                 CallState.Unknown -> {}
             }
             previousCallState = state

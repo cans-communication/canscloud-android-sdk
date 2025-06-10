@@ -38,6 +38,8 @@ class CallsViewModel : ViewModel() {
                 CallState.Unknown -> {}
                 CallState.Idle -> {}
                 CallState.StreamsRunning -> {}
+                CallState.Pause -> {}
+                CallState.Resuming -> {}
             }
         }
 
