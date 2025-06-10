@@ -7,6 +7,8 @@ enum class CallState {
     CallOutgoing,
     Connected,
     StreamsRunning,
+    Pause,
+    Resuming,
     Error,
     CallEnd,
     MissCall,

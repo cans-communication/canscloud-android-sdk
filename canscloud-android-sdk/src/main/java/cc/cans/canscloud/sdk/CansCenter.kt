@@ -259,7 +259,7 @@ class CansCenter() : Cans {
             state: RegistrationState,
             message: String,
         ) {
-            Log.i("defaultStateRegister2:","${cansCenter().defaultStateRegister}")
+            Log.i("defaultStateRegister:","${cansCenter().defaultStateRegister}")
             if (cfg == proxyConfigToCheck) {
                 org.linphone.core.tools.Log.i("[Assistant] [Account Login] Registration state is $state: $message")
                 if (state == RegistrationState.Ok) {
@@ -277,37 +277,24 @@ class CansCenter() : Cans {
             state: Call.State?,
             message: String
         ) {
-            // This function will be called each time a call state changes,
-            // which includes new incoming/outgoing calls
             callCans = call
             destinationCall = call.remoteAddress.username ?: ""
 
             updateCallLogs()
-            Log.w("onCallStateChanged2: ", "${state} $message")
+            Log.w("onCallStateChanged: ", "$state : $message")
 
             when (state) {
                 Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> {
                     vibrator()
-                    setListenerCall(CallState.IncomingCall)
                 }
 
                 Call.State.OutgoingInit -> {
                     addCallToPausedList(call)
-                    setListenerCall(CallState.StartCall)
-                }
-
-                Call.State.OutgoingProgress -> {
-                    setListenerCall(CallState.CallOutgoing)
                 }
 
                 Call.State.StreamsRunning -> {
                     mVibrator.cancel()
                     updateCallToPausedList(call)
-                    setListenerCall(CallState.StreamsRunning)
-                }
-
-                Call.State.Connected -> {
-                    setListenerCall(CallState.Connected)
                 }
 
                 Call.State.Paused -> {
@@ -329,17 +316,18 @@ class CansCenter() : Cans {
                     updateMissedCallLogs()
                     mVibrator.cancel()
                     removeCallToPausedList(call)
-                    setListenerCall(CallState.CallEnd)
                 }
 
                 Call.State.Released -> {
                     removeCallToPausedList(call)
-                    setListenerCall(CallState.MissCall)
                 }
 
                 else -> {
-                    setListenerCall(CallState.Unknown)
                 }
+            }
+
+            if (state != null) {
+                setListenerCall(mapStatusCall(state))
             }
         }
 
@@ -363,6 +351,22 @@ class CansCenter() : Cans {
             Log.i("[CansSDK Controls]", "Audio devices list updated")
             audioDevicesListUpdated()
             listeners.forEach { it.onAudioDevicesListUpdated() }
+        }
+    }
+
+    private fun mapStatusCall(state: Call.State): CallState {
+        return when (state) {
+            Call.State.IncomingEarlyMedia, Call.State.IncomingReceived ->  CallState.IncomingCall
+            Call.State.OutgoingInit -> CallState.StartCall
+            Call.State.OutgoingProgress ->  CallState.CallOutgoing
+            Call.State.StreamsRunning -> CallState.StreamsRunning
+            Call.State.Connected -> CallState.Connected
+            Call.State.Paused -> CallState.Pause
+            Call.State.Resuming ->  CallState.Resuming
+            Call.State.Error -> CallState.Error
+            Call.State.End ->  CallState.CallEnd
+            Call.State.Released -> CallState.MissCall
+            else -> CallState.Unknown
         }
     }
 
@@ -390,7 +394,7 @@ class CansCenter() : Cans {
                phoneNumber = call.remoteAddress.username ?: "",
                name = call.remoteAddress.displayName ?: "",
                isPaused = call.state == Call.State.Paused,
-               status = call.state.name,
+               status = mapStatusCall(call.state),
                duration = call.duration.toString()
            )
         callingLogs.add(data)
@@ -402,7 +406,7 @@ class CansCenter() : Cans {
         val callLog = callingLogs.find { it.phoneNumber == call.remoteAddress.username}
         callLog?.isPaused = call.state == Call.State.Paused
         callLog?.duration = call.duration.toString()
-        callLog?.status = call.state.name
+        callLog?.status = mapStatusCall(call.state)
         Log.i("callingLogs update: ","${cansCenter().callingLogs.size}")
     }
 
@@ -419,6 +423,7 @@ class CansCenter() : Cans {
     }
 
     private fun setListenerCall(callState: CallState) {
+        Log.i("setListenerCall: ","$callState")
         this.callState = callState
         listeners.forEach { it.onCallState(callState) }
     }
