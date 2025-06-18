@@ -20,10 +20,14 @@
 package cc.cans.canscloud.sdk.compatibility
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.AudioAttributes
+import android.os.VibrationEffect
+import android.os.Vibrator
 import androidx.annotation.Keep
 import androidx.core.app.NotificationManagerCompat
 import androidx.fragment.app.Fragment
@@ -90,6 +94,15 @@ class Api26Compatibility {
 
         fun startForegroundService(context: Context, intent: Intent) {
             context.startForegroundService(intent)
+        }
+
+        @SuppressLint("MissingPermission")
+        fun eventVibration(vibrator: Vibrator) {
+            val effect = VibrationEffect.createWaveform(longArrayOf(0L, 100L, 100L), intArrayOf(0, VibrationEffect.DEFAULT_AMPLITUDE, 0), -1)
+            val audioAttrs = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION_EVENT)
+                .build()
+            vibrator.vibrate(effect, audioAttrs)
         }
     }
 }
