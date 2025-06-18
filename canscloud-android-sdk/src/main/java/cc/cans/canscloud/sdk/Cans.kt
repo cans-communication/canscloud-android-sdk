@@ -156,4 +156,6 @@ interface Cans {
     fun transferNow(phoneNumber: String) : Boolean
 
     fun askFirst(phoneNumber: String) : Boolean
+
+    fun dtmfKey(key: String)
 }

@@ -1273,4 +1273,14 @@ class CansCenter() : Cans {
     override fun removeAllListener() {
         listeners.clear()
     }
+
+    override fun dtmfKey(key: String) {
+        val keyDtmf = key.single()
+        core.playDtmf(keyDtmf, 1)
+        core.currentCall?.sendDtmf(keyDtmf)
+
+        if (mVibrator.hasVibrator() && corePreferences.dtmfKeypadVibration) {
+            Compatibility.eventVibration(mVibrator)
+        }
+    }
 }

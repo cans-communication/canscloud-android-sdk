@@ -28,6 +28,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
+import android.os.Vibrator
 import android.telephony.TelephonyManager
 import androidx.annotation.Keep
 import androidx.core.app.NotificationManagerCompat
@@ -229,6 +230,14 @@ class Compatibility {
                 Api31Compatibility.startForegroundService(service, notifId, notif)
             } else {
                 Api21Compatibility.startForegroundService(service, notifId, notif)
+            }
+        }
+
+        fun eventVibration(vibrator: Vibrator) {
+            if (Version.sdkAboveOrEqual(Version.API26_O_80)) {
+                Api26Compatibility.eventVibration(vibrator)
+            } else {
+                Api21Compatibility.eventVibration(vibrator)
             }
         }
     }
