@@ -285,6 +285,7 @@ class CansCenter() : Cans {
 
             when (state) {
                 Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> {
+                    addCallToPausedList(call)
                     vibrator()
                 }
 
