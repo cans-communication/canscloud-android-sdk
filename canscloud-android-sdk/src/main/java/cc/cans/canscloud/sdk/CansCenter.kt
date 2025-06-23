@@ -39,6 +39,7 @@ import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.core.CoreService
+import cc.cans.canscloud.sdk.data.ConferenceParticipantData
 import cc.cans.canscloud.sdk.data.GroupedCallLogData
 import cc.cans.canscloud.sdk.models.CallModel
 import cc.cans.canscloud.sdk.models.CansAddress
@@ -55,8 +56,11 @@ import org.linphone.core.AccountCreator
 import org.linphone.core.AccountListenerStub
 import org.linphone.core.Address
 import org.linphone.core.CallLog
+import org.linphone.core.Conference
+import org.linphone.core.ConferenceListenerStub
 import org.linphone.core.LogCollectionState
 import org.linphone.core.LogLevel
+import org.linphone.core.Participant
 import org.linphone.core.tools.compatibility.DeviceUtils
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -98,6 +102,16 @@ class CansCenter() : Cans {
     override val missedCallLogs = ArrayList<GroupedCallLogData>()
     override val callingLogs = ArrayList<CallModel>()
     val callList = ArrayList<Call>()
+
+    var isConferencePaused : Boolean = false
+
+    var isMeConferenceFocus : Boolean = false
+
+    lateinit var conferenceAddress : Address
+
+    lateinit var conferenceParticipants : List<ConferenceParticipantData>
+
+    var isInConference: Boolean = false
 
     override val account: String
         get() {
@@ -353,6 +367,57 @@ class CansCenter() : Cans {
             audioDevicesListUpdated()
             listeners.forEach { it.onAudioDevicesListUpdated() }
         }
+
+        override fun onConferenceStateChanged(
+            core: Core,
+            conference: Conference,
+            state: Conference.State,
+        ) {
+            Log.i("[Conference VM]"," Conference state changed: $state")
+            isConferencePaused = !conference.isIn
+
+            if (state == Conference.State.Instantiated) {
+                conference.addListener(conferenceListener)
+            } else if (state == Conference.State.Created) {
+                updateParticipantsList(conference)
+                isMeConferenceFocus = conference.me.isFocus
+                conferenceAddress = conference.conferenceAddress
+            } else if (state == Conference.State.Terminated || state == Conference.State.TerminationFailed) {
+                isInConference = false
+                conference.removeListener(conferenceListener)
+                conferenceParticipants = arrayListOf()
+            }
+        }
+    }
+
+    private val conferenceListener = object : ConferenceListenerStub() {
+        override fun onParticipantAdded(conference: Conference, participant: Participant) {
+            if (conference.isMe(participant.address)) {
+                org.linphone.core.tools.Log.i("[Conference VM] Entered conference")
+                isConferencePaused = false
+            } else {
+                org.linphone.core.tools.Log.i("[Conference VM] Participant added")
+                updateParticipantsList(conference)
+            }
+        }
+
+        override fun onParticipantRemoved(conference: Conference, participant: Participant) {
+            if (conference.isMe(participant.address)) {
+                org.linphone.core.tools.Log.i("[Conference VM] Left conference")
+                isConferencePaused = true
+            } else {
+                org.linphone.core.tools.Log.i("[Conference VM] Participant removed")
+                updateParticipantsList(conference)
+            }
+        }
+
+        override fun onParticipantAdminStatusChanged(
+            conference: Conference,
+            participant: Participant,
+        ) {
+            org.linphone.core.tools.Log.i("[Conference VM] Participant admin status changed")
+            updateParticipantsList(conference)
+        }
     }
 
     private fun mapStatusCall(state: Call.State): CallState {
@@ -369,6 +434,19 @@ class CansCenter() : Cans {
             Call.State.Released -> CallState.MissCall
             else -> CallState.Unknown
         }
+    }
+
+    private fun updateParticipantsList(conference: Conference) {
+        Log.i("[TestUI]","Participant found: updateParticipantsList")
+
+        val participants = arrayListOf<ConferenceParticipantData>()
+        for (participant in conference.participantList) {
+            org.linphone.core.tools.Log.i("[Conference VM] Participant found: ${participant.address.asStringUriOnly()}")
+            val viewModel = ConferenceParticipantData(conference, participant)
+            participants.add(viewModel)
+        }
+        conferenceParticipants = participants
+        isInConference = participants.isNotEmpty()
     }
 
     private fun addCallToPausedList(call : Call) {
@@ -1283,5 +1361,9 @@ class CansCenter() : Cans {
         if (mVibrator.hasVibrator() && corePreferences.dtmfKeypadVibration) {
             Compatibility.eventVibration(mVibrator)
         }
+    }
+
+    override fun coreCans(): Core {
+       return core
     }
 }
