@@ -158,4 +158,6 @@ interface Cans {
     fun askFirst(phoneNumber: String) : Boolean
 
     fun dtmfKey(key: String)
+
+    fun coreCans() : Core
 }
