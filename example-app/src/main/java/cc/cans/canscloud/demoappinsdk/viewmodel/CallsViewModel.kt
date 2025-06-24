@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CallState
+import cc.cans.canscloud.sdk.models.ConferenceState
 import cc.cans.canscloud.sdk.models.RegisterState
 
 class CallsViewModel : ViewModel() {
@@ -21,6 +22,7 @@ class CallsViewModel : ViewModel() {
         }
 
         override fun onAudioDevicesListUpdated() {}
+        override fun onConferenceState(state: ConferenceState) {}
 
         override fun onCallState(
             state: CallState,

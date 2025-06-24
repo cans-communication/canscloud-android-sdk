@@ -7,6 +7,7 @@ import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CallState
+import cc.cans.canscloud.sdk.models.ConferenceState
 import cc.cans.canscloud.sdk.models.RegisterState
 
 class SharedMainViewModel : ViewModel() {
@@ -69,6 +70,9 @@ class SharedMainViewModel : ViewModel() {
 
         override fun onAudioDevicesListUpdated() {
             Log.i("[SharedMainViewModel onAudioUpdate]", "onAudioDevicesListUpdated")
+        }
+
+        override fun onConferenceState(state: ConferenceState) {
         }
     }
 
