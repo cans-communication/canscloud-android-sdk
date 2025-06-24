@@ -13,6 +13,7 @@ import cc.cans.canscloud.sdk.data.GroupedCallLogData
 import cc.cans.canscloud.sdk.models.CallModel
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.CansTransport
+import cc.cans.canscloud.sdk.models.ConferenceModel
 import cc.cans.canscloud.sdk.models.HistoryModel
 import cc.cans.canscloud.sdk.models.RegisterState
 import org.linphone.core.Account
@@ -84,6 +85,14 @@ interface Cans {
     val callingLogs: ArrayList<CallModel>
 
     val missedCallLogs:ArrayList<GroupedCallLogData>
+
+    val isInConference: Boolean
+
+    val isConferencePaused : Boolean
+
+    val isMeConferenceFocus : Boolean
+
+    val conferenceCall: ArrayList<ConferenceModel>
 
     fun config(context: Context, appName: String)
 
@@ -159,5 +168,5 @@ interface Cans {
 
     fun dtmfKey(key: String)
 
-    fun coreCans() : Core
+    fun startConference()
 }
