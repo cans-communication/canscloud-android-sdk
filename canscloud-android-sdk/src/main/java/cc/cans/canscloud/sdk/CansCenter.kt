@@ -43,6 +43,8 @@ import cc.cans.canscloud.sdk.data.ConferenceParticipantData
 import cc.cans.canscloud.sdk.data.GroupedCallLogData
 import cc.cans.canscloud.sdk.models.CallModel
 import cc.cans.canscloud.sdk.models.CansAddress
+import cc.cans.canscloud.sdk.models.ConferenceModel
+import cc.cans.canscloud.sdk.models.ConferenceState
 import cc.cans.canscloud.sdk.models.HistoryModel
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
@@ -101,17 +103,18 @@ class CansCenter() : Cans {
     override val callLogs = ArrayList<GroupedCallLogData>()
     override val missedCallLogs = ArrayList<GroupedCallLogData>()
     override val callingLogs = ArrayList<CallModel>()
+    override var conferenceCall = ArrayList<ConferenceModel>()
     val callList = ArrayList<Call>()
 
-    var isConferencePaused : Boolean = false
+    override var isConferencePaused : Boolean = false
 
-    var isMeConferenceFocus : Boolean = false
+    override var isInConference : Boolean = false
+
+    override var isMeConferenceFocus : Boolean = false
 
     lateinit var conferenceAddress : Address
 
     lateinit var conferenceParticipants : List<ConferenceParticipantData>
-
-    var isInConference: Boolean = false
 
     override val account: String
         get() {
@@ -378,14 +381,18 @@ class CansCenter() : Cans {
 
             if (state == Conference.State.Instantiated) {
                 conference.addListener(conferenceListener)
+                listeners.forEach { it.onConferenceState(ConferenceState.Instantiated) }
             } else if (state == Conference.State.Created) {
                 updateParticipantsList(conference)
                 isMeConferenceFocus = conference.me.isFocus
                 conferenceAddress = conference.conferenceAddress
+                listeners.forEach { it.onConferenceState(ConferenceState.Created) }
             } else if (state == Conference.State.Terminated || state == Conference.State.TerminationFailed) {
                 isInConference = false
                 conference.removeListener(conferenceListener)
                 conferenceParticipants = arrayListOf()
+                conferenceCall = arrayListOf()
+                listeners.forEach { it.onConferenceState(ConferenceState.Terminated) }
             }
         }
     }
@@ -393,20 +400,20 @@ class CansCenter() : Cans {
     private val conferenceListener = object : ConferenceListenerStub() {
         override fun onParticipantAdded(conference: Conference, participant: Participant) {
             if (conference.isMe(participant.address)) {
-                org.linphone.core.tools.Log.i("[Conference VM] Entered conference")
+                Log.i("[Conference VM]", "Entered conference")
                 isConferencePaused = false
             } else {
-                org.linphone.core.tools.Log.i("[Conference VM] Participant added")
+                Log.i("[Conference VM]", " Participant added")
                 updateParticipantsList(conference)
             }
         }
 
         override fun onParticipantRemoved(conference: Conference, participant: Participant) {
             if (conference.isMe(participant.address)) {
-                org.linphone.core.tools.Log.i("[Conference VM] Left conference")
+                Log.i("[Conference VM]", "Left conference")
                 isConferencePaused = true
             } else {
-                org.linphone.core.tools.Log.i("[Conference VM] Participant removed")
+                Log.i("[Conference VM]", "Participant removed")
                 updateParticipantsList(conference)
             }
         }
@@ -415,7 +422,7 @@ class CansCenter() : Cans {
             conference: Conference,
             participant: Participant,
         ) {
-            org.linphone.core.tools.Log.i("[Conference VM] Participant admin status changed")
+            Log.i("[Conference VM]", "Participant admin status changed")
             updateParticipantsList(conference)
         }
     }
@@ -440,11 +447,21 @@ class CansCenter() : Cans {
         Log.i("[TestUI]","Participant found: updateParticipantsList")
 
         val participants = arrayListOf<ConferenceParticipantData>()
+        val newConferenceCall = arrayListOf<ConferenceModel>()
         for (participant in conference.participantList) {
-            org.linphone.core.tools.Log.i("[Conference VM] Participant found: ${participant.address.asStringUriOnly()}")
+            Log.i("[Conference VM]", "Participant found: ${participant.address.asStringUriOnly()}")
             val viewModel = ConferenceParticipantData(conference, participant)
             participants.add(viewModel)
+
+            val data = ConferenceModel(
+                address = participant.address.asStringUriOnly(),
+                phoneNumber = participant.address.username ?: "",
+                name = participant.address.displayName ?: "",
+                duration = participant.creationTime.toString()
+            )
+            newConferenceCall.add(data)
         }
+        conferenceCall = newConferenceCall
         conferenceParticipants = participants
         isInConference = participants.isNotEmpty()
     }
@@ -1341,18 +1358,6 @@ class CansCenter() : Cans {
         }
     }
 
-    override fun addListener(listener: CansListenerStub) {
-        listeners.add(listener)
-    }
-
-    override fun removeListener(listener: CansListenerStub) {
-        listeners.remove(listener)
-    }
-
-    override fun removeAllListener() {
-        listeners.clear()
-    }
-
     override fun dtmfKey(key: String) {
         val keyDtmf = key.single()
         core.playDtmf(keyDtmf, 1)
@@ -1363,7 +1368,26 @@ class CansCenter() : Cans {
         }
     }
 
-    override fun coreCans(): Core {
-       return core
+    override fun startConference() {
+        val currentCallVideoEnabled = core.currentCall?.currentParams?.isVideoEnabled ?: false
+
+        val params = core.createConferenceParams(null)
+        params.isVideoEnabled = currentCallVideoEnabled
+        Log.i("[Call]", "Setting videoEnabled to [$currentCallVideoEnabled] in conference params")
+
+        val conference = core.conference ?: core.createConferenceWithParams(params)
+        conference?.addParticipants(core.calls)
+    }
+
+    override fun addListener(listener: CansListenerStub) {
+        listeners.add(listener)
+    }
+
+    override fun removeListener(listener: CansListenerStub) {
+        listeners.remove(listener)
+    }
+
+    override fun removeAllListener() {
+        listeners.clear()
     }
 }
