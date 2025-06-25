@@ -19,7 +19,6 @@
  */
 package cc.cans.canscloud.sdk.data
 
-import androidx.lifecycle.MutableLiveData
 import org.linphone.core.Conference
 import org.linphone.core.Participant
 import org.linphone.core.tools.Log
@@ -28,14 +27,14 @@ class ConferenceParticipantData(
     private val conference: Conference,
     val participant: Participant
 ){
-    private val isAdmin = MutableLiveData<Boolean>()
-    val isMeAdmin = MutableLiveData<Boolean>()
-    val number = MutableLiveData<String>()
+    private var isAdmin : Boolean = false
+    var isMeAdmin : Boolean = false
+    var number : String = ""
 
     init {
-        isAdmin.value = participant.isAdmin
-        isMeAdmin.value = conference.me.isAdmin
-        number.value = participant.address.username
+        isAdmin = participant.isAdmin
+        isMeAdmin = conference.me.isAdmin
+        number = participant.address.username.toString()
         Log.i("[Conference Participant VM] Participant ${participant.address.asStringUriOnly()} is ${if (participant.isAdmin) "admin" else "not admin"}")
         Log.i("[Conference Participant VM] Me is ${if (conference.me.isAdmin) "admin" else "not admin"} and is ${if (conference.me.isFocus) "focus" else "not focus"}")
     }

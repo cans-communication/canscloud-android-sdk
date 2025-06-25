@@ -30,7 +30,6 @@ import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import android.util.Log
 import androidx.core.app.ActivityCompat
-import androidx.lifecycle.MutableLiveData
 import cc.cans.canscloud.data.ProvisioningData
 import cc.cans.canscloud.data.ProvisioningInterceptor
 import cc.cans.canscloud.data.ProvisioningResult

@@ -3,7 +3,6 @@ package cc.cans.canscloud.sdk
 import android.app.Activity
 import android.content.Context
 import android.os.Vibrator
-import androidx.lifecycle.MutableLiveData
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CorePreferences
