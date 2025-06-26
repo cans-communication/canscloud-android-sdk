@@ -17,6 +17,7 @@ import cc.cans.canscloud.sdk.models.HistoryModel
 import cc.cans.canscloud.sdk.models.RegisterState
 import org.linphone.core.Account
 import org.linphone.core.Call
+import org.linphone.core.Conference
 import org.linphone.core.Core
 
 interface Cans {
@@ -32,6 +33,8 @@ interface Cans {
     var corePreferences: CorePreferences
 
     var context: Context
+
+    var conference: Conference
 
     var coreContext: CoreContextSDK
 

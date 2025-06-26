@@ -105,6 +105,8 @@ class CansCenter() : Cans {
     override var conferenceCall = ArrayList<ConferenceModel>()
     val callList = ArrayList<Call>()
 
+    override lateinit var conference : Conference
+
     override var isConferencePaused : Boolean = false
 
     override var isInConference : Boolean = false
@@ -114,6 +116,7 @@ class CansCenter() : Cans {
     lateinit var conferenceAddress : Address
 
     lateinit var conferenceParticipants : List<ConferenceParticipantData>
+
 
     override val account: String
         get() {
@@ -444,7 +447,7 @@ class CansCenter() : Cans {
 
     private fun updateParticipantsList(conference: Conference) {
         Log.i("[TestUI]","Participant found: updateParticipantsList")
-
+        this.conference = conference
         val participants = arrayListOf<ConferenceParticipantData>()
         val newConferenceCall = arrayListOf<ConferenceModel>()
         for (participant in conference.participantList) {
