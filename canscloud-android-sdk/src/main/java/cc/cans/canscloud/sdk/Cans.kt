@@ -84,8 +84,6 @@ interface Cans {
 
     val callLogs: ArrayList<GroupedCallLogData>
 
-    val callingLogs: ArrayList<CallModel>
-
     val missedCallLogs:ArrayList<GroupedCallLogData>
 
     val isInConference: Boolean
@@ -105,6 +103,8 @@ interface Cans {
         port: String,
         transport: CansTransport
     )
+
+    fun getCallLog(): ArrayList<CallModel>
 
     fun registerAccount(username: String, password: String, domain: String)
 
