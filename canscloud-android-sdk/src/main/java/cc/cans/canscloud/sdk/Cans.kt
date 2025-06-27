@@ -104,6 +104,8 @@ interface Cans {
         transport: CansTransport
     )
 
+    fun refreshRegister()
+
     fun getCallLog(): ArrayList<CallModel>
 
     fun registerAccount(username: String, password: String, domain: String)

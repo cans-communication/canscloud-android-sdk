@@ -80,7 +80,6 @@ class CallFragment : Fragment() {
         }
 
         binding.buttonHangUp2.setOnClickListener {
-
         }
 
         binding.buttonHangUp3.setOnClickListener {

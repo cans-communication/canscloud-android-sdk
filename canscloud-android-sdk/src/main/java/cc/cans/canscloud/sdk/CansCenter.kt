@@ -235,6 +235,7 @@ class CansCenter() : Cans {
             state: RegistrationState,
             message: String
         ) {
+            Log.i("[CansSDK: onRegistrationStateChanged]", "Registration state is $state: $message")
             if (state == RegistrationState.Cleared && account == accountToDelete) {
                 deleteAccount(account)
                 listeners.forEach { it.onUnRegister() }
@@ -255,7 +256,7 @@ class CansCenter() : Cans {
             state: RegistrationState?,
             message: String
         ) {
-            Log.i("[CansSDK]", "Registration state is $state: $message")
+            Log.i("[CansSDK: onAccountRegistrationStateChanged]", "Registration state is $state: $message")
             if (account == accountToCheck) {
                 if (state == RegistrationState.Ok) {
                     listeners.forEach { it.onRegistration(RegisterState.OK, message) }
@@ -278,7 +279,7 @@ class CansCenter() : Cans {
             state: RegistrationState,
             message: String,
         ) {
-            Log.i("defaultStateRegister:","${cansCenter().defaultStateRegister}")
+            Log.i("CansSDK: onRegistrationStateChanged ","${cansCenter().defaultStateRegister}")
             if (cfg == proxyConfigToCheck) {
                 org.linphone.core.tools.Log.i("[Assistant] [Account Login] Registration state is $state: $message")
                 if (state == RegistrationState.Ok) {
@@ -300,7 +301,7 @@ class CansCenter() : Cans {
             destinationCall = call.remoteAddress.username ?: ""
 
             updateCallLogs()
-            Log.w("onCallStateChanged: ", "$state : $message")
+            Log.w("CansSDK: onCallStateChanged: ", "$state : $message")
 
             when (state) {
                 Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> {
@@ -329,6 +330,7 @@ class CansCenter() : Cans {
                     updateMissedCallLogs()
                     mVibrator.cancel()
                     removeCallToPausedList(call)
+
                     setListenerCall(CallState.Error)
                 }
 
@@ -353,6 +355,7 @@ class CansCenter() : Cans {
 
         override fun onLastCallEnded(core: Core) {
             super.onLastCallEnded(core)
+            Log.w("CansSDK: onLastCallEnded:", "")
             if (!core.isMicEnabled) {
                 Log.w("[CansSDK]", "Mic was muted in Core, enabling it back for next call")
                 core.isMicEnabled = true
@@ -469,46 +472,46 @@ class CansCenter() : Cans {
     }
 
     private fun addCallToPausedList(call : Call) {
-        val isCall = callingLogs.any { it.phoneNumber == call.remoteAddress.username }
-        Log.i("callingLogs1: callId: ","${call.core.currentCall?.callLog?.callId}")
+        val isCall = callList.any { it.remoteAddress.username == call.remoteAddress.username }
         if (isCall) {
             return
         }
         callList.add(call)
+
+        Log.i("callingLogs: ","addCallToPausedList")
     }
 
-    private fun updateCallToPausedList(call : Call) {
-        val callLog = callingLogs.find { it.phoneNumber == call.remoteAddress.username}
-        callLog?.isPaused = call.state == Call.State.Paused
-        callLog?.duration = call.duration.toString()
-        callLog?.status = mapStatusCall(call.state)
+    private fun updateCallToPausedList(call: Call) {
+        val index = callList.indexOfFirst { it.remoteAddress.username == call.remoteAddress.username }
+        if (index != -1) {
+            callList[index] = call
+            Log.i("callingLogs", "updateCallToPausedList: updated at index $index")
+        } else {
+            Log.i("callingLogs", "updateCallToPausedList: no match found")
+        }
     }
 
     private fun removeCallToPausedList(call : Call) {
-        val callLog = callingLogs.find { it.phoneNumber == call.remoteAddress.username}
-        callingLogs.remove(callLog)
         callList.remove(call)
 
         if (cansCenter().countCalls == 0) {
-            callingLogs.clear()
             callList.clear()
         }
+        Log.i("callingLogs: ","removeCallToPausedList")
     }
 
     override fun getCallLog(): ArrayList<CallModel> {
         callingLogs = arrayListOf()
         callList.forEach { call ->
-            val address: String by lazy {
-                val sip = CansUtils.getDisplayableAddress(call.remoteAddress)
-                val domain = core.defaultAccount?.params?.domain.orEmpty()
-                val port = core.defaultAccount?.params?.identityAddress?.port.toString()
-                if (sip.startsWith("sip:509")) {
-                    "sip:" + sip.substring(7, 16) + "@" + domain + ":" + port
-                } else if (sip.startsWith("sip:510")) {
-                    "sip:" + sip.substring(7, 17) + "@" + domain + ":" + port
-                } else {
-                    sip
-                }
+            val sip = CansUtils.getDisplayableAddress(call.remoteAddress)
+            val domain = core.defaultAccount?.params?.domain.orEmpty()
+            val port = core.defaultAccount?.params?.identityAddress?.port.toString()
+            val address = if (sip.startsWith("sip:509")) {
+                "sip:" + sip.substring(7, 16) + "@" + domain + ":" + port
+            } else if (sip.startsWith("sip:510")) {
+                "sip:" + sip.substring(7, 17) + "@" + domain + ":" + port
+            } else {
+                sip
             }
 
             val data = CallModel(
@@ -523,6 +526,7 @@ class CansCenter() : Cans {
             callingLogs.add(data)
         }
 
+        Log.i("callingLogs1: ","${callList.size}")
         return callingLogs
     }
 
@@ -561,6 +565,8 @@ class CansCenter() : Cans {
         }
 
         core = Factory.instance().createCoreWithConfig(config, context)
+
+        core.removeListener(coreListenerStub)
         core.addListener(coreListenerStub)
         core.start()
         createNotificationChannels(context, notificationManager)
@@ -681,9 +687,6 @@ class CansCenter() : Cans {
         val proxyConfig = accountCreator.createAccountInCore()
         accountToCheck = proxyConfig
 
-        core.addListener(coreListenerStub)
-        core.start()
-
         corePreferences.keepServiceAlive = true
         coreContext.notificationsManager.startForeground()
     }
@@ -799,9 +802,6 @@ class CansCenter() : Cans {
             }
         }
 
-        core.addListener(coreListenerStub)
-        core.start()
-
         // Finally we start the call
         core.inviteAddressWithParams(remoteAddress, params)
         // Call process can be followed in onCallStateChanged callback from core listener
@@ -870,6 +870,10 @@ class CansCenter() : Cans {
         } else {
             routeAudioToSpeaker()
         }
+    }
+
+    override fun refreshRegister() {
+        core.refreshRegisters()
     }
 
     override fun registerAccount(username: String, password: String, domain: String) {
@@ -955,9 +959,6 @@ class CansCenter() : Cans {
                                         }
                                         val proxyConfig = accountCreator.createAccountInCore()
                                         accountToCheck = proxyConfig
-
-                                        core.addListener(coreListenerStub)
-                                        core.start()
 
                                         if (!createProxyConfig()) {
                                             Log.i(
