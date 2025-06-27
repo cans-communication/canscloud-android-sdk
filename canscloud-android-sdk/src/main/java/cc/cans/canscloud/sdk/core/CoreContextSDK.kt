@@ -27,6 +27,7 @@ import kotlinx.coroutines.cancel
 import org.linphone.mediastream.Version
 import java.io.File
 import cc.cans.canscloud.sdk.compatibility.PhoneStateInterface
+import cc.cans.canscloud.sdk.models.ConferenceState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -125,6 +126,8 @@ class CoreContextSDK(
         override fun onAudioDevicesListUpdated() {
             Log.i("[Context onAudioUpdate]", "onAudioDevicesListUpdated")
         }
+
+        override fun onConferenceState(state: ConferenceState) {}
     }
 
     private val loggingServiceListener = object : LoggingServiceListenerStub() {

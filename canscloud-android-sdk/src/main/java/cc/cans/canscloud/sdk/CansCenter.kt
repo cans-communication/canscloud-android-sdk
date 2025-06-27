@@ -30,7 +30,6 @@ import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import android.util.Log
 import androidx.core.app.ActivityCompat
-import androidx.lifecycle.MutableLiveData
 import cc.cans.canscloud.data.ProvisioningData
 import cc.cans.canscloud.data.ProvisioningInterceptor
 import cc.cans.canscloud.data.ProvisioningResult
@@ -39,9 +38,12 @@ import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.core.CoreService
+import cc.cans.canscloud.sdk.data.ConferenceParticipantData
 import cc.cans.canscloud.sdk.data.GroupedCallLogData
 import cc.cans.canscloud.sdk.models.CallModel
 import cc.cans.canscloud.sdk.models.CansAddress
+import cc.cans.canscloud.sdk.models.ConferenceModel
+import cc.cans.canscloud.sdk.models.ConferenceState
 import cc.cans.canscloud.sdk.models.HistoryModel
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
@@ -55,8 +57,11 @@ import org.linphone.core.AccountCreator
 import org.linphone.core.AccountListenerStub
 import org.linphone.core.Address
 import org.linphone.core.CallLog
+import org.linphone.core.Conference
+import org.linphone.core.ConferenceListenerStub
 import org.linphone.core.LogCollectionState
 import org.linphone.core.LogLevel
+import org.linphone.core.Participant
 import org.linphone.core.tools.compatibility.DeviceUtils
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -96,8 +101,22 @@ class CansCenter() : Cans {
     private var listeners = mutableListOf<CansListenerStub>()
     override val callLogs = ArrayList<GroupedCallLogData>()
     override val missedCallLogs = ArrayList<GroupedCallLogData>()
-    override val callingLogs = ArrayList<CallModel>()
+    var callingLogs = ArrayList<CallModel>()
+    override var conferenceCall = ArrayList<ConferenceModel>()
     val callList = ArrayList<Call>()
+
+    override lateinit var conference : Conference
+
+    override var isConferencePaused : Boolean = false
+
+    override var isInConference : Boolean = false
+
+    override var isMeConferenceFocus : Boolean = false
+
+    lateinit var conferenceAddress : Address
+
+    lateinit var conferenceParticipants : List<ConferenceParticipantData>
+
 
     override val account: String
         get() {
@@ -216,6 +235,7 @@ class CansCenter() : Cans {
             state: RegistrationState,
             message: String
         ) {
+            Log.i("[CansSDK: onRegistrationStateChanged]", "Registration state is $state: $message")
             if (state == RegistrationState.Cleared && account == accountToDelete) {
                 deleteAccount(account)
                 listeners.forEach { it.onUnRegister() }
@@ -236,7 +256,7 @@ class CansCenter() : Cans {
             state: RegistrationState?,
             message: String
         ) {
-            Log.i("[CansSDK]", "Registration state is $state: $message")
+            Log.i("[CansSDK: onAccountRegistrationStateChanged]", "Registration state is $state: $message")
             if (account == accountToCheck) {
                 if (state == RegistrationState.Ok) {
                     listeners.forEach { it.onRegistration(RegisterState.OK, message) }
@@ -259,7 +279,7 @@ class CansCenter() : Cans {
             state: RegistrationState,
             message: String,
         ) {
-            Log.i("defaultStateRegister:","${cansCenter().defaultStateRegister}")
+            Log.i("CansSDK: onRegistrationStateChanged ","${cansCenter().defaultStateRegister}")
             if (cfg == proxyConfigToCheck) {
                 org.linphone.core.tools.Log.i("[Assistant] [Account Login] Registration state is $state: $message")
                 if (state == RegistrationState.Ok) {
@@ -281,10 +301,11 @@ class CansCenter() : Cans {
             destinationCall = call.remoteAddress.username ?: ""
 
             updateCallLogs()
-            Log.w("onCallStateChanged: ", "$state : $message")
+            Log.w("CansSDK: onCallStateChanged: ", "$state : $message")
 
             when (state) {
                 Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> {
+                    addCallToPausedList(call)
                     vibrator()
                 }
 
@@ -309,6 +330,7 @@ class CansCenter() : Cans {
                     updateMissedCallLogs()
                     mVibrator.cancel()
                     removeCallToPausedList(call)
+
                     setListenerCall(CallState.Error)
                 }
 
@@ -333,6 +355,7 @@ class CansCenter() : Cans {
 
         override fun onLastCallEnded(core: Core) {
             super.onLastCallEnded(core)
+            Log.w("CansSDK: onLastCallEnded:", "")
             if (!core.isMicEnabled) {
                 Log.w("[CansSDK]", "Mic was muted in Core, enabling it back for next call")
                 core.isMicEnabled = true
@@ -352,6 +375,61 @@ class CansCenter() : Cans {
             audioDevicesListUpdated()
             listeners.forEach { it.onAudioDevicesListUpdated() }
         }
+
+        override fun onConferenceStateChanged(
+            core: Core,
+            conference: Conference,
+            state: Conference.State,
+        ) {
+            Log.i("[Conference VM]"," Conference state changed: $state")
+            isConferencePaused = !conference.isIn
+
+            if (state == Conference.State.Instantiated) {
+                conference.addListener(conferenceListener)
+                listeners.forEach { it.onConferenceState(ConferenceState.Instantiated) }
+            } else if (state == Conference.State.Created) {
+                updateParticipantsList(conference)
+                isMeConferenceFocus = conference.me.isFocus
+                conferenceAddress = conference.conferenceAddress
+                listeners.forEach { it.onConferenceState(ConferenceState.Created) }
+            } else if (state == Conference.State.Terminated || state == Conference.State.TerminationFailed) {
+                isInConference = false
+                conference.removeListener(conferenceListener)
+                conferenceParticipants = arrayListOf()
+                conferenceCall = arrayListOf()
+                listeners.forEach { it.onConferenceState(ConferenceState.Terminated) }
+            }
+        }
+    }
+
+    private val conferenceListener = object : ConferenceListenerStub() {
+        override fun onParticipantAdded(conference: Conference, participant: Participant) {
+            if (conference.isMe(participant.address)) {
+                Log.i("[Conference VM]", "Entered conference")
+                isConferencePaused = false
+            } else {
+                Log.i("[Conference VM]", " Participant added")
+                updateParticipantsList(conference)
+            }
+        }
+
+        override fun onParticipantRemoved(conference: Conference, participant: Participant) {
+            if (conference.isMe(participant.address)) {
+                Log.i("[Conference VM]", "Left conference")
+                isConferencePaused = true
+            } else {
+                Log.i("[Conference VM]", "Participant removed")
+                updateParticipantsList(conference)
+            }
+        }
+
+        override fun onParticipantAdminStatusChanged(
+            conference: Conference,
+            participant: Participant,
+        ) {
+            Log.i("[Conference VM]", "Participant admin status changed")
+            updateParticipantsList(conference)
+        }
     }
 
     private fun mapStatusCall(state: Call.State): CallState {
@@ -370,56 +448,93 @@ class CansCenter() : Cans {
         }
     }
 
+    private fun updateParticipantsList(conference: Conference) {
+        Log.i("[TestUI]","Participant found: updateParticipantsList")
+        this.conference = conference
+        val participants = arrayListOf<ConferenceParticipantData>()
+        val newConferenceCall = arrayListOf<ConferenceModel>()
+        for (participant in conference.participantList) {
+            Log.i("[Conference VM]", "Participant found: ${participant.address.asStringUriOnly()}")
+            val viewModel = ConferenceParticipantData(conference, participant)
+            participants.add(viewModel)
+
+            val data = ConferenceModel(
+                address = participant.address.asStringUriOnly(),
+                phoneNumber = participant.address.username ?: "",
+                name = participant.address.displayName ?: "",
+                duration = participant.creationTime.toString()
+            )
+            newConferenceCall.add(data)
+        }
+        conferenceCall = newConferenceCall
+        conferenceParticipants = participants
+        isInConference = participants.isNotEmpty()
+    }
+
     private fun addCallToPausedList(call : Call) {
-        val isCall = callingLogs.any { it.phoneNumber == call.remoteAddress.username }
-        Log.i("callingLogs1: callId: ","${call.core.currentCall?.callLog?.callId}")
+        val isCall = callList.any { it.remoteAddress.username == call.remoteAddress.username }
         if (isCall) {
             return
         }
-        val address: String by lazy {
+        callList.add(call)
+        mapCallLog()
+        Log.i("callingLogs: ","addCallToPausedList")
+    }
+
+    private fun updateCallToPausedList(call: Call) {
+        val index = callList.indexOfFirst { it.remoteAddress.username == call.remoteAddress.username }
+        if (index != -1) {
+            callList[index] = call
+            Log.i("callingLogs", "updateCallToPausedList: updated at index $index")
+        } else {
+            Log.i("callingLogs", "updateCallToPausedList: no match found")
+        }
+        mapCallLog()
+    }
+
+    private fun removeCallToPausedList(call : Call) {
+        callList.remove(call)
+
+        if (cansCenter().countCalls == 0) {
+            callList.clear()
+        }
+        mapCallLog()
+        Log.i("callingLogs: ","removeCallToPausedList")
+    }
+
+    private fun mapCallLog(){
+        val list: ArrayList<CallModel> = arrayListOf()
+        callList.forEach { call ->
             val sip = CansUtils.getDisplayableAddress(call.remoteAddress)
             val domain = core.defaultAccount?.params?.domain.orEmpty()
             val port = core.defaultAccount?.params?.identityAddress?.port.toString()
-            if (sip.startsWith("sip:509")) {
+            val address = if (sip.startsWith("sip:509")) {
                 "sip:" + sip.substring(7, 16) + "@" + domain + ":" + port
             } else if (sip.startsWith("sip:510")) {
                 "sip:" + sip.substring(7, 17) + "@" + domain + ":" + port
             } else {
                 sip
             }
+
+            val data = CallModel(
+                callID = call.callLog.callId ?: "",
+                address = address,
+                phoneNumber = call.remoteAddress.username ?: "",
+                name = call.remoteAddress.displayName ?: "",
+                isPaused = call.state == Call.State.Paused,
+                status = mapStatusCall(call.state),
+                duration = call.duration.toString()
+            )
+            list.add(data)
         }
-           val data = CallModel(
-               callID = call.callLog.callId ?: "",
-               address = address,
-               phoneNumber = call.remoteAddress.username ?: "",
-               name = call.remoteAddress.displayName ?: "",
-               isPaused = call.state == Call.State.Paused,
-               status = mapStatusCall(call.state),
-               duration = call.duration.toString()
-           )
-        callingLogs.add(data)
-        callList.add(call)
-        Log.i("callingLogs add: ","${cansCenter().callingLogs.size}")
+
+        callingLogs = list
+        Log.i("callingLogs1: ","${callingLogs.size}")
     }
 
-    private fun updateCallToPausedList(call : Call) {
-        val callLog = callingLogs.find { it.phoneNumber == call.remoteAddress.username}
-        callLog?.isPaused = call.state == Call.State.Paused
-        callLog?.duration = call.duration.toString()
-        callLog?.status = mapStatusCall(call.state)
-        Log.i("callingLogs update: ","${cansCenter().callingLogs.size}")
-    }
-
-    private fun removeCallToPausedList(call : Call) {
-        val callLog = callingLogs.find { it.phoneNumber == call.remoteAddress.username}
-        callingLogs.remove(callLog)
-        callList.remove(call)
-
-        if (cansCenter().countCalls == 0) {
-            callingLogs.clear()
-            callList.clear()
-        }
-        Log.i("callingLogs remove: ","${cansCenter().callingLogs.size}")
+    override fun getCallLog(): ArrayList<CallModel> {
+        Log.i("getCallLog: ","${callingLogs.size}")
+        return callingLogs
     }
 
     private fun setListenerCall(callState: CallState) {
@@ -457,6 +572,8 @@ class CansCenter() : Cans {
         }
 
         core = Factory.instance().createCoreWithConfig(config, context)
+
+        core.removeListener(coreListenerStub)
         core.addListener(coreListenerStub)
         core.start()
         createNotificationChannels(context, notificationManager)
@@ -577,9 +694,6 @@ class CansCenter() : Cans {
         val proxyConfig = accountCreator.createAccountInCore()
         accountToCheck = proxyConfig
 
-        core.addListener(coreListenerStub)
-        core.start()
-
         corePreferences.keepServiceAlive = true
         coreContext.notificationsManager.startForeground()
     }
@@ -695,9 +809,6 @@ class CansCenter() : Cans {
             }
         }
 
-        core.addListener(coreListenerStub)
-        core.start()
-
         // Finally we start the call
         core.inviteAddressWithParams(remoteAddress, params)
         // Call process can be followed in onCallStateChanged callback from core listener
@@ -766,6 +877,10 @@ class CansCenter() : Cans {
         } else {
             routeAudioToSpeaker()
         }
+    }
+
+    override fun refreshRegister() {
+        core.refreshRegisters()
     }
 
     override fun registerAccount(username: String, password: String, domain: String) {
@@ -851,9 +966,6 @@ class CansCenter() : Cans {
                                         }
                                         val proxyConfig = accountCreator.createAccountInCore()
                                         accountToCheck = proxyConfig
-
-                                        core.addListener(coreListenerStub)
-                                        core.start()
 
                                         if (!createProxyConfig()) {
                                             Log.i(
@@ -1262,6 +1374,27 @@ class CansCenter() : Cans {
         }
     }
 
+    override fun dtmfKey(key: String) {
+        val keyDtmf = key.single()
+        core.playDtmf(keyDtmf, 1)
+        core.currentCall?.sendDtmf(keyDtmf)
+
+        if (mVibrator.hasVibrator() && corePreferences.dtmfKeypadVibration) {
+            Compatibility.eventVibration(mVibrator)
+        }
+    }
+
+    override fun startConference() {
+        val currentCallVideoEnabled = core.currentCall?.currentParams?.isVideoEnabled ?: false
+
+        val params = core.createConferenceParams(null)
+        params.isVideoEnabled = currentCallVideoEnabled
+        Log.i("[Call]", "Setting videoEnabled to [$currentCallVideoEnabled] in conference params")
+
+        val conference = core.conference ?: core.createConferenceWithParams(params)
+        conference?.addParticipants(core.calls)
+    }
+
     override fun addListener(listener: CansListenerStub) {
         listeners.add(listener)
     }
@@ -1272,15 +1405,5 @@ class CansCenter() : Cans {
 
     override fun removeAllListener() {
         listeners.clear()
-    }
-
-    override fun dtmfKey(key: String) {
-        val keyDtmf = key.single()
-        core.playDtmf(keyDtmf, 1)
-        core.currentCall?.sendDtmf(keyDtmf)
-
-        if (mVibrator.hasVibrator() && corePreferences.dtmfKeypadVibration) {
-            Compatibility.eventVibration(mVibrator)
-        }
     }
 }

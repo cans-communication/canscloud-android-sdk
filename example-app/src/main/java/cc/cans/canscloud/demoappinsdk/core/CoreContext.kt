@@ -16,6 +16,7 @@ import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CallState
+import cc.cans.canscloud.sdk.models.ConferenceState
 import cc.cans.canscloud.sdk.models.RegisterState
 
 class CoreContext(
@@ -82,6 +83,8 @@ class CoreContext(
         override fun onAudioDevicesListUpdated() {
             Log.i("[Context onAudioUpdate]", "onAudioDevicesListUpdated")
         }
+
+        override fun onConferenceState(state: ConferenceState) {}
     }
 
     init {

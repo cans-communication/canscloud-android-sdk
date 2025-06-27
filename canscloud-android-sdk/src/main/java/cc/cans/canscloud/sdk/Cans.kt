@@ -3,7 +3,6 @@ package cc.cans.canscloud.sdk
 import android.app.Activity
 import android.content.Context
 import android.os.Vibrator
-import androidx.lifecycle.MutableLiveData
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CorePreferences
@@ -13,10 +12,12 @@ import cc.cans.canscloud.sdk.data.GroupedCallLogData
 import cc.cans.canscloud.sdk.models.CallModel
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.CansTransport
+import cc.cans.canscloud.sdk.models.ConferenceModel
 import cc.cans.canscloud.sdk.models.HistoryModel
 import cc.cans.canscloud.sdk.models.RegisterState
 import org.linphone.core.Account
 import org.linphone.core.Call
+import org.linphone.core.Conference
 import org.linphone.core.Core
 
 interface Cans {
@@ -32,6 +33,8 @@ interface Cans {
     var corePreferences: CorePreferences
 
     var context: Context
+
+    var conference: Conference
 
     var coreContext: CoreContextSDK
 
@@ -81,9 +84,15 @@ interface Cans {
 
     val callLogs: ArrayList<GroupedCallLogData>
 
-    val callingLogs: ArrayList<CallModel>
-
     val missedCallLogs:ArrayList<GroupedCallLogData>
+
+    val isInConference: Boolean
+
+    val isConferencePaused : Boolean
+
+    val isMeConferenceFocus : Boolean
+
+    val conferenceCall: ArrayList<ConferenceModel>
 
     fun config(context: Context, appName: String)
 
@@ -94,6 +103,10 @@ interface Cans {
         port: String,
         transport: CansTransport
     )
+
+    fun refreshRegister()
+
+    fun getCallLog(): ArrayList<CallModel>
 
     fun registerAccount(username: String, password: String, domain: String)
 
@@ -158,4 +171,6 @@ interface Cans {
     fun askFirst(phoneNumber: String) : Boolean
 
     fun dtmfKey(key: String)
+
+    fun startConference()
 }

@@ -20,6 +20,7 @@ import cc.cans.canscloud.sdk.Notifiable
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CallState
+import cc.cans.canscloud.sdk.models.ConferenceState
 import cc.cans.canscloud.sdk.models.RegisterState
 import org.linphone.core.Call
 
@@ -75,6 +76,8 @@ class NotificationsManager(private val context: Context) {
         override fun onAudioDevicesListUpdated() {
             Log.i("[Context onAudioUpdate]", "onAudioDevicesListUpdated")
         }
+
+        override fun onConferenceState(state: ConferenceState) {}
     }
 
     init {
