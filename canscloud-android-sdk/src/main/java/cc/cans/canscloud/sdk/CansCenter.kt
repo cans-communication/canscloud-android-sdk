@@ -477,7 +477,7 @@ class CansCenter() : Cans {
             return
         }
         callList.add(call)
-
+        mapCallLog()
         Log.i("callingLogs: ","addCallToPausedList")
     }
 
@@ -489,6 +489,7 @@ class CansCenter() : Cans {
         } else {
             Log.i("callingLogs", "updateCallToPausedList: no match found")
         }
+        mapCallLog()
     }
 
     private fun removeCallToPausedList(call : Call) {
@@ -497,11 +498,12 @@ class CansCenter() : Cans {
         if (cansCenter().countCalls == 0) {
             callList.clear()
         }
+        mapCallLog()
         Log.i("callingLogs: ","removeCallToPausedList")
     }
 
-    override fun getCallLog(): ArrayList<CallModel> {
-        callingLogs = arrayListOf()
+    private fun mapCallLog(){
+        val list: ArrayList<CallModel> = arrayListOf()
         callList.forEach { call ->
             val sip = CansUtils.getDisplayableAddress(call.remoteAddress)
             val domain = core.defaultAccount?.params?.domain.orEmpty()
@@ -523,10 +525,15 @@ class CansCenter() : Cans {
                 status = mapStatusCall(call.state),
                 duration = call.duration.toString()
             )
-            callingLogs.add(data)
+            list.add(data)
         }
 
-        Log.i("callingLogs1: ","${callList.size}")
+        callingLogs = list
+        Log.i("callingLogs1: ","${callingLogs.size}")
+    }
+
+    override fun getCallLog(): ArrayList<CallModel> {
+        Log.i("getCallLog: ","${callingLogs.size}")
         return callingLogs
     }
 
