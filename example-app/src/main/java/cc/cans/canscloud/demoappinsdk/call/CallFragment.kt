@@ -76,13 +76,16 @@ class CallFragment : Fragment() {
             }
         }
 
-        binding.buttonCall.setOnClickListener {
+        binding.buttonCall1.setOnClickListener {
         }
 
-        binding.buttonHangUp2.setOnClickListener {
+        binding.buttonCall2.setOnClickListener {
         }
 
-        binding.buttonHangUp3.setOnClickListener {
+        binding.buttonCall3.setOnClickListener {
+        }
+
+        binding.buttonConference.setOnClickListener {
             cansCenter().startConference()
         }
 

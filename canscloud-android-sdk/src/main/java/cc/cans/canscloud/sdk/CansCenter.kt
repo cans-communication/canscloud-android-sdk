@@ -50,6 +50,10 @@ import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
 import cc.cans.canscloud.sdk.utils.TimestampUtils
 import com.google.gson.Gson
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import org.linphone.core.Account
@@ -433,13 +437,14 @@ class CansCenter() : Cans {
     }
 
     private fun mapStatusCall(state: Call.State): CallState {
+        Log.i("mapCallLog111", ":$state ")
         return when (state) {
             Call.State.IncomingEarlyMedia, Call.State.IncomingReceived ->  CallState.IncomingCall
             Call.State.OutgoingInit -> CallState.StartCall
-            Call.State.OutgoingProgress ->  CallState.CallOutgoing
+            Call.State.OutgoingProgress, Call.State.OutgoingEarlyMedia,  ->  CallState.CallOutgoing
             Call.State.StreamsRunning -> CallState.StreamsRunning
             Call.State.Connected -> CallState.Connected
-            Call.State.Paused -> CallState.Pause
+            Call.State.Paused, Call.State.Pausing -> CallState.Pause
             Call.State.Resuming ->  CallState.Resuming
             Call.State.Error -> CallState.Error
             Call.State.End ->  CallState.CallEnd
@@ -472,10 +477,6 @@ class CansCenter() : Cans {
     }
 
     private fun addCallToPausedList(call : Call) {
-        val isCall = callList.any { it.remoteAddress.username == call.remoteAddress.username }
-        if (isCall) {
-            return
-        }
         callList.add(call)
         mapCallLog()
         Log.i("callingLogs: ","addCallToPausedList")
@@ -525,6 +526,7 @@ class CansCenter() : Cans {
                 status = mapStatusCall(call.state),
                 duration = call.duration.toString()
             )
+
             list.add(data)
         }
 
@@ -1385,14 +1387,16 @@ class CansCenter() : Cans {
     }
 
     override fun startConference() {
-        val currentCallVideoEnabled = core.currentCall?.currentParams?.isVideoEnabled ?: false
+        CoroutineScope(Dispatchers.Default).launch {
+            val currentCallVideoEnabled = core.currentCall?.currentParams?.isVideoEnabled ?: false
+            val params = core.createConferenceParams(null)
+            params.isVideoEnabled = currentCallVideoEnabled
 
-        val params = core.createConferenceParams(null)
-        params.isVideoEnabled = currentCallVideoEnabled
-        Log.i("[Call]", "Setting videoEnabled to [$currentCallVideoEnabled] in conference params")
-
-        val conference = core.conference ?: core.createConferenceWithParams(params)
-        conference?.addParticipants(core.calls)
+            withContext(Dispatchers.Main) {
+                val conference = core.conference ?: core.createConferenceWithParams(params)
+                conference?.addParticipants(core.calls)
+            }
+        }
     }
 
     override fun addListener(listener: CansListenerStub) {

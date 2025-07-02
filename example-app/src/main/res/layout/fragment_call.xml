@@ -31,7 +31,7 @@
             android:gravity="center"
             android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
-            android:layout_marginBottom="180dp"
+            android:layout_marginBottom="300dp"
             android:orientation="horizontal">
 
             <ImageView
@@ -56,36 +56,47 @@
                 android:layout_marginStart="24dp"
                 android:contentDescription="@string/content_description_bluetooth"
                 android:src="@drawable/ongoing_route_bluetooth" />
+        </LinearLayout>
 
-            <ImageButton
-                android:id="@+id/buttonCall"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/call"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
+        <LinearLayout
+            android:id="@+id/layout_call"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="180dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/buttonCall1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_alignParentBottom="true"
                 android:layout_centerHorizontal="true"
                 android:contentDescription="Hang Up"/>
 
-            <ImageButton
-                android:id="@+id/buttonHangUp2"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/hang_up"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
+            <Button
+                android:id="@+id/buttonCall2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_alignParentBottom="true"
                 android:layout_centerHorizontal="true"
                 android:contentDescription="Hang Up"/>
 
-            <ImageButton
-                android:id="@+id/buttonHangUp3"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/hang_up"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
+            <Button
+                android:id="@+id/buttonCall3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
+                android:contentDescription="Hang Up"/>
+
+            <Button
+                android:id="@+id/buttonConference"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Conference"
                 android:layout_alignParentBottom="true"
                 android:layout_centerHorizontal="true"
                 android:contentDescription="Hang Up"/>
