@@ -827,6 +827,11 @@ class CansCenter() : Cans {
         call.terminate()
     }
 
+    override fun terminateAllCalls() {
+        if (core.callsNb == 0) return
+        core.terminateAllCalls()
+    }
+
     override fun pause(addressToCall: String) {
         val call = callList.find { it.remoteAddress.username == addressToCall }
         call?.pause()

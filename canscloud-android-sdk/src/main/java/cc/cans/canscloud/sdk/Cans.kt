@@ -130,6 +130,8 @@ interface Cans {
 
     fun terminate(addressToCall: String)
 
+    fun terminateAllCalls()
+
     fun startAnswerCall()
 
     fun updateAudioRelated()
