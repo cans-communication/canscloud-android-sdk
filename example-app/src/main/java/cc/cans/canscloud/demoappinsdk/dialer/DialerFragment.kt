@@ -77,8 +77,8 @@ class DialerFragment : Fragment() {
 
         binding.buttonRegister.setOnClickListener {
             cansCenter().register(
-                "1007",
-                "p1007",
+                "1003",
+                "p1003",
                 "sitmms.cans.cc",
                 "8446",
                 CansTransport.UDP
