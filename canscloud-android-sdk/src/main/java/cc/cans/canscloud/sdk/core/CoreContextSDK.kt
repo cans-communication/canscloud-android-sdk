@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
+import android.telecom.TelecomManager
 import android.telephony.TelephonyManager
 import android.util.Base64
 import android.util.Log
@@ -69,6 +70,7 @@ class CoreContextSDK(
     private var previousCallState = CallState.Idle
     private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val loggingService = Factory.instance().loggingService
+
 
     val notificationsManager: NotificationsManager by lazy {
         NotificationsManager(context)

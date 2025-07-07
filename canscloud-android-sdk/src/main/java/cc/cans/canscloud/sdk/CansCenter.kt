@@ -29,6 +29,7 @@ import org.linphone.core.ProxyConfig
 import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import cc.cans.canscloud.data.ProvisioningData
 import cc.cans.canscloud.data.ProvisioningInterceptor
@@ -116,8 +117,6 @@ class CansCenter() : Cans {
     override var isInConference : Boolean = false
 
     override var isMeConferenceFocus : Boolean = false
-
-    lateinit var conferenceAddress : Address
 
     lateinit var conferenceParticipants : List<ConferenceParticipantData>
 
@@ -394,7 +393,6 @@ class CansCenter() : Cans {
             } else if (state == Conference.State.Created) {
                 updateParticipantsList(conference)
                 isMeConferenceFocus = conference.me.isFocus
-                conferenceAddress = conference.conferenceAddress
                 listeners.forEach { it.onConferenceState(ConferenceState.Created) }
             } else if (state == Conference.State.Terminated || state == Conference.State.TerminationFailed) {
                 isInConference = false
@@ -545,6 +543,7 @@ class CansCenter() : Cans {
         listeners.forEach { it.onCallState(callState) }
     }
 
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     override fun config(
         context: Context,
         appName: String
@@ -586,6 +585,7 @@ class CansCenter() : Cans {
         mVibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
+        Compatibility.setupAppStartupListener(context)
         coreContext = CoreContextSDK(context)
         coreContext.start()
         computeUserAgent()
@@ -1398,7 +1398,7 @@ class CansCenter() : Cans {
             params.isVideoEnabled = currentCallVideoEnabled
 
             withContext(Dispatchers.Main) {
-                val conference = core.conference ?: core.createConferenceWithParams(params)
+                val conference = core.createConferenceWithParams(params)
                 conference?.addParticipants(core.calls)
             }
         }

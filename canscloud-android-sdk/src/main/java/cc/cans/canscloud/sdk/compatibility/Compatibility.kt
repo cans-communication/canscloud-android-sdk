@@ -31,6 +31,7 @@ import android.os.Build
 import android.os.Vibrator
 import android.telephony.TelephonyManager
 import androidx.annotation.Keep
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationManagerCompat
 import androidx.fragment.app.Fragment
 import cc.cans.canscloud.sdk.telecom.NativeCallWrapper
@@ -183,6 +184,15 @@ class Compatibility {
             }
             return false
         }
+
+        @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+        @JvmStatic
+        fun setupAppStartupListener(context: Context) {
+            if (Version.sdkAboveOrEqual(Version.API35_ANDROID_15_VANILLA_ICE_CREAM)) {
+                Api35Compatibility.setupAppStartupListener(context)
+            }
+        }
+
 
         fun startForegroundService(context: Context, intent: Intent) {
             if (Version.sdkAboveOrEqual(Version.API31_ANDROID_12)) {
