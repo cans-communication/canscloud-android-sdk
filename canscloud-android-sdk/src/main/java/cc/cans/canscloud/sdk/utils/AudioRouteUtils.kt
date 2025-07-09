@@ -49,7 +49,6 @@ class AudioRouteUtils {
                 Log.w("[Audio Route Helper] No call found, setting audio route on Core")
                 null
             }
-            val conference =  cansCenter().core.conference
             val capability = if (output) {
                 AudioDevice.Capabilities.CapabilityPlay
             } else {
@@ -94,18 +93,9 @@ class AudioRouteUtils {
                 }
                 return
             }
-            if (conference != null && conference.isIn) {
+            if (currentCall != null) {
                 Log.i(
                     "[Audio Route Helper] Found [${audioDevice.type}] ${if (output) "playback" else "recorder"} audio device [${audioDevice.deviceName} (${audioDevice.driverName})], routing conference audio to it"
-                )
-                if (output) {
-                    conference.outputAudioDevice = audioDevice
-                } else {
-                    conference.inputAudioDevice = audioDevice
-                }
-            } else if (currentCall != null) {
-                Log.i(
-                    "[Audio Route Helper] Found [${audioDevice.type}] ${if (output) "playback" else "recorder"} audio device [${audioDevice.deviceName} (${audioDevice.driverName})], routing call audio to it"
                 )
                 if (output) {
                     currentCall.outputAudioDevice = audioDevice
@@ -114,7 +104,7 @@ class AudioRouteUtils {
                 }
             } else {
                 Log.i(
-                    "[Audio Route Helper] Found [${audioDevice.type}] ${if (output) "playback" else "recorder"} audio device [${audioDevice.deviceName} (${audioDevice.driverName})], changing core default audio device"
+                    "[Audio Route Helper] Found [${audioDevice.type}] [${if (output) "playback" else "recorder"}] audio device [${audioDevice.deviceName} (${audioDevice.driverName})], changing core default audio device"
                 )
                 if (output) {
                     cansCenter().core.outputAudioDevice = audioDevice
@@ -248,10 +238,9 @@ class AudioRouteUtils {
                 Log.w("[Audio Route Helper] No call found, checking audio route on Core")
                 null
             }
-            val conference =  cansCenter().core.conference
 
-            val audioDevice = if (conference != null && conference.isIn) {
-                conference.outputAudioDevice
+            val audioDevice = if (call != null) {
+                call.outputAudioDevice
             } else if (currentCall != null) {
                 currentCall.outputAudioDevice
             } else {
@@ -271,10 +260,9 @@ class AudioRouteUtils {
                 return false
             }
             val currentCall = call ?: cansCenter().core.currentCall ?: cansCenter().core.calls[0]
-            val conference = cansCenter().core.conference
 
-            val audioDevice = if (conference != null && conference.isIn) {
-                conference.outputAudioDevice
+            val audioDevice = if (call != null) {
+                call.outputAudioDevice
             } else {
                 currentCall.outputAudioDevice
             }
