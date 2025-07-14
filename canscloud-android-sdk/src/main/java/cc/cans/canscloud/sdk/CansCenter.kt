@@ -696,6 +696,11 @@ class CansCenter() : Cans {
         val proxyConfig = accountCreator.createAccountInCore()
         accountToCheck = proxyConfig
 
+        if (proxyConfig == null) {
+            listeners.forEach { it.onRegistration(RegisterState.FAIL) }
+            return
+        }
+
         corePreferences.keepServiceAlive = true
         coreContext.notificationsManager.startForeground()
     }
