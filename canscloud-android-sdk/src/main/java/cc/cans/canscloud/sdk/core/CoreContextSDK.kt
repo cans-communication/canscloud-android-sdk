@@ -78,15 +78,15 @@ class CoreContextSDK(
 
     private val listener = object : CansListenerStub {
         override fun onRegistration(state: RegisterState, message: String?) {
-            Log.i("[SharedMainViewModel]","onRegistration ${state}")
+            Log.i("[CoreContextSDK]","onRegistration ${state}")
         }
 
         override fun onUnRegister() {
-            Log.i("[Context]","onUnRegistration")
+            Log.i("[CoreContextSDK]","onUnRegistration")
         }
 
         override fun onCallState(state: CallState, message: String?) {
-            Log.i("[Context] onCallState: ","$state")
+            Log.i("[CoreContextSDK] onCallState: ","$state")
             when (state) {
                 CallState.Idle -> {}
                 CallState.IncomingCall -> {
@@ -118,15 +118,15 @@ class CoreContextSDK(
         }
 
         override fun onLastCallEnded() {
-            Log.i("[Context]", "onLastCallEnded")
+            Log.i("[CoreContextSDK]", "onLastCallEnded")
         }
 
         override fun onAudioDeviceChanged() {
-            Log.i("[Context onAudioUpdate]", "onAudioDeviceChanged")
+            Log.i("[CoreContextSDK onAudioUpdate]", "onAudioDeviceChanged")
         }
 
         override fun onAudioDevicesListUpdated() {
-            Log.i("[Context onAudioUpdate]", "onAudioDevicesListUpdated")
+            Log.i("[CoreContextSDK onAudioUpdate]", "onAudioDevicesListUpdated")
         }
 
         override fun onConferenceState(state: ConferenceState) {}
@@ -155,7 +155,7 @@ class CoreContextSDK(
         cans.addListener(listener)
         stopped = false
         _lifecycleRegistry.currentState = Lifecycle.State.INITIALIZED
-        Log.i("[Context]","Ready")
+        Log.i("[CoreContextSDK]","Ready")
     }
 
     fun start() {

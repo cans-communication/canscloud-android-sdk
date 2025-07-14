@@ -39,7 +39,7 @@ class CoreContext(
 
     private val listener = object : CansListenerStub {
         override fun onRegistration(state: RegisterState, message: String?) {
-            Log.i("[SharedMainViewModel]","onRegistration ${state}")
+            Log.i("[CoreContext]","onRegistration ${state}")
         }
 
         override fun onUnRegister() {
