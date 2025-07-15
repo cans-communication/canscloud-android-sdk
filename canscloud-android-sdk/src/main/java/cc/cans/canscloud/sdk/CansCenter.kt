@@ -30,6 +30,7 @@ import org.linphone.core.RegistrationState
 import org.linphone.core.TransportType
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.annotation.WorkerThread
 import androidx.core.app.ActivityCompat
 import cc.cans.canscloud.data.ProvisioningData
 import cc.cans.canscloud.data.ProvisioningInterceptor
@@ -108,7 +109,6 @@ class CansCenter() : Cans {
     override val callLogs = ArrayList<GroupedCallLogData>()
     override val missedCallLogs = ArrayList<GroupedCallLogData>()
     var callingLogs = ArrayList<CallModel>()
-    override var conferenceCall = ArrayList<ConferenceModel>()
     val callList = ArrayList<Call>()
 
     override lateinit var conference : Conference
@@ -389,49 +389,14 @@ class CansCenter() : Cans {
             isConferencePaused = !conference.isIn
 
             if (state == Conference.State.Instantiated) {
-                conference.addListener(conferenceListener)
                 listeners.forEach { it.onConferenceState(ConferenceState.Instantiated) }
             } else if (state == Conference.State.Created) {
-                updateParticipantsList(conference)
                 isMeConferenceFocus = conference.me.isFocus
                 listeners.forEach { it.onConferenceState(ConferenceState.Created) }
             } else if (state == Conference.State.Terminated || state == Conference.State.TerminationFailed) {
                 isInConference = false
-                conference.removeListener(conferenceListener)
-                conferenceParticipants = arrayListOf()
-                conferenceCall = arrayListOf()
                 listeners.forEach { it.onConferenceState(ConferenceState.Terminated) }
             }
-        }
-    }
-
-    private val conferenceListener = object : ConferenceListenerStub() {
-        override fun onParticipantAdded(conference: Conference, participant: Participant) {
-            if (conference.isMe(participant.address)) {
-                Log.i("[Conference VM]", "Entered conference")
-                isConferencePaused = false
-            } else {
-                Log.i("[Conference VM]", " Participant added")
-                updateParticipantsList(conference)
-            }
-        }
-
-        override fun onParticipantRemoved(conference: Conference, participant: Participant) {
-            if (conference.isMe(participant.address)) {
-                Log.i("[Conference VM]", "Left conference")
-                isConferencePaused = true
-            } else {
-                Log.i("[Conference VM]", "Participant removed")
-                updateParticipantsList(conference)
-            }
-        }
-
-        override fun onParticipantAdminStatusChanged(
-            conference: Conference,
-            participant: Participant,
-        ) {
-            Log.i("[Conference VM]", "Participant admin status changed")
-            updateParticipantsList(conference)
         }
     }
 
@@ -450,29 +415,6 @@ class CansCenter() : Cans {
             Call.State.Released -> CallState.MissCall
             else -> CallState.Unknown
         }
-    }
-
-    private fun updateParticipantsList(conference: Conference) {
-        Log.i("[TestUI]","Participant found: updateParticipantsList")
-        this.conference = conference
-        val participants = arrayListOf<ConferenceParticipantData>()
-        val newConferenceCall = arrayListOf<ConferenceModel>()
-        for (participant in conference.participantList) {
-            Log.i("[Conference VM]", "Participant found: ${participant.address.asStringUriOnly()}")
-            val viewModel = ConferenceParticipantData(conference, participant)
-            participants.add(viewModel)
-
-            val data = ConferenceModel(
-                address = participant.address.asStringUriOnly(),
-                phoneNumber = participant.address.username ?: "",
-                name = participant.address.displayName ?: "",
-                duration = participant.creationTime.toString()
-            )
-            newConferenceCall.add(data)
-        }
-        conferenceCall = newConferenceCall
-        conferenceParticipants = participants
-        isInConference = participants.isNotEmpty()
     }
 
     private fun addCallToPausedList(call : Call) {
@@ -1397,25 +1339,24 @@ class CansCenter() : Cans {
         }
     }
 
+    @WorkerThread
     override fun mergeCallsIntoConference() {
-        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
-            val callsCount = core.callsNb
-            val defaultAccount = CansUtils.getDefaultAccount()
-            val subject =
-                if (defaultAccount != null && defaultAccount.params.audioVideoConferenceFactoryAddress != null) {
-                    Log.i(TAG, "Merging [$callsCount] calls into a remotely hosted conference")
-                    coreContext.context.getString(R.string.conference_remotely_hosted_title)
-                } else {
-                    Log.i(TAG, "Merging [$callsCount] calls into a locally hosted conference")
-                    coreContext.context.getString(R.string.conference_locally_hosted_title)
-                }
-
-            val conference = CansUtils.createGroupCall(defaultAccount, subject)
-            if (conference == null) {
-                Log.e(TAG, "Failed to create conference!")
+        val callsCount = core.callsNb
+        val defaultAccount = CansUtils.getDefaultAccount()
+        val subject =
+            if (defaultAccount != null && defaultAccount.params.audioVideoConferenceFactoryAddress != null) {
+                Log.i(TAG, "Merging [$callsCount] calls into a remotely hosted conference")
+                coreContext.context.getString(R.string.conference_remotely_hosted_title)
             } else {
-                conference.addParticipants(core.calls)
+                Log.i(TAG, "Merging [$callsCount] calls into a locally hosted conference")
+                coreContext.context.getString(R.string.conference_locally_hosted_title)
             }
+
+        val conference = CansUtils.createGroupCall(defaultAccount, subject)
+        if (conference == null) {
+            Log.e(TAG, "Failed to create conference!")
+        } else {
+            conference.addParticipants(core.calls)
         }
     }
 

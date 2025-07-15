@@ -92,8 +92,6 @@ interface Cans {
 
     val isMeConferenceFocus : Boolean
 
-    val conferenceCall: ArrayList<ConferenceModel>
-
     fun config(context: Context, appName: String)
 
     fun register(
