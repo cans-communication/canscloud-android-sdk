@@ -174,5 +174,5 @@ interface Cans {
 
     fun dtmfKey(key: String)
 
-    fun startConference()
+    fun mergeCallsIntoConference()
 }

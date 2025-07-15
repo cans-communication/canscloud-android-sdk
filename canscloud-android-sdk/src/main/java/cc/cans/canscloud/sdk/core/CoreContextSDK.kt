@@ -1,7 +1,11 @@
 package cc.cans.canscloud.sdk.core
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Handler
+import android.os.HandlerThread
+import android.os.Looper
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.telecom.TelecomManager
@@ -9,7 +13,9 @@ import android.telephony.TelephonyManager
 import android.util.Base64
 import android.util.Log
 import android.util.Pair
+import androidx.annotation.AnyThread
 import androidx.annotation.Keep
+import androidx.annotation.WorkerThread
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -35,7 +41,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.linphone.core.Call
+import org.linphone.core.Core
 import org.linphone.core.Factory
 import org.linphone.core.LogLevel
 import org.linphone.core.LoggingService
@@ -56,6 +62,7 @@ class CoreContextSDK(
     val context: Context,
     ) : LifecycleOwner, ViewModelStoreOwner {
 
+    private val TAG = "[CoreContextSDK]"
     private val _lifecycleRegistry = LifecycleRegistry(this)
     override val lifecycle: Lifecycle
         get() = _lifecycleRegistry
@@ -70,7 +77,6 @@ class CoreContextSDK(
     private var previousCallState = CallState.Idle
     private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val loggingService = Factory.instance().loggingService
-
 
     val notificationsManager: NotificationsManager by lazy {
         NotificationsManager(context)
