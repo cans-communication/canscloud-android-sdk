@@ -389,16 +389,35 @@ class CansCenter() : Cans {
             isConferencePaused = !conference.isIn
 
             if (state == Conference.State.Instantiated) {
+                conference.addListener(conferenceListener)
                 listeners.forEach { it.onConferenceState(ConferenceState.Instantiated) }
             } else if (state == Conference.State.Created) {
                 isMeConferenceFocus = conference.me.isFocus
                 listeners.forEach { it.onConferenceState(ConferenceState.Created) }
             } else if (state == Conference.State.Terminated || state == Conference.State.TerminationFailed) {
+                conference.removeListener(conferenceListener)
                 isInConference = false
                 listeners.forEach { it.onConferenceState(ConferenceState.Terminated) }
             }
         }
     }
+
+    private val conferenceListener = object : ConferenceListenerStub() {
+        override fun onParticipantAdded(conference: Conference, participant: Participant) {
+            if (conference.isMe(participant.address)) {
+                Log.i("[Conference VM]", "Entered conference")
+                isConferencePaused = false
+            }
+        }
+
+        override fun onParticipantRemoved(conference: Conference, participant: Participant) {
+            if (conference.isMe(participant.address)) {
+                Log.i("[Conference VM]", "Left conference")
+                isConferencePaused = true
+            }
+        }
+    }
+
 
     private fun mapStatusCall(state: Call.State): CallState {
         Log.i("mapCallLog111", ":$state ")
