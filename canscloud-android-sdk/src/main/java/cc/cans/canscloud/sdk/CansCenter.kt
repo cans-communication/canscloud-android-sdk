@@ -103,7 +103,7 @@ class CansCenter() : Cans {
     var callingLogs = ArrayList<CallModel>()
     val callList = ArrayList<Call>()
 
-    override lateinit var conference : Conference
+    override lateinit var conferenceCore : Conference
 
     override var isInConference : Boolean = false
 
@@ -394,6 +394,7 @@ class CansCenter() : Cans {
                 Log.i("[Conference VM]", "Entered conference")
             } else {
                 Log.i("[Conference VM]", " Participant added")
+                conferenceCore = conference
                 isInConference = conference.participantList.isNotEmpty()
             }
         }
@@ -403,6 +404,7 @@ class CansCenter() : Cans {
                 Log.i("[Conference VM]", "Left conference")
             } else {
                 Log.i("[Conference VM]", "Participant removed")
+                conferenceCore = conference
                 isInConference = conference.participantList.isNotEmpty()
             }
         }
@@ -412,6 +414,7 @@ class CansCenter() : Cans {
             participant: Participant,
         ) {
             Log.i("[Conference VM]", "Participant admin status changed")
+            conferenceCore = conference
             isInConference = conference.participantList.isNotEmpty()
         }
 

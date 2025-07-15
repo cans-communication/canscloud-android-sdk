@@ -34,7 +34,7 @@ interface Cans {
 
     var context: Context
 
-    var conference: Conference
+    var conferenceCore: Conference
 
     var coreContext: CoreContextSDK
 
