@@ -53,6 +53,7 @@ import cc.cans.canscloud.sdk.utils.TimestampUtils
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MultipartBody
@@ -1396,14 +1397,25 @@ class CansCenter() : Cans {
         }
     }
 
-    override fun startConference() {
-        CoroutineScope(Dispatchers.Default).launch {
-            val currentCallVideoEnabled = core.currentCall?.currentParams?.isVideoEnabled ?: false
-            val params = core.createConferenceParams(null)
-            params.isVideoEnabled = currentCallVideoEnabled
+    override fun mergeCallsIntoConference() {
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+            val callsCount = core.callsNb
+            val defaultAccount = CansUtils.getDefaultAccount()
+            val subject =
+                if (defaultAccount != null && defaultAccount.params.audioVideoConferenceFactoryAddress != null) {
+                    Log.i(TAG, "Merging [$callsCount] calls into a remotely hosted conference")
+                    coreContext.context.getString(R.string.conference_remotely_hosted_title)
+                } else {
+                    Log.i(TAG, "Merging [$callsCount] calls into a locally hosted conference")
+                    coreContext.context.getString(R.string.conference_locally_hosted_title)
+                }
 
-            val conference = core.createConferenceWithParams(params)
-            conference?.addParticipants(core.calls)
+            val conference = CansUtils.createGroupCall(defaultAccount, subject)
+            if (conference == null) {
+                Log.e(TAG, "Failed to create conference!")
+            } else {
+                conference.addParticipants(core.calls)
+            }
         }
     }
 

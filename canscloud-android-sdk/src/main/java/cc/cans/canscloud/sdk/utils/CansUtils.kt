@@ -8,15 +8,20 @@ import android.telephony.TelephonyManager.NETWORK_TYPE_EDGE
 import android.telephony.TelephonyManager.NETWORK_TYPE_GPRS
 import android.telephony.TelephonyManager.NETWORK_TYPE_IDEN
 import androidx.annotation.Keep
+import androidx.annotation.WorkerThread
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.CansCenter
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
+import org.linphone.core.Account
 import org.linphone.core.Address
+import org.linphone.core.Conference
+import org.linphone.core.tools.Log
 
 class CansUtils {
     @Keep
     companion object {
         private val cans: Cans = CansCenter()
+        private const val TAG = "[Cans Utils]"
 
         @SuppressLint("MissingPermission")
         fun checkIfNetworkHasLowBandwidth(context: Context): Boolean {
@@ -33,6 +38,7 @@ class CansUtils {
             return false
         }
 
+        @WorkerThread
         fun getDisplayableAddress(address: Address?): String {
             if (address == null) return "[null]"
             return if (cansCenter().corePreferences.replaceSipUriByUsername) {
@@ -42,6 +48,35 @@ class CansUtils {
                 copy.clean() // To remove gruu if any
                 copy.asStringUriOnly()
             }
+        }
+
+        @WorkerThread
+        fun getDefaultAccount(): Account? {
+            return cansCenter().core.defaultAccount ?: cansCenter().core.accountList.firstOrNull()
+        }
+
+        @WorkerThread
+        fun createGroupCall(account: Account?, subject: String): Conference? {
+            val core = cansCenter().core
+            val conferenceParams = core.createConferenceParams(null)
+            conferenceParams.isVideoEnabled = true
+            conferenceParams.account = account
+            conferenceParams.subject = subject
+
+            // Enable end-to-end encryption if client supports it
+            conferenceParams.securityLevel = if (cansCenter().corePreferences.createEndToEndEncryptedMeetingsAndGroupCalls) {
+                Log.i("$TAG Requesting EndToEnd security level for conference")
+                Conference.SecurityLevel.EndToEnd
+            } else {
+                Log.i("$TAG Requesting PointToPoint security level for conference")
+                Conference.SecurityLevel.PointToPoint
+            }
+
+            // Allows to have a chat room within the conference
+            conferenceParams.isChatEnabled = true
+
+            Log.i("$TAG Creating group call with subject ${conferenceParams.subject}")
+            return core.createConferenceWithParams(conferenceParams)
         }
     }
 }

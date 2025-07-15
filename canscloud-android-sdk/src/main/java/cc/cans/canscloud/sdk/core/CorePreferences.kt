@@ -2,6 +2,7 @@ package cc.cans.canscloud.sdk.core
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.annotation.WorkerThread
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
@@ -126,6 +127,16 @@ class CorePreferences constructor(private val context: Context) {
         get() = config.getBool("app", "replace_sip_uri_by_username", false)
         set(value) {
             config.setBool("app", "replace_sip_uri_by_username", value)
+        }
+
+    // Conference related
+
+    @get:WorkerThread
+    @set:WorkerThread
+    var createEndToEndEncryptedMeetingsAndGroupCalls: Boolean
+        get() = config.getBool("app", "create_e2e_encrypted_conferences", false)
+        set(value) {
+            config.setBool("app", "create_e2e_encrypted_conferences", value)
         }
 
     var enableAnimations: Boolean

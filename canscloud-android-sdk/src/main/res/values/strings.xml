@@ -120,6 +120,9 @@
         <item>@string/cancel</item>
     </string-array>
 
+    <string name="conference_remotely_hosted_title">Remote group call</string>
+    <string name="conference_locally_hosted_title">Local group call</string>
+
     <!-- Chat -->
     <string name="no_chat_history">No conversations</string>
     <string name="chat_remote_is_composing">Remote is writing&#8230;</string>
