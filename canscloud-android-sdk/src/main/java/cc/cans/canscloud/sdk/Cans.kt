@@ -88,8 +88,6 @@ interface Cans {
 
     val isInConference: Boolean
 
-    val isConferencePaused : Boolean
-
     val isMeConferenceFocus : Boolean
 
     fun config(context: Context, appName: String)

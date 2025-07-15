@@ -44,6 +44,8 @@ class SharedMainViewModel : ViewModel() {
 
         override fun onCallState(state: CallState, message: String?) {
             Log.i("[SharedMainViewModel] onCallState: ","$state")
+            Log.i("[SharedMainViewModel onConferenceState2]", "${cansCenter().isInConference}")
+
             when (state) {
                 CallState.Idle -> {}
                 CallState.IncomingCall -> {}
@@ -73,6 +75,7 @@ class SharedMainViewModel : ViewModel() {
         }
 
         override fun onConferenceState(state: ConferenceState) {
+            Log.i("[SharedMainViewModel onConferenceState]", "${cansCenter().isInConference}")
         }
     }
 
