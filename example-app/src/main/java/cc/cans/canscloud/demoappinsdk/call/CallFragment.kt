@@ -86,7 +86,7 @@ class CallFragment : Fragment() {
         }
 
         binding.buttonConference.setOnClickListener {
-            cansCenter().startConference()
+            cansCenter().mergeCallsIntoConference()
         }
 
         binding.buttonHangUp.setOnClickListener {
