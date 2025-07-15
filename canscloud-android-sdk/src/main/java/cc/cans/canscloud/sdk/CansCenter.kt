@@ -259,7 +259,7 @@ class CansCenter() : Cans {
             state: RegistrationState?,
             message: String
         ) {
-            Log.i("[CansSDK: onAccountRegistrationStateChanged]", "Registration state is $state: $message")
+            Log.i("[CansSDK: onAccount]", "Registration state is $state: $message")
             if (account == accountToCheck) {
                 if (state == RegistrationState.Ok) {
                     listeners.forEach { it.onRegistration(RegisterState.OK, message) }
@@ -282,7 +282,7 @@ class CansCenter() : Cans {
             state: RegistrationState,
             message: String,
         ) {
-            Log.i("CansSDK: onRegistrationStateChanged ","${cansCenter().defaultStateRegister}")
+            Log.i("CansSDK: onRegistration","${cansCenter().defaultStateRegister}")
             if (cfg == proxyConfigToCheck) {
                 org.linphone.core.tools.Log.i("[Assistant] [Account Login] Registration state is $state: $message")
                 if (state == RegistrationState.Ok) {
@@ -1402,10 +1402,8 @@ class CansCenter() : Cans {
             val params = core.createConferenceParams(null)
             params.isVideoEnabled = currentCallVideoEnabled
 
-            withContext(Dispatchers.Main) {
-                val conference = core.createConferenceWithParams(params)
-                conference?.addParticipants(core.calls)
-            }
+            val conference = core.createConferenceWithParams(params)
+            conference?.addParticipants(core.calls)
         }
     }
 
