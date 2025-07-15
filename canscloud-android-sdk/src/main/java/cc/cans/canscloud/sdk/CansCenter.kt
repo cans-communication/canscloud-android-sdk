@@ -40,23 +40,15 @@ import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.core.CoreService
-import cc.cans.canscloud.sdk.data.ConferenceParticipantData
 import cc.cans.canscloud.sdk.data.GroupedCallLogData
 import cc.cans.canscloud.sdk.models.CallModel
 import cc.cans.canscloud.sdk.models.CansAddress
-import cc.cans.canscloud.sdk.models.ConferenceModel
 import cc.cans.canscloud.sdk.models.ConferenceState
 import cc.cans.canscloud.sdk.models.HistoryModel
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
 import cc.cans.canscloud.sdk.utils.TimestampUtils
-import com.google.gson.Gson
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import org.linphone.core.Account
@@ -113,14 +105,9 @@ class CansCenter() : Cans {
 
     override lateinit var conference : Conference
 
-    override var isConferencePaused : Boolean = false
-
     override var isInConference : Boolean = false
 
     override var isMeConferenceFocus : Boolean = false
-
-    lateinit var conferenceParticipants : List<ConferenceParticipantData>
-
 
     override val account: String
         get() {
@@ -386,8 +373,6 @@ class CansCenter() : Cans {
             state: Conference.State,
         ) {
             Log.i("[Conference VM]"," Conference state changed: $state")
-            isConferencePaused = !conference.isIn
-
             if (state == Conference.State.Instantiated) {
                 conference.addListener(conferenceListener)
                 listeners.forEach { it.onConferenceState(ConferenceState.Instantiated) }
@@ -403,19 +388,33 @@ class CansCenter() : Cans {
     }
 
     private val conferenceListener = object : ConferenceListenerStub() {
+        @WorkerThread
         override fun onParticipantAdded(conference: Conference, participant: Participant) {
             if (conference.isMe(participant.address)) {
                 Log.i("[Conference VM]", "Entered conference")
-                isConferencePaused = false
+            } else {
+                Log.i("[Conference VM]", " Participant added")
+                isInConference = conference.participantList.isNotEmpty()
             }
         }
 
         override fun onParticipantRemoved(conference: Conference, participant: Participant) {
             if (conference.isMe(participant.address)) {
                 Log.i("[Conference VM]", "Left conference")
-                isConferencePaused = true
+            } else {
+                Log.i("[Conference VM]", "Participant removed")
+                isInConference = conference.participantList.isNotEmpty()
             }
         }
+
+        override fun onParticipantAdminStatusChanged(
+            conference: Conference,
+            participant: Participant,
+        ) {
+            Log.i("[Conference VM]", "Participant admin status changed")
+            isInConference = conference.participantList.isNotEmpty()
+        }
+
     }
 
 

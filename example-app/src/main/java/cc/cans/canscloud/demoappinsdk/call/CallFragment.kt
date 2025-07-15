@@ -77,12 +77,15 @@ class CallFragment : Fragment() {
         }
 
         binding.buttonCall1.setOnClickListener {
+            cansCenter().startCall("1005")
         }
 
         binding.buttonCall2.setOnClickListener {
+            cansCenter().startCall("1006")
         }
 
         binding.buttonCall3.setOnClickListener {
+            cansCenter().startCall("0838927729")
         }
 
         binding.buttonConference.setOnClickListener {
