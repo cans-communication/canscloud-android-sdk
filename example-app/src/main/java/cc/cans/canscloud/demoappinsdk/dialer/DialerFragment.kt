@@ -10,11 +10,14 @@ import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.demoappinsdk.databinding.FragmentDialerBinding
+import cc.cans.canscloud.demoappinsdk.okta.OktaWebAuth
 import cc.cans.canscloud.demoappinsdk.viewmodel.SharedMainViewModel
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CansTransport
 import cc.cans.canscloud.sdk.models.RegisterState
+import com.okta.oidc.AuthenticationPayload
 import org.linphone.core.RegistrationState
+import org.linphone.mediastream.Log
 
 
 /**
@@ -88,6 +91,37 @@ class DialerFragment : Fragment() {
 
         binding.buttonUnregister.setOnClickListener {
             sharedViewModel.unregister()
+        }
+
+        Log.i("OKTA", "buttonOkta is null? ${binding.buttonOkta == null}")
+
+        // TEST OKTA
+        binding.buttonOkta.setOnClickListener {
+            Toast.makeText(requireContext(), "OKTA Clicked", Toast.LENGTH_SHORT).show()
+
+            Log.i("OKTA","click  OKTA")
+
+            OktaWebAuth.setupWebAuth(requireContext(),"https://dev-23817104.okta.com/.well-known/oauth-authorization-server","0oadjbr9zf5fXpFoG5d7")
+            OktaWebAuth.setupWebAuthCallback(requireActivity(), OktaWebAuth.webAuth, object :
+                OktaWebAuth.Companion.TokenRefreshCallback {
+                override fun onTokenRefreshed(isAuthenticated: Boolean) {
+                    if (isAuthenticated) {
+                        Log.i("OKTA", "User is signed in")
+//                        viewModel.fetchSignInOKTA(
+//                            requireContext(),
+//                            corePreferences.loginInfo?.tokenOkta ?: "",
+//                            sharedAssistantViewModel.domainCompany.value ?: ""
+//                        )
+                    } else {
+                        Log.i("OKTA", "User is signed out")
+                    }
+                }
+            })
+            Log.d("OKTA", "webAuth is null? ${OktaWebAuth.webAuth == null}")
+
+            val payload = AuthenticationPayload.Builder()
+                .build()
+            OktaWebAuth.webAuth.signIn(requireActivity(), payload)
         }
     }
 
