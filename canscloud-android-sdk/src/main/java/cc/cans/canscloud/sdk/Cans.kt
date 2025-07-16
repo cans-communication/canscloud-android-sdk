@@ -167,4 +167,10 @@ interface Cans {
     fun dtmfKey(key: String)
 
     fun mergeCallsIntoConference()
+
+    fun signInOKTADomain(domain: String, activity: Activity, onResult: (Int) -> Unit)
+
+    fun signOutOKTADomain(activity: Activity,onResult: (Int) -> Unit)
+
+    fun isSignInOKTANotConnected() : Boolean
 }

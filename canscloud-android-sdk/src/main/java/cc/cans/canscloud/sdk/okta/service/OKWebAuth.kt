@@ -1,9 +1,12 @@
-package cc.cans.canscloud.demoappinsdk.okta
+package cc.cans.canscloud.sdk.okta.service
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
-import cc.cans.canscloud.demoappinsdk.model.LoginInfo
+import cc.cans.canscloud.sdk.BuildConfig
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
+import cc.cans.canscloud.sdk.core.CorePreferences
+import cc.cans.canscloud.sdk.okta.models.LoginInfo
 import cc.cans.canscloud.sdk.utils.CansUtils
 import com.google.gson.Gson
 import com.okta.oidc.AuthorizationStatus
@@ -27,7 +30,8 @@ class OktaWebAuth {
         lateinit var webAuth: WebAuthClient
         var pageCurrent = ""
         private var isCheckedSession: Boolean = false
-//        var corePreferences = cansCenter().corePreferences.dis
+        @SuppressLint("StaticFieldLeak")
+        lateinit var corePreferences: CorePreferences
 
         interface TokenRefreshCallback {
             fun onTokenRefreshed(isAuthenticated: Boolean)
@@ -39,28 +43,24 @@ class OktaWebAuth {
         }
 
         fun setupWebAuth(context: Context, discoveryURL: String, clientID: String) {
-            Log.i("OKTA","discoveryURL : $discoveryURL , clientID : $clientID")
+            Log.d(TAG,"discoveryURL : $discoveryURL , clientID : $clientID")
             val discoveryUri = getBaseUrl(discoveryURL)
-            Log.i("OKTA","discoveryUri : $discoveryUri")
+            Log.d(TAG,"discoveryUri : $discoveryUri")
             val oidcConfig = OIDCConfig.Builder()
                 .clientId(clientID)
-//                .redirectUri(BuildConfig.SIGN_IN_REDIRECT_URI)
-//                .endSessionRedirectUri(BuildConfig.SIGN_OUT_REDIRECT_URI)
-                .redirectUri("cc.cans.canscloud:/callback")
-                .endSessionRedirectUri("cc.cans.canscloud:/logout")
+                .redirectUri(BuildConfig.SIGN_IN_REDIRECT_URI)
+                .endSessionRedirectUri(BuildConfig.SIGN_OUT_REDIRECT_URI)
                 .scopes("openid", "profile", "offline_access")
                 .discoveryUri(discoveryUri)
                 .create()
 
-            Log.i("OKTA","oidcConfig : $oidcConfig")
+            Log.d(TAG,"oidcConfig : $oidcConfig")
             webAuth = Okta.WebAuthBuilder()
                 .withConfig(oidcConfig)
                 .withContext(context)
                 .withStorage(SharedPreferenceStorage(context))
                 .setRequireHardwareBackedKeyStore(false)
                 .create()
-
-            Log.i("OKTA","webAuth : $webAuth")
         }
 
         fun getLoginInfo(): LoginInfo? {
@@ -85,7 +85,8 @@ class OktaWebAuth {
             webAuth: WebAuthClient,
             callback: TokenRefreshCallback
         ) {
-            val callbackAuth = object : ResultCallback<AuthorizationStatus, AuthorizationException> {
+            val callbackAuth = object :
+                ResultCallback<AuthorizationStatus, AuthorizationException> {
                 override fun onSuccess(status: AuthorizationStatus) {
                     if (status == AuthorizationStatus.AUTHORIZED) {
                         val accessToken = webAuth.sessionClient.tokens?.accessToken.orEmpty()
