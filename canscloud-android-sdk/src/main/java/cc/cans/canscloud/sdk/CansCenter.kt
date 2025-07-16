@@ -1,5 +1,3 @@
-
-
 package cc.cans.canscloud.sdk
 
 import android.Manifest
@@ -47,6 +45,7 @@ import cc.cans.canscloud.sdk.models.CallModel
 import cc.cans.canscloud.sdk.models.CansAddress
 import cc.cans.canscloud.sdk.models.ConferenceState
 import cc.cans.canscloud.sdk.models.HistoryModel
+import cc.cans.canscloud.sdk.okta.repository.OKTARepository
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
@@ -1391,6 +1390,24 @@ class CansCenter() : Cans {
         } else {
             conference.addParticipants(core.calls)
         }
+    }
+
+    override fun signInOKTADomain(domain: String, activity: Activity,onResult: (Int) -> Unit ) {
+        val oktaRepo = OKTARepository(core,corePreferences,listeners) {
+            getAccountCreator()
+        }
+        oktaRepo.fetchOKTAClient(domain, context, activity, onResult)
+    }
+
+    override fun signOutOKTADomain(activity: Activity,onResult: (Int) -> Unit ) {
+        val oktaRepo = OKTARepository(core,corePreferences,listeners) {
+            getAccountCreator()
+        }
+        oktaRepo.signOutOKTA(activity,onResult)
+    }
+
+    override fun isSignInOKTANotConnected():Boolean {
+        return corePreferences.isSignInOKTANotConnected
     }
 
     override fun addListener(listener: CansListenerStub) {
