@@ -10,7 +10,6 @@ import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.demoappinsdk.databinding.FragmentDialerBinding
-import cc.cans.canscloud.demoappinsdk.okta.OktaWebAuth
 import cc.cans.canscloud.demoappinsdk.viewmodel.SharedMainViewModel
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CansTransport
@@ -40,6 +39,21 @@ class DialerFragment : Fragment() {
     ): View? {
         _binding = FragmentDialerBinding.inflate(inflater, container, false)
         return binding.root
+    }
+
+    private fun showResultDialog() {
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Sign In Result")
+            .setMessage("Not Connected")
+            .setPositiveButton("SignOut"){ dialog, _ ->
+                // This block runs when user taps "OK"
+                dialog.dismiss() // (optional, dialog will auto-dismiss, but good for clarity)
+//                onOkButtonClicked(resultCode) // <-- Call your function here
+                cansCenter().signOutOKTADomain(requireActivity()){ code ->
+                    Toast.makeText(activity,"Result Code : $code",Toast.LENGTH_LONG).show()
+                }
+            }
+            .show()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -93,36 +107,43 @@ class DialerFragment : Fragment() {
             sharedViewModel.unregister()
         }
 
-        Log.i("OKTA", "buttonOkta is null? ${binding.buttonOkta == null}")
-
         // TEST OKTA
         binding.buttonOkta.setOnClickListener {
             Toast.makeText(requireContext(), "OKTA Clicked", Toast.LENGTH_SHORT).show()
 
             Log.i("OKTA","click  OKTA")
 
-            OktaWebAuth.setupWebAuth(requireContext(),"https://dev-23817104.okta.com/.well-known/oauth-authorization-server","0oadjbr9zf5fXpFoG5d7")
-            OktaWebAuth.setupWebAuthCallback(requireActivity(), OktaWebAuth.webAuth, object :
-                OktaWebAuth.Companion.TokenRefreshCallback {
-                override fun onTokenRefreshed(isAuthenticated: Boolean) {
-                    if (isAuthenticated) {
-                        Log.i("OKTA", "User is signed in")
-//                        viewModel.fetchSignInOKTA(
-//                            requireContext(),
-//                            corePreferences.loginInfo?.tokenOkta ?: "",
-//                            sharedAssistantViewModel.domainCompany.value ?: ""
-//                        )
-                    } else {
-                        Log.i("OKTA", "User is signed out")
-                    }
-                }
-            })
-            Log.d("OKTA", "webAuth is null? ${OktaWebAuth.webAuth == null}")
+            cansCenter().signInOKTADomain("sitmms.cans.cc", requireActivity()){ code ->
+                Toast.makeText(activity,"Result Code : $code",Toast.LENGTH_LONG).show()
+//                when (code) {
+//                    200 -> Toast.makeText(activity,"Result Code : $code",Toast.LENGTH_LONG).show()
+//                    301 -> Toast.makeText(activity,"Result Code : $code",Toast.LENGTH_LONG).show()
+//                    400 -> Toast.makeText(activity,"Result Code : $code",Toast.LENGTH_LONG).show()
+//                    else -> Toast.makeText(activity,"Result Code : $code",Toast.LENGTH_LONG).show()
+//                }
 
-            val payload = AuthenticationPayload.Builder()
-                .build()
-            OktaWebAuth.webAuth.signIn(requireActivity(), payload)
+                if(code == 301 || code == 400){
+                    showResultDialog()
+                }
+            }
         }
+
+        binding.buttonSignOutOkta.setOnClickListener {
+            Toast.makeText(requireContext(), "Sign out OKTA Clicked", Toast.LENGTH_SHORT).show()
+
+            Log.i("OKTA","click  OKTA")
+
+            cansCenter().signOutOKTADomain(requireActivity()){ code ->
+               Toast.makeText(activity,"Result Code : $code",Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        val signInOKTANotConnected = cansCenter().isSignInOKTANotConnected()
+        Log.i("OKTA signInOKTANotConnected : $signInOKTANotConnected")
     }
 
     override fun onDestroyView() {

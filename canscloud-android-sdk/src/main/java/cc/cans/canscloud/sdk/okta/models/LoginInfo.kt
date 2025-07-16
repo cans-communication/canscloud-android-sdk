@@ -1,4 +1,4 @@
-package cc.cans.canscloud.demoappinsdk.model
+package cc.cans.canscloud.sdk.okta.models
 
 data class LoginInfo(
     var logInType: String? = "",

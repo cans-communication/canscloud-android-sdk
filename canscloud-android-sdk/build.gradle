@@ -46,6 +46,12 @@ android {
     namespace 'cc.cans.canscloud.sdk'
     compileSdk 36
 
+    packagingOptions {
+        resources {
+            excludes += 'META-INF/okta/version.properties'
+        }
+    }
+
     defaultConfig {
         minSdk 28
         targetSdk 36
