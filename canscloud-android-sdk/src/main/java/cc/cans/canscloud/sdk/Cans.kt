@@ -7,15 +7,11 @@ import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CorePreferences
 import cc.cans.canscloud.sdk.core.CoreService
-import cc.cans.canscloud.sdk.core.NotificationsManager
 import cc.cans.canscloud.sdk.data.GroupedCallLogData
 import cc.cans.canscloud.sdk.models.CallModel
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.CansTransport
-import cc.cans.canscloud.sdk.models.ConferenceModel
-import cc.cans.canscloud.sdk.models.HistoryModel
 import cc.cans.canscloud.sdk.models.RegisterState
-import org.linphone.core.Account
 import org.linphone.core.Call
 import org.linphone.core.Conference
 import org.linphone.core.Core
@@ -34,7 +30,7 @@ interface Cans {
 
     var context: Context
 
-    var conference: Conference
+    var conferenceCore: Conference
 
     var coreContext: CoreContextSDK
 
@@ -87,8 +83,6 @@ interface Cans {
     val missedCallLogs:ArrayList<GroupedCallLogData>
 
     val isInConference: Boolean
-
-    val isConferencePaused : Boolean
 
     val isMeConferenceFocus : Boolean
 

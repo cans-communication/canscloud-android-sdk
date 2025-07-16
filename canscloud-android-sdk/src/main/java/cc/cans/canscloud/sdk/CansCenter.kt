@@ -1,3 +1,5 @@
+
+
 package cc.cans.canscloud.sdk
 
 import android.Manifest
@@ -40,23 +42,15 @@ import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.core.CoreService
-import cc.cans.canscloud.sdk.data.ConferenceParticipantData
 import cc.cans.canscloud.sdk.data.GroupedCallLogData
 import cc.cans.canscloud.sdk.models.CallModel
 import cc.cans.canscloud.sdk.models.CansAddress
-import cc.cans.canscloud.sdk.models.ConferenceModel
 import cc.cans.canscloud.sdk.models.ConferenceState
 import cc.cans.canscloud.sdk.models.HistoryModel
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
 import cc.cans.canscloud.sdk.utils.TimestampUtils
-import com.google.gson.Gson
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import org.linphone.core.Account
@@ -111,16 +105,11 @@ class CansCenter() : Cans {
     var callingLogs = ArrayList<CallModel>()
     val callList = ArrayList<Call>()
 
-    override lateinit var conference : Conference
-
-    override var isConferencePaused : Boolean = false
+    override lateinit var conferenceCore : Conference
 
     override var isInConference : Boolean = false
 
     override var isMeConferenceFocus : Boolean = false
-
-    lateinit var conferenceParticipants : List<ConferenceParticipantData>
-
 
     override val account: String
         get() {
@@ -386,19 +375,53 @@ class CansCenter() : Cans {
             state: Conference.State,
         ) {
             Log.i("[Conference VM]"," Conference state changed: $state")
-            isConferencePaused = !conference.isIn
-
             if (state == Conference.State.Instantiated) {
+                conference.addListener(conferenceListener)
                 listeners.forEach { it.onConferenceState(ConferenceState.Instantiated) }
             } else if (state == Conference.State.Created) {
                 isMeConferenceFocus = conference.me.isFocus
                 listeners.forEach { it.onConferenceState(ConferenceState.Created) }
             } else if (state == Conference.State.Terminated || state == Conference.State.TerminationFailed) {
+                conference.removeListener(conferenceListener)
                 isInConference = false
                 listeners.forEach { it.onConferenceState(ConferenceState.Terminated) }
             }
         }
     }
+
+    private val conferenceListener = object : ConferenceListenerStub() {
+        @WorkerThread
+        override fun onParticipantAdded(conference: Conference, participant: Participant) {
+            if (conference.isMe(participant.address)) {
+                Log.i("[Conference VM]", "Entered conference")
+            } else {
+                Log.i("[Conference VM]", " Participant added")
+                conferenceCore = conference
+                isInConference = conference.participantList.isNotEmpty()
+            }
+        }
+
+        override fun onParticipantRemoved(conference: Conference, participant: Participant) {
+            if (conference.isMe(participant.address)) {
+                Log.i("[Conference VM]", "Left conference")
+            } else {
+                Log.i("[Conference VM]", "Participant removed")
+                conferenceCore = conference
+                isInConference = conference.participantList.isNotEmpty()
+            }
+        }
+
+        override fun onParticipantAdminStatusChanged(
+            conference: Conference,
+            participant: Participant,
+        ) {
+            Log.i("[Conference VM]", "Participant admin status changed")
+            conferenceCore = conference
+            isInConference = conference.participantList.isNotEmpty()
+        }
+
+    }
+
 
     private fun mapStatusCall(state: Call.State): CallState {
         Log.i("mapCallLog111", ":$state ")
@@ -1263,24 +1286,24 @@ class CansCenter() : Cans {
         }
     }
 
-   private fun duration(it: CallLog): String {
-       return if (isCallLogMissed(it)) {
+    private fun duration(it: CallLog): String {
+        return if (isCallLogMissed(it)) {
             ""
         } else {
             TimestampUtils.durationCallingTime(it.duration)
         }
     }
 
-     private fun onCallState(callLog: CallLog): CallState {
-         return if (callLog.dir == Call.Dir.Incoming) {
-             if (isCallLogMissed(callLog)) {
-                 CallState.MissCall
-             } else {
-                 CallState.IncomingCall
-             }
-         } else {
-             CallState.CallOutgoing
-         }
+    private fun onCallState(callLog: CallLog): CallState {
+        return if (callLog.dir == Call.Dir.Incoming) {
+            if (isCallLogMissed(callLog)) {
+                CallState.MissCall
+            } else {
+                CallState.IncomingCall
+            }
+        } else {
+            CallState.CallOutgoing
+        }
     }
 
     private fun transport(transport: TransportType): CansTransport {
@@ -1294,10 +1317,10 @@ class CansCenter() : Cans {
 
     private fun addressEqual(address1: CansAddress, address2: CansAddress): Boolean {
         return address1.domain == address2.domain &&
-            address1.password == address2.password &&
-            address1.displayName == address2.displayName &&
-            address1.transport == address2.transport &&
-            address1.username == address2.username
+                address1.password == address2.password &&
+                address1.displayName == address2.displayName &&
+                address1.transport == address2.transport &&
+                address1.username == address2.username
     }
 
     override fun transferNow(phoneNumber: String) : Boolean {
@@ -1308,7 +1331,7 @@ class CansCenter() : Cans {
         } else {
             val address = core.interpretUrl(phoneNumber)
             if (address != null) {
-               Log.i("[Context]" ,"Transferring current call to $phoneNumber")
+                Log.i("[Context]" ,"Transferring current call to $phoneNumber")
                 currentCall.transferTo(address)
                 return true
             } else {
