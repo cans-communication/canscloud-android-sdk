@@ -14,7 +14,6 @@ import cc.cans.canscloud.demoappinsdk.viewmodel.SharedMainViewModel
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CansTransport
 import cc.cans.canscloud.sdk.models.RegisterState
-import com.okta.oidc.AuthenticationPayload
 import org.linphone.core.RegistrationState
 import org.linphone.mediastream.Log
 
@@ -111,18 +110,10 @@ class DialerFragment : Fragment() {
         binding.buttonOkta.setOnClickListener {
             Toast.makeText(requireContext(), "OKTA Clicked", Toast.LENGTH_SHORT).show()
 
-            Log.i("OKTA","click  OKTA")
+            cansCenter().signInOKTADomain("sitmms.cans.cc", requireActivity()) { code ->
+                Toast.makeText(activity, "Result Code : $code", Toast.LENGTH_LONG).show()
 
-            cansCenter().signInOKTADomain("sitmms.cans.cc", requireActivity()){ code ->
-                Toast.makeText(activity,"Result Code : $code",Toast.LENGTH_LONG).show()
-//                when (code) {
-//                    200 -> Toast.makeText(activity,"Result Code : $code",Toast.LENGTH_LONG).show()
-//                    301 -> Toast.makeText(activity,"Result Code : $code",Toast.LENGTH_LONG).show()
-//                    400 -> Toast.makeText(activity,"Result Code : $code",Toast.LENGTH_LONG).show()
-//                    else -> Toast.makeText(activity,"Result Code : $code",Toast.LENGTH_LONG).show()
-//                }
-
-                if(code == 301 || code == 400){
+                if (code == 301 || code == 400) {
                     showResultDialog()
                 }
             }
@@ -130,8 +121,6 @@ class DialerFragment : Fragment() {
 
         binding.buttonSignOutOkta.setOnClickListener {
             Toast.makeText(requireContext(), "Sign out OKTA Clicked", Toast.LENGTH_SHORT).show()
-
-            Log.i("OKTA","click  OKTA")
 
             cansCenter().signOutOKTADomain(requireActivity()){ code ->
                Toast.makeText(activity,"Result Code : $code",Toast.LENGTH_LONG).show()
