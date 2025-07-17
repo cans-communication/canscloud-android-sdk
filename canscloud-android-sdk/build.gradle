@@ -15,6 +15,9 @@ android.defaultConfig {
     buildConfigField "String", 'SIGN_IN_REDIRECT_URI', "\"${oktaProperties.getProperty('signInRedirectUri')}\""
     buildConfigField "String", 'SIGN_OUT_REDIRECT_URI', "\"${oktaProperties.getProperty('signOutRedirectUri')}\""
     buildConfigField "String", 'KEY_AES', "\"${oktaProperties.getProperty('keyAES')}\""
+    buildConfigField "String", "OKTA_API_USER", "\"${oktaProperties.oktaApiUser}\""
+    buildConfigField "String", "OKTA_API_PASSWORD", "\"${oktaProperties.oktaApiPassword}\""
+    buildConfigField "String", "OKTA_API_URL", "\"${oktaProperties.oktaApiUrl}\""
 }
 
 static def parseScheme(String uri) {

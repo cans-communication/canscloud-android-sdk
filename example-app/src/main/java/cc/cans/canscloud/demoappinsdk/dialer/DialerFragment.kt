@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.demoappinsdk.databinding.FragmentDialerBinding
 import cc.cans.canscloud.demoappinsdk.viewmodel.SharedMainViewModel
+import cc.cans.canscloud.sdk.BuildConfig
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CansTransport
 import cc.cans.canscloud.sdk.models.RegisterState
@@ -106,7 +107,13 @@ class DialerFragment : Fragment() {
             sharedViewModel.unregister()
         }
 
-        // TEST OKTA
+//         TEST OKTA
+        cansCenter().setUpConfigOKTA(
+            apiUrl = BuildConfig.OKTA_API_URL,
+            apiUser = BuildConfig.OKTA_API_USER,
+            apiPassword = BuildConfig.OKTA_API_PASSWORD
+        )
+
         binding.buttonOkta.setOnClickListener {
             Toast.makeText(requireContext(), "OKTA Clicked", Toast.LENGTH_SHORT).show()
 

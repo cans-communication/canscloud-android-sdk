@@ -6,11 +6,13 @@ import android.os.Build
 import android.util.Base64
 import androidx.lifecycle.MutableLiveData
 import cc.cans.canscloud.data.AESFactory
+import cc.cans.canscloud.sdk.BuildConfig
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.core.CorePreferences
 import cc.cans.canscloud.sdk.okta.models.OKTAClientResponseData
 import cc.cans.canscloud.sdk.models.RegisterState
+import cc.cans.canscloud.sdk.okta.models.OKTAApiConfig
 import cc.cans.canscloud.sdk.okta.models.SignIn
 import cc.cans.canscloud.sdk.okta.models.SignInOKTAResponseData
 import cc.cans.canscloud.sdk.okta.service.OKTAInterceptor
@@ -38,6 +40,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.Locale
 
 class OKTARepository(
+    private var oktaApiConfig: OKTAApiConfig,
     private val core: Core,
     private val corePreferences: CorePreferences,
     private val listeners: MutableList<CansListenerStub>,
@@ -64,32 +67,56 @@ class OKTARepository(
         ) {
             if (cfg == proxyConfigToCheck) {
                 if (state == RegistrationState.Ok) {
-                    Log.i("OKTARepository - coreListener RegistrationState.Ok")
                     cansCenter().corePreferences.isRegister = true
                     core.removeListener(this)
                 } else if (state == RegistrationState.Failed) {
-                    Log.i("OKTARepository - coreListener RegistrationState.Failed")
                     core.removeListener(this)
                 }
             }
         }
     }
 
-    private val okHttpClient: OkHttpClient = OkHttpClient.Builder()
-        .addInterceptor(OKTAInterceptor())
-        .addNetworkInterceptor(
-            OKTAInterceptor(),
-        )
-        .build()
+    private lateinit var oktaService: OKTAService
+    private lateinit var retrofit: Retrofit
+    private lateinit var okHttpClient: OkHttpClient
 
-    private val retrofit: Retrofit = Retrofit.Builder()
-        .client(okHttpClient)
-        .addConverterFactory(GsonConverterFactory.create())
-        .baseUrl("https://sitdkmms.cans.cc")
-        .build()
+    init {
+        setupOKTAService(oktaApiConfig)
+    }
 
-    private val oktaService: OKTAService =
-        retrofit.create(OKTAService::class.java)
+    fun setOKTAApiConfig(newConfig: OKTAApiConfig) {
+        oktaApiConfig = newConfig
+        setupOKTAService(oktaApiConfig)
+    }
+
+    private fun setupOKTAService(config: OKTAApiConfig) {
+        okHttpClient = OkHttpClient.Builder()
+            .addInterceptor(OKTAInterceptor(config.apiUser, config.apiPassword))
+            .addNetworkInterceptor(OKTAInterceptor(config.apiUser, config.apiPassword))
+            .build()
+        retrofit = Retrofit.Builder()
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .baseUrl(config.apiUrl)
+            .build()
+        oktaService = retrofit.create(OKTAService::class.java)
+    }
+
+//    private val okHttpClient: OkHttpClient = OkHttpClient.Builder()
+//        .addInterceptor(OKTAInterceptor(BuildConfig.OKTA_API_USER,BuildConfig.OKTA_API_PASSWORD))
+//        .addNetworkInterceptor(
+//            OKTAInterceptor(BuildConfig.OKTA_API_USER,BuildConfig.OKTA_API_PASSWORD),
+//        )
+//        .build()
+//
+//    private val retrofit: Retrofit = Retrofit.Builder()
+//        .client(okHttpClient)
+//        .addConverterFactory(GsonConverterFactory.create())
+//        .baseUrl(BuildConfig.OKTA_API_URL)
+//        .build()
+//
+//    private val oktaService: OKTAService =
+//        retrofit.create(OKTAService::class.java)
 
     private fun getAppVersion(context: Context): Pair<String, Long> {
         val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
@@ -105,8 +132,6 @@ class OKTARepository(
         activity: Activity,
         onResult: (Int) -> Unit
     ) {
-        Log.i("OKTARepository", "fetchOKTAClient by domain : $inputDomain")
-
         val bodyJson = JSONObject().apply {
             put("domain_name", inputDomain)
             put("device_os", "android")
@@ -132,7 +157,6 @@ class OKTARepository(
                                 if (result.code == 200) {
                                     val data = result.data
                                     if (data.clientId.isNotEmpty() && data.domainName.isNotEmpty() && data.discoveryUrl.isNotEmpty()) {
-                                        Log.i("OKTARepository response domainName ${data.domainName}")
                                         if (data.domainName == inputDomain) {
                                             OktaWebAuth.setupWebAuth(
                                                 context,
@@ -147,7 +171,6 @@ class OKTARepository(
                                                     override fun onTokenRefreshed(
                                                         isAuthenticated: Boolean
                                                     ) {
-                                                        Log.i("OKTARepository onTokenRefreshed isAuthenticated : $isAuthenticated")
                                                         val token =
                                                             corePreferences.loginInfo.tokenOkta
                                                                 ?: ""
@@ -240,7 +263,6 @@ class OKTARepository(
         domain: String,
         callback: (SignInOKTAResponseData?) -> Unit
     ) {
-        Log.i("OKTARepository ", "fetchSignInOKTA by token : $token , domain : $domain")
 
         val bodyJson = JSONObject().apply {
             put("device_os", "android")
@@ -257,7 +279,6 @@ class OKTARepository(
             oktaService.fetchSignInOKTA("/mobile/login/login-okta", requestBody)
 
 
-        Log.i("OKTARepository", "fetchSignInOKTA signInOKTAResponseData : $signInOKTAResponseData")
         signInOKTAResponseData?.let { signInOKTA ->
             signInOKTA.enqueue(
                 object : retrofit2.Callback<SignInOKTAResponseData?> {
