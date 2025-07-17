@@ -23,6 +23,16 @@ class CansUtils {
         private val cans: Cans = CansCenter()
         private const val TAG = "[Cans Utils]"
 
+        private var isSignOutLoadings: Boolean = false
+
+        var isSignOutLoading: Boolean
+            get() {
+                return isSignOutLoadings
+            }
+            set(value) {
+                isSignOutLoadings = value
+            }
+
         @SuppressLint("MissingPermission")
         fun checkIfNetworkHasLowBandwidth(context: Context): Boolean {
             val connMgr =

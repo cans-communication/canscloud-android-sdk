@@ -1,5 +1,3 @@
-
-
 package cc.cans.canscloud.sdk
 
 import android.Manifest
@@ -47,6 +45,8 @@ import cc.cans.canscloud.sdk.models.CallModel
 import cc.cans.canscloud.sdk.models.CansAddress
 import cc.cans.canscloud.sdk.models.ConferenceState
 import cc.cans.canscloud.sdk.models.HistoryModel
+import cc.cans.canscloud.sdk.okta.models.OKTAApiConfig
+import cc.cans.canscloud.sdk.okta.repository.OKTARepository
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
@@ -104,6 +104,9 @@ class CansCenter() : Cans {
     override val missedCallLogs = ArrayList<GroupedCallLogData>()
     var callingLogs = ArrayList<CallModel>()
     val callList = ArrayList<Call>()
+
+    private var oktaRepository: OKTARepository? = null
+    private var oktaApiConfig: OKTAApiConfig? = null
 
     override lateinit var conferenceCore : Conference
 
@@ -1390,6 +1393,40 @@ class CansCenter() : Cans {
             Log.e(TAG, "Failed to create conference!")
         } else {
             conference.addParticipants(core.calls)
+        }
+    }
+
+    override fun signInOKTADomain(domain: String, activity: Activity, onResult: (Int) -> Unit) {
+        if (oktaRepository == null) {
+            setUpConfigOKTA(BuildConfig.OKTA_API_URL, BuildConfig.OKTA_API_USER, BuildConfig.OKTA_API_PASSWORD)
+        }
+        oktaRepository?.fetchOKTAClient(domain, context, activity, onResult)
+    }
+
+    override fun signOutOKTADomain(activity: Activity, onResult: (Int) -> Unit) {
+        if (oktaRepository == null) {
+            setUpConfigOKTA(BuildConfig.OKTA_API_URL, BuildConfig.OKTA_API_USER, BuildConfig.OKTA_API_PASSWORD)
+        }
+        oktaRepository?.signOutOKTA(activity, onResult)
+    }
+
+    override fun isSignInOKTANotConnected():Boolean {
+        return corePreferences.isSignInOKTANotConnected
+    }
+
+    override fun setUpConfigOKTA(apiUrl: String, apiUser: String, apiPassword: String){
+        val config = OKTAApiConfig(apiUrl, apiUser, apiPassword)
+        oktaApiConfig = config
+        if (oktaRepository == null) {
+            oktaRepository = OKTARepository(
+                oktaApiConfig = config,
+                core = core,
+                corePreferences = corePreferences,
+                listeners = listeners,
+                getAccountCreator = { getAccountCreator() }
+            )
+        } else {
+            oktaRepository?.setOKTAApiConfig(config)
         }
     }
 
