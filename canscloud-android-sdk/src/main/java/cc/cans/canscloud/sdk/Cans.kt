@@ -179,4 +179,6 @@ interface Cans {
     fun signOutOKTADomain(activity: Activity,onResult: (Int) -> Unit)
 
     fun isSignInOKTANotConnected() : Boolean
+
+    fun setUpConfigOKTA(apiUrl: String, apiUser: String, apiPassword: String)
 }

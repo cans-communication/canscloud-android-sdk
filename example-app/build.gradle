@@ -41,11 +41,14 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         // These become BuildConfig fields:
-        buildConfigField "String", "DISCOVERY_URL",        "\"${oktaProperties.discoveryUrl}\""
-        buildConfigField "String", "CLIENT_ID",            "\"${oktaProperties.clientId}\""
-        buildConfigField "String", "SIGN_IN_REDIRECT_URI", "\"${oktaProperties.signInRedirectUri}\""
-        buildConfigField "String", "SIGN_OUT_REDIRECT_URI","\"${oktaProperties.signOutRedirectUri}\""
-        buildConfigField "String", "KEY_AES",              "\"${oktaProperties.keyAES}\""
+        buildConfigField "String", 'DISCOVERY_URL', "\"${oktaProperties.getProperty('discoveryUrl')}\""
+        buildConfigField "String", 'CLIENT_ID', "\"${oktaProperties.getProperty('clientId')}\""
+        buildConfigField "String", 'SIGN_IN_REDIRECT_URI', "\"${oktaProperties.getProperty('signInRedirectUri')}\""
+        buildConfigField "String", 'SIGN_OUT_REDIRECT_URI', "\"${oktaProperties.getProperty('signOutRedirectUri')}\""
+        buildConfigField "String", 'KEY_AES', "\"${oktaProperties.getProperty('keyAES')}\""
+        buildConfigField "String", "OKTA_API_USER", "\"${oktaProperties.oktaApiUser}\""
+        buildConfigField "String", "OKTA_API_PASSWORD", "\"${oktaProperties.oktaApiPassword}\""
+        buildConfigField "String", "OKTA_API_URL", "\"${oktaProperties.oktaApiUrl}\""
 
         // This supplies the ${appAuthRedirectScheme} placeholder in *every* build variant
         manifestPlaceholders = [

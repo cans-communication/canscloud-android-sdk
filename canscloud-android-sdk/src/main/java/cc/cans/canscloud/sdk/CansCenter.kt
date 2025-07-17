@@ -45,6 +45,7 @@ import cc.cans.canscloud.sdk.models.CallModel
 import cc.cans.canscloud.sdk.models.CansAddress
 import cc.cans.canscloud.sdk.models.ConferenceState
 import cc.cans.canscloud.sdk.models.HistoryModel
+import cc.cans.canscloud.sdk.okta.models.OKTAApiConfig
 import cc.cans.canscloud.sdk.okta.repository.OKTARepository
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
@@ -103,6 +104,9 @@ class CansCenter() : Cans {
     override val missedCallLogs = ArrayList<GroupedCallLogData>()
     var callingLogs = ArrayList<CallModel>()
     val callList = ArrayList<Call>()
+
+    private var oktaRepository: OKTARepository? = null
+    private var oktaApiConfig: OKTAApiConfig? = null
 
     override lateinit var conferenceCore : Conference
 
@@ -1425,22 +1429,38 @@ class CansCenter() : Cans {
         }.start()
     }
 
-    override fun signInOKTADomain(domain: String, activity: Activity,onResult: (Int) -> Unit ) {
-        val oktaRepo = OKTARepository(core,corePreferences,listeners) {
-            getAccountCreator()
+    override fun signInOKTADomain(domain: String, activity: Activity, onResult: (Int) -> Unit) {
+        if (oktaRepository == null) {
+            setUpConfigOKTA(BuildConfig.OKTA_API_URL, BuildConfig.OKTA_API_USER, BuildConfig.OKTA_API_PASSWORD)
         }
-        oktaRepo.fetchOKTAClient(domain, context, activity, onResult)
+        oktaRepository?.fetchOKTAClient(domain, context, activity, onResult)
     }
 
-    override fun signOutOKTADomain(activity: Activity,onResult: (Int) -> Unit ) {
-        val oktaRepo = OKTARepository(core,corePreferences,listeners) {
-            getAccountCreator()
+    override fun signOutOKTADomain(activity: Activity, onResult: (Int) -> Unit) {
+        if (oktaRepository == null) {
+            setUpConfigOKTA(BuildConfig.OKTA_API_URL, BuildConfig.OKTA_API_USER, BuildConfig.OKTA_API_PASSWORD)
         }
-        oktaRepo.signOutOKTA(activity,onResult)
+        oktaRepository?.signOutOKTA(activity, onResult)
     }
 
     override fun isSignInOKTANotConnected():Boolean {
         return corePreferences.isSignInOKTANotConnected
+    }
+
+    override fun setUpConfigOKTA(apiUrl: String, apiUser: String, apiPassword: String){
+        val config = OKTAApiConfig(apiUrl, apiUser, apiPassword)
+        oktaApiConfig = config
+        if (oktaRepository == null) {
+            oktaRepository = OKTARepository(
+                oktaApiConfig = config,
+                core = core,
+                corePreferences = corePreferences,
+                listeners = listeners,
+                getAccountCreator = { getAccountCreator() }
+            )
+        } else {
+            oktaRepository?.setOKTAApiConfig(config)
+        }
     }
 
     override fun addListener(listener: CansListenerStub) {
