@@ -308,11 +308,11 @@ class CansCenter() : Cans {
 
                 Call.State.StreamsRunning -> {
                     mVibrator.cancel()
-                    updateCallToPausedList(call)
+                    addCallToPausedList(call)
                 }
 
                 Call.State.Paused -> {
-                    updateCallToPausedList(call)
+                    addCallToPausedList(call)
                 }
 
                 Call.State.Resuming ->  {
@@ -441,8 +441,13 @@ class CansCenter() : Cans {
     }
 
     private fun addCallToPausedList(call : Call) {
-        callList.add(call)
-        mapCallLog()
+        if (callList.isEmpty()) {
+            callList.add(call)
+            mapCallLog()
+        } else if (callList.none { it == call }) {
+            callList.add(call)
+            mapCallLog()
+        }
         Log.i("callingLogs: ","addCallToPausedList")
     }
 
@@ -458,7 +463,13 @@ class CansCenter() : Cans {
     }
 
     private fun removeCallToPausedList(call : Call) {
-        callList.remove(call)
+        for (i in callList) {
+            if (i == call) {
+                callList.remove(call)
+                Log.i("removeCallToPausedList 3","");
+                break
+            }
+        }
 
         if (cansCenter().countCalls == 0) {
             callList.clear()
