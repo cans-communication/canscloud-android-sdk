@@ -63,31 +63,12 @@ class OKTARepository(
             message: String
         ) {
             if (cfg == proxyConfigToCheck) {
-                org.linphone.core.tools.Log.i("[Assistant] [Generic Login] Registration state is $state: $message")
                 if (state == RegistrationState.Ok) {
                     Log.i("OKTARepository - coreListener RegistrationState.Ok")
-
-//                    waitForServerAnswer.value = false
-//                    leaveAssistantEvent.value = Event(true)
-
-                    //TODO:Implement
-//                    cansCenter().coreContext.context .newAccountConfigured(true)
-
-                    if (cansCenter().core.isEchoCancellerCalibrationRequired) {
-                        Log.i("OKTARepository - coreListener isEchoCancellerCalibrationRequired")
-                        //TODO:Implement
-//                        navigateToEchoCancellerCalibration()
-                    } else {
-                        Log.i("OKTARepository - coreListener not isEchoCancellerCalibrationRequired go to onboarding")
-                        cansCenter().corePreferences.isRegister = true
-//                        onboarding()
-                    }
-
+                    cansCenter().corePreferences.isRegister = true
                     core.removeListener(this)
                 } else if (state == RegistrationState.Failed) {
                     Log.i("OKTARepository - coreListener RegistrationState.Failed")
-//                    waitForServerAnswer.value = false
-//                    invalidCredentialsEvent.value = Event(true)
                     core.removeListener(this)
                 }
             }
@@ -110,6 +91,14 @@ class OKTARepository(
     private val oktaService: OKTAService =
         retrofit.create(OKTAService::class.java)
 
+    private fun getAppVersion(context: Context): Pair<String, Long> {
+        val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+        val versionName = packageInfo.versionName ?: ""
+        val versionCode =
+            packageInfo.longVersionCode
+        return versionName to versionCode
+    }
+
     fun fetchOKTAClient(
         inputDomain: String,
         context: Context,
@@ -122,7 +111,7 @@ class OKTARepository(
             put("domain_name", inputDomain)
             put("device_os", "android")
             put("language", Locale.getDefault().language)
-            put("current_version", "1.5.0")
+            put("current_version", getAppVersion(context))
             put("device_model", Build.MANUFACTURER)
         }
 
@@ -139,76 +128,88 @@ class OKTARepository(
                         response: retrofit2.Response<OKTAClientResponseData?>,
                     ) {
                         if (response.isSuccessful) {
-                            response.body()?.let { client ->
-                                client.data.let { data ->
+                            response.body()?.let { result ->
+                                if (result.code == 200) {
+                                    val data = result.data
                                     if (data.clientId.isNotEmpty() && data.domainName.isNotEmpty() && data.discoveryUrl.isNotEmpty()) {
-                                        OktaWebAuth.setupWebAuth(
-                                            context,
-                                            data.discoveryUrl,
-                                            data.clientId
-                                        )
-                                        OktaWebAuth.setupWebAuthCallback(
-                                            activity,
-                                            webAuth,
-                                            object : OktaWebAuth.Companion.TokenRefreshCallback {
-                                                override fun onTokenRefreshed(isAuthenticated: Boolean) {
-                                                    Log.i("OKTARepository onTokenRefreshed")
-                                                    val token =
-                                                        corePreferences.loginInfo.tokenOkta ?: ""
-//                                                val domainOKTA = loginIngo?.domainOKTACurrent ?: ""
-                                                    val domainOKTA = data.domainName
-                                                    fetchSignInOKTA(
-                                                        token,
-                                                        domainOKTA
-                                                    ) { response ->
-                                                        if (response != null) {
-                                                            if (response.data != null) {
-                                                                decryptLogin(response.data)
-                                                            } else {
-                                                                when (response.code) {
-                                                                    301 -> {
-                                                                        corePreferences.isSignInOKTANotConnected =
-                                                                            true
-                                                                        listeners.forEach {
-                                                                            it.onRegistration(
-                                                                                RegisterState.FAIL
-                                                                            )
+                                        Log.i("OKTARepository response domainName ${data.domainName}")
+                                        if (data.domainName == inputDomain) {
+                                            OktaWebAuth.setupWebAuth(
+                                                context,
+                                                data.discoveryUrl,
+                                                data.clientId
+                                            )
+                                            OktaWebAuth.setupWebAuthCallback(
+                                                activity,
+                                                webAuth,
+                                                object :
+                                                    OktaWebAuth.Companion.TokenRefreshCallback {
+                                                    override fun onTokenRefreshed(
+                                                        isAuthenticated: Boolean
+                                                    ) {
+                                                        Log.i("OKTARepository onTokenRefreshed isAuthenticated : $isAuthenticated")
+                                                        val token =
+                                                            corePreferences.loginInfo.tokenOkta
+                                                                ?: ""
+                                                        val domainOKTA = data.domainName
+                                                        fetchSignInOKTA(
+                                                            context,
+                                                            token,
+                                                            domainOKTA
+                                                        ) { response ->
+                                                            if (response != null) {
+                                                                if (response.data != null) {
+                                                                    decryptLogin(response.data)
+                                                                } else {
+                                                                    when (response.code) {
+                                                                        301 -> {
+                                                                            corePreferences.isSignInOKTANotConnected =
+                                                                                true
+                                                                            listeners.forEach {
+                                                                                it.onRegistration(
+                                                                                    RegisterState.FAIL
+                                                                                )
+                                                                            }
                                                                         }
-                                                                    }
 
-                                                                    400 -> {
-                                                                        corePreferences.isSignInOKTANotConnected =
-                                                                            true
-                                                                        listeners.forEach {
-                                                                            it.onRegistration(
-                                                                                RegisterState.FAIL
-                                                                            )
+                                                                        400 -> {
+                                                                            corePreferences.isSignInOKTANotConnected =
+                                                                                true
+                                                                            listeners.forEach {
+                                                                                it.onRegistration(
+                                                                                    RegisterState.FAIL
+                                                                                )
+                                                                            }
                                                                         }
-                                                                    }
 
-                                                                    else -> {
-                                                                        listeners.forEach {
-                                                                            it.onRegistration(
-                                                                                RegisterState.FAIL
-                                                                            )
+                                                                        else -> {
+                                                                            listeners.forEach {
+                                                                                it.onRegistration(
+                                                                                    RegisterState.FAIL
+                                                                                )
+                                                                            }
                                                                         }
                                                                     }
                                                                 }
-                                                            }
-                                                            onResult(response.code)
-                                                        } else {
-                                                            onResult(-1)
-                                                            listeners.forEach {
-                                                                it.onRegistration(
-                                                                    RegisterState.FAIL
-                                                                )
+                                                                onResult(response.code)
+                                                            } else {
+                                                                onResult(-1)
+                                                                listeners.forEach {
+                                                                    it.onRegistration(
+                                                                        RegisterState.FAIL
+                                                                    )
+                                                                }
                                                             }
                                                         }
                                                     }
-                                                }
-                                            })
-                                        val payload = AuthenticationPayload.Builder().build()
-                                        webAuth.signIn(activity, payload)
+                                                })
+                                            val payload =
+                                                AuthenticationPayload.Builder().build()
+                                            webAuth.signIn(activity, payload)
+                                        } else {
+                                            onResult(response.code())
+                                            listeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                                        }
                                     } else {
                                         onResult(response.code())
                                         listeners.forEach { it.onRegistration(RegisterState.FAIL) }
@@ -227,7 +228,6 @@ class OKTARepository(
                     ) {
                         onResult(-1)
                         listeners.forEach { it.onRegistration(RegisterState.FAIL) }
-                        android.util.Log.e("Response fail", "${t.message}")
                     }
                 },
             )
@@ -235,6 +235,7 @@ class OKTARepository(
     }
 
     fun fetchSignInOKTA(
+        context: Context,
         token: String,
         domain: String,
         callback: (SignInOKTAResponseData?) -> Unit
@@ -244,16 +245,13 @@ class OKTARepository(
         val bodyJson = JSONObject().apply {
             put("device_os", "android")
             put("language", Locale.getDefault().language)
-            put("current_version", "1.5.0")
-//            put("current_version", coreContext.appVersion.substringBefore("("))
+            put("current_version", getAppVersion(context))
             put("device_model", Build.MANUFACTURER)
             put("domain_name", domain)
             put("access_token", token)
         }
 
         val requestBody = bodyJson.toString().toRequestBody("application/json".toMediaTypeOrNull())
-
-        Log.i("OKTARepository", "fetchSignInOKTA by requestBody : $requestBody")
 
         val signInOKTAResponseData: retrofit2.Call<SignInOKTAResponseData?>? =
             oktaService.fetchSignInOKTA("/mobile/login/login-okta", requestBody)
@@ -262,37 +260,36 @@ class OKTARepository(
         Log.i("OKTARepository", "fetchSignInOKTA signInOKTAResponseData : $signInOKTAResponseData")
         signInOKTAResponseData?.let { signInOKTA ->
             signInOKTA.enqueue(
-            object : retrofit2.Callback<SignInOKTAResponseData?> {
-                override fun onResponse(
-                    call: retrofit2.Call<SignInOKTAResponseData?>,
-                    response: retrofit2.Response<SignInOKTAResponseData?>,
-                ) {
-                    if (response.isSuccessful) {
-                        response.body()?.let { res ->
-                            when (res.code) {
-                                200, 301, 400 -> if (res.success) {
-                                    callback(res)
-                                } else {
-                                    listeners.forEach { it.onRegistration(RegisterState.FAIL) }
-                                }
+                object : retrofit2.Callback<SignInOKTAResponseData?> {
+                    override fun onResponse(
+                        call: retrofit2.Call<SignInOKTAResponseData?>,
+                        response: retrofit2.Response<SignInOKTAResponseData?>,
+                    ) {
+                        if (response.isSuccessful) {
+                            response.body()?.let { res ->
+                                when (res.code) {
+                                    200, 301, 400 -> if (res.success) {
+                                        callback(res)
+                                    } else {
+                                        listeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                                    }
 
-                                else -> listeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                                    else -> listeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                                }
                             }
+                        } else {
+                            listeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         }
-                    } else {
+                    }
+
+                    override fun onFailure(
+                        call: retrofit2.Call<SignInOKTAResponseData?>,
+                        t: Throwable,
+                    ) {
                         listeners.forEach { it.onRegistration(RegisterState.FAIL) }
                     }
-                }
-
-                override fun onFailure(
-                    call: retrofit2.Call<SignInOKTAResponseData?>,
-                    t: Throwable,
-                ) {
-                    listeners.forEach { it.onRegistration(RegisterState.FAIL) }
-                    android.util.Log.e("Response fail", "${t.message}")
-                }
-            },
-        )
+                },
+            )
         }
     }
 
@@ -341,17 +338,13 @@ class OKTARepository(
     private fun deleteAccount(account: Account) {
         val authInfo = account.findAuthInfo()
         if (authInfo != null) {
-            org.linphone.core.tools.Log.i("[Account Settings] Found auth info $authInfo, removing it.")
             core.removeAuthInfo(authInfo)
-        } else {
-            org.linphone.core.tools.Log.w("[Account Settings] Couldn't find matching auth info...")
         }
 
         core.removeAccount(account)
     }
 
     private fun createProxyConfig() {
-//        CansAnalytics.loginSip()
         core.addListener(coreListener)
 
         var accountCreator = getAccountCreator()
@@ -366,17 +359,12 @@ class OKTARepository(
         proxyConfigToCheck = proxyConfig
 
         if (proxyConfig == null) {
-            Log.i("OKTARepository decodeBase64 token : proxyConfig == null Account creator couldn't create proxy config")
-
-            org.linphone.core.tools.Log.e("[Assistant] [Generic Login] Account creator couldn't create proxy config")
             core.removeListener(coreListener)
-
             listeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
 
         if (domain.value.orEmpty() != cansCenter().corePreferences.defaultDomain) {
-            org.linphone.core.tools.Log.i("[Assistant] [Generic Login] Background mode with foreground service automatically enabled")
             cansCenter().corePreferences.keepServiceAlive = true
             cansCenter().coreContext.notificationsManager.startForeground()
         }
@@ -386,8 +374,6 @@ class OKTARepository(
         webAuth.signOut(activity, object :
             RequestCallback<Int, AuthorizationException> {
             override fun onSuccess(result: Int) {
-                android.util.Log.d("OktaWebAuth", "Successfully signed out")
-
                 val loginInfo = corePreferences.loginInfo
                 val newLoginInfo = loginInfo.copy(
                     logInType = "",
@@ -401,7 +387,6 @@ class OKTARepository(
 
             override fun onError(error: String?, exception: AuthorizationException?) {
                 onResult(-1)
-                android.util.Log.e("OktaWebAuth", "Sign out failed: $error", exception)
             }
         })
     }
