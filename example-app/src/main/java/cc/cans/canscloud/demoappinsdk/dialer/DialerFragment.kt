@@ -15,6 +15,7 @@ import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CansTransport
 import cc.cans.canscloud.sdk.models.RegisterState
 import org.linphone.core.RegistrationState
+import org.linphone.mediastream.Log
 
 
 /**
@@ -37,6 +38,21 @@ class DialerFragment : Fragment() {
     ): View? {
         _binding = FragmentDialerBinding.inflate(inflater, container, false)
         return binding.root
+    }
+
+    private fun showResultDialog() {
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Sign In Result")
+            .setMessage("Not Connected")
+            .setPositiveButton("SignOut"){ dialog, _ ->
+                // This block runs when user taps "OK"
+                dialog.dismiss() // (optional, dialog will auto-dismiss, but good for clarity)
+//                onOkButtonClicked(resultCode) // <-- Call your function here
+                cansCenter().signOutOKTADomain(requireActivity()){ code ->
+                    Toast.makeText(activity,"Result Code : $code",Toast.LENGTH_LONG).show()
+                }
+            }
+            .show()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -89,6 +105,34 @@ class DialerFragment : Fragment() {
         binding.buttonUnregister.setOnClickListener {
             sharedViewModel.unregister()
         }
+
+        // TEST OKTA
+        binding.buttonOkta.setOnClickListener {
+            Toast.makeText(requireContext(), "OKTA Clicked", Toast.LENGTH_SHORT).show()
+
+            cansCenter().signInOKTADomain("sitmms.cans.cc", requireActivity()) { code ->
+                Toast.makeText(activity, "Result Code : $code", Toast.LENGTH_LONG).show()
+
+                if (code == 301 || code == 400) {
+                    showResultDialog()
+                }
+            }
+        }
+
+        binding.buttonSignOutOkta.setOnClickListener {
+            Toast.makeText(requireContext(), "Sign out OKTA Clicked", Toast.LENGTH_SHORT).show()
+
+            cansCenter().signOutOKTADomain(requireActivity()){ code ->
+               Toast.makeText(activity,"Result Code : $code",Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        val signInOKTANotConnected = cansCenter().isSignInOKTANotConnected()
+        Log.i("OKTA signInOKTANotConnected : $signInOKTANotConnected")
     }
 
     override fun onDestroyView() {
