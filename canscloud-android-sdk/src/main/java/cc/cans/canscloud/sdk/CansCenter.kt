@@ -452,14 +452,13 @@ class CansCenter() : Cans {
     }
 
     private fun updateCallToPausedList(call: Call) {
-        val index = callList.indexOfFirst { it.remoteAddress.username == call.remoteAddress.username }
-        if (index != -1) {
-            callList[index] = call
-            Log.i("callingLogs", "updateCallToPausedList: updated at index $index")
-        } else {
-            Log.i("callingLogs", "updateCallToPausedList: no match found")
+        for (i in callList.indices) {
+            val callData = callList[i]
+            if (callData == call) {
+                callList[i] = call
+                mapCallLog()
+            }
         }
-        mapCallLog()
     }
 
     private fun removeCallToPausedList(call : Call) {
