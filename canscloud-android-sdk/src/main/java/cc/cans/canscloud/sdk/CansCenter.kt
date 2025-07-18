@@ -316,11 +316,11 @@ class CansCenter() : Cans {
 
                 Call.State.StreamsRunning -> {
                     mVibrator.cancel()
-                    updateCallToPausedList(call)
+                    addCallToPausedList(call)
                 }
 
                 Call.State.Paused -> {
-                    updateCallToPausedList(call)
+                    addCallToPausedList(call)
                 }
 
                 Call.State.Resuming -> {
