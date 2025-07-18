@@ -1377,27 +1377,28 @@ class CansCenter() : Cans {
         }
     }
 
-    @WorkerThread
     override fun mergeCallsIntoConference() {
-        val callsCount = core.callsNb
-        val defaultAccount = CansUtils.getDefaultAccount()
-        val subject =
-            if (defaultAccount != null && defaultAccount.params.audioVideoConferenceFactoryAddress != null) {
-                Log.i(TAG, "Merging [$callsCount] calls into a remotely hosted conference")
-                coreContext.context.getString(R.string.conference_remotely_hosted_title)
-            } else {
-                Log.i(TAG, "Merging [$callsCount] calls into a locally hosted conference")
-                coreContext.context.getString(R.string.conference_locally_hosted_title)
-            }
+        Thread {
+            val callsCount = core.callsNb
+            val defaultAccount = CansUtils.getDefaultAccount()
+            val subject =
+                if (defaultAccount != null && defaultAccount.params.audioVideoConferenceFactoryAddress != null) {
+                    Log.i(TAG, "Merging [$callsCount] calls into a remotely hosted conference")
+                    coreContext.context.getString(R.string.conference_remotely_hosted_title)
+                } else {
+                    Log.i(TAG, "Merging [$callsCount] calls into a locally hosted conference")
+                    coreContext.context.getString(R.string.conference_locally_hosted_title)
+                }
 
-        Log.i(TAG, "Merging [$callsCount] createGroupCall")
-        val conference = CansUtils.createGroupCall(defaultAccount, subject)
-        if (conference == null) {
-            Log.e(TAG, "Failed to create conference!")
-        } else {
-            Log.i(TAG, "Merging [$callsCount] conference")
-            conference.addParticipants(core.calls)
-        }
+            Log.i(TAG, "Merging [$callsCount] createGroupCall")
+            val conference = CansUtils.createGroupCall(defaultAccount, subject)
+            if (conference == null) {
+                Log.e(TAG, "Failed to create conference!")
+            } else {
+                Log.i(TAG, "Merging [$callsCount] conference")
+                conference.addParticipants(core.calls)
+            }
+        }.start()
     }
 
     override fun addListener(listener: CansListenerStub) {
