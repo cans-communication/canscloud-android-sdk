@@ -505,6 +505,7 @@ class CorePreferences constructor(private val context: Context) {
     val showAllRingtones: Boolean
         get() = config.getBool("app", "show_all_available_ringtones", false)
 
+    // add for OKTA
     var loginInfo: LoginInfo
         get() {
             val json = config.getString("app", "login_info", "")
@@ -527,6 +528,19 @@ class CorePreferences constructor(private val context: Context) {
             val json = Gson().toJson(value)
             config.setBool("app", "is_sign_in_okta_not_connected", value)
         }
+
+    var clientID: String
+        get() = config.getString("app", "client_in_okta", "") ?: ""
+        set(value) {
+            config.setString("app", "client_in_okta", value)
+        }
+
+    var discoveryURL: String?
+        get() = config.getString("app", "discovery_sign_in_okta", "")
+        set(value) {
+            config.setString("app", "discovery_sign_in_okta", value)
+        }
+    // end for OKTA
 
     /* Default values related */
 

@@ -45,12 +45,12 @@ class DialerFragment : Fragment() {
         androidx.appcompat.app.AlertDialog.Builder(requireContext())
             .setTitle("Sign In Result")
             .setMessage("Not Connected")
-            .setPositiveButton("SignOut"){ dialog, _ ->
-                // This block runs when user taps "OK"
-                dialog.dismiss() // (optional, dialog will auto-dismiss, but good for clarity)
-//                onOkButtonClicked(resultCode) // <-- Call your function here
-                cansCenter().signOutOKTADomain(requireActivity()){ code ->
-                    Toast.makeText(activity,"Result Code : $code",Toast.LENGTH_LONG).show()
+            .setPositiveButton("SignOut") { dialog, _ ->
+                dialog.dismiss()
+                cansCenter().signOutOKTADomain(
+                    requireActivity()
+                ) { status ->
+                    Toast.makeText(activity, "Logout status : $status", Toast.LENGTH_LONG).show()
                 }
             }
             .show()
@@ -81,7 +81,8 @@ class DialerFragment : Fragment() {
                 cansCenter().startCall(binding.editTextPhoneNumber.text.toString())
             } else {
                 if (cansCenter().lastOutgoingCallLog != "") {
-                    binding.editTextPhoneNumber.text = Editable.Factory.getInstance().newEditable(cansCenter().lastOutgoingCallLog)
+                    binding.editTextPhoneNumber.text =
+                        Editable.Factory.getInstance().newEditable(cansCenter().lastOutgoingCallLog)
                 } else {
                     Toast.makeText(
                         requireContext(),
@@ -108,16 +109,14 @@ class DialerFragment : Fragment() {
         }
 
 //         TEST OKTA
-        cansCenter().setUpConfigOKTA(
-            apiUrl = BuildConfig.OKTA_API_URL,
-            apiUser = BuildConfig.OKTA_API_USER,
-            apiPassword = BuildConfig.OKTA_API_PASSWORD
-        )
-
         binding.buttonOkta.setOnClickListener {
             Toast.makeText(requireContext(), "OKTA Clicked", Toast.LENGTH_SHORT).show()
 
-            cansCenter().signInOKTADomain("sitmms.cans.cc", requireActivity()) { code ->
+            cansCenter().signInOKTADomain(
+                BuildConfig.OKTA_API_URL,
+                "sitmms.cans.cc",
+                requireActivity()
+            ) { code ->
                 Toast.makeText(activity, "Result Code : $code", Toast.LENGTH_LONG).show()
 
                 if (code == 301 || code == 400) {
@@ -129,8 +128,12 @@ class DialerFragment : Fragment() {
         binding.buttonSignOutOkta.setOnClickListener {
             Toast.makeText(requireContext(), "Sign out OKTA Clicked", Toast.LENGTH_SHORT).show()
 
-            cansCenter().signOutOKTADomain(requireActivity()){ code ->
-               Toast.makeText(activity,"Result Code : $code",Toast.LENGTH_LONG).show()
+            if (cansCenter().isSignInOKTANotConnected()) {
+                cansCenter().signOutOKTADomain(requireActivity()) { status ->
+                    Toast.makeText(activity, "Logout status : $status", Toast.LENGTH_LONG).show()
+                }
+            } else {
+                Toast.makeText(activity, "No OKTA sign in", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -140,6 +143,12 @@ class DialerFragment : Fragment() {
 
         val signInOKTANotConnected = cansCenter().isSignInOKTANotConnected()
         Log.i("OKTA signInOKTANotConnected : $signInOKTANotConnected")
+
+        if (signInOKTANotConnected) {
+            binding.buttonSignOutOkta.visibility = View.VISIBLE
+        } else {
+            binding.buttonSignOutOkta.visibility = View.GONE
+        }
     }
 
     override fun onDestroyView() {
