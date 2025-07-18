@@ -1379,7 +1379,7 @@ class CansCenter() : Cans {
 
     override fun mergeCallsIntoConference() {
         Thread {
-            try (){
+            try {
                 val callsCount = core.callsNb
                 val defaultAccount = CansUtils.getDefaultAccount()
                 val subject =
@@ -1400,7 +1400,7 @@ class CansCenter() : Cans {
                     conference.addParticipants(core.calls)
                 }
             } catch (e: Exception) {
-                Log.i(TAG, "Merging: $Exception")
+                Log.i(TAG, "Merging: $e")
             }
         }.start()
     }
