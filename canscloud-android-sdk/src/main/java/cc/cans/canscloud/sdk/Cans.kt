@@ -116,11 +116,11 @@ interface Cans {
 
     fun terminateCall()
 
-    fun pause(addressToCall: String)
+    fun pause(index: Int, addressToCall: String)
 
-    fun resume(addressToCall: String)
+    fun resume(index: Int, addressToCall: String)
 
-    fun terminate(addressToCall: String)
+    fun terminate(index: Int, addressToCall: String)
 
     fun terminateAllCalls()
 

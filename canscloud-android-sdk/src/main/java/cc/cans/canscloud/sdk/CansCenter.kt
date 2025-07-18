@@ -813,20 +813,25 @@ class CansCenter() : Cans {
         core.terminateAllCalls()
     }
 
-    override fun pause(addressToCall: String) {
-        val call = callList.find { it.remoteAddress.username == addressToCall }
-        call?.pause()
+    override fun pause(index: Int, addressToCall: String) {
+        val call = callList[index]
+        if (call.remoteAddress.username == addressToCall) {
+            call.pause()
+        }
     }
 
-    override fun resume(addressToCall: String) {
-        val call = callList.find { it.remoteAddress.username == addressToCall }
-        call?.resume()
+    override fun resume(index: Int, addressToCall: String) {
+        val call = callList[index]
+        if (call.remoteAddress.username == addressToCall) {
+            call.resume()
+        }
     }
 
-    override fun terminate(addressToCall: String) {
-        val call = callList.find { it.remoteAddress.username == addressToCall }
-        Log.i("terminate: ", addressToCall)
-        call?.terminate()
+    override fun terminate(index: Int, addressToCall: String) {
+        val call = callList[index]
+        if (call.remoteAddress.username == addressToCall) {
+            call.terminate()
+        }
     }
 
     override fun startAnswerCall() {
