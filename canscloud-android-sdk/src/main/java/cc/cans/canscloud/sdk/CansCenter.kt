@@ -1390,10 +1390,12 @@ class CansCenter() : Cans {
                 coreContext.context.getString(R.string.conference_locally_hosted_title)
             }
 
+        Log.i(TAG, "Merging [$callsCount] createGroupCall")
         val conference = CansUtils.createGroupCall(defaultAccount, subject)
         if (conference == null) {
             Log.e(TAG, "Failed to create conference!")
         } else {
+            Log.i(TAG, "Merging [$callsCount] conference")
             conference.addParticipants(core.calls)
         }
     }
