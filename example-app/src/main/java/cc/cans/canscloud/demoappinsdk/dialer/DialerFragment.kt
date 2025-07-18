@@ -11,10 +11,12 @@ import androidx.lifecycle.ViewModelProvider
 import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.demoappinsdk.databinding.FragmentDialerBinding
 import cc.cans.canscloud.demoappinsdk.viewmodel.SharedMainViewModel
+import cc.cans.canscloud.sdk.BuildConfig
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CansTransport
 import cc.cans.canscloud.sdk.models.RegisterState
 import org.linphone.core.RegistrationState
+import org.linphone.mediastream.Log
 
 
 /**
@@ -37,6 +39,21 @@ class DialerFragment : Fragment() {
     ): View? {
         _binding = FragmentDialerBinding.inflate(inflater, container, false)
         return binding.root
+    }
+
+    private fun showResultDialog() {
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Sign In Result")
+            .setMessage("Not Connected")
+            .setPositiveButton("SignOut") { dialog, _ ->
+                dialog.dismiss()
+                cansCenter().signOutOKTADomain(
+                    requireActivity()
+                ) { status ->
+                    Toast.makeText(activity, "Logout status : $status", Toast.LENGTH_LONG).show()
+                }
+            }
+            .show()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -64,7 +81,8 @@ class DialerFragment : Fragment() {
                 cansCenter().startCall(binding.editTextPhoneNumber.text.toString())
             } else {
                 if (cansCenter().lastOutgoingCallLog != "") {
-                    binding.editTextPhoneNumber.text = Editable.Factory.getInstance().newEditable(cansCenter().lastOutgoingCallLog)
+                    binding.editTextPhoneNumber.text =
+                        Editable.Factory.getInstance().newEditable(cansCenter().lastOutgoingCallLog)
                 } else {
                     Toast.makeText(
                         requireContext(),
@@ -89,6 +107,42 @@ class DialerFragment : Fragment() {
         binding.buttonUnregister.setOnClickListener {
             sharedViewModel.unregister()
         }
+
+//         TEST OKTA
+        binding.buttonOkta.setOnClickListener {
+            Toast.makeText(requireContext(), "OKTA Clicked", Toast.LENGTH_SHORT).show()
+
+            cansCenter().signInOKTADomain(
+                BuildConfig.OKTA_API_URL,
+                "sitmms.cans.cc",
+                requireActivity()
+            ) { code ->
+                Toast.makeText(activity, "Result Code : $code", Toast.LENGTH_LONG).show()
+
+                if (code == 301 || code == 400) {
+                    showResultDialog()
+                }
+            }
+        }
+
+        binding.buttonSignOutOkta.setOnClickListener {
+            Toast.makeText(requireContext(), "Sign out OKTA Clicked", Toast.LENGTH_SHORT).show()
+
+            if (cansCenter().isSignInOKTANotConnected()) {
+                cansCenter().signOutOKTADomain(requireActivity()) { status ->
+                    Toast.makeText(activity, "Logout status : $status", Toast.LENGTH_LONG).show()
+                }
+            } else {
+                Toast.makeText(activity, "No OKTA sign in", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        val signInOKTANotConnected = cansCenter().isSignInOKTANotConnected()
+        Log.i("OKTA signInOKTANotConnected : $signInOKTANotConnected")
     }
 
     override fun onDestroyView() {

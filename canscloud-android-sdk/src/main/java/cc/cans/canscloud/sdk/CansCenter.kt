@@ -1,5 +1,3 @@
-
-
 package cc.cans.canscloud.sdk
 
 import android.Manifest
@@ -14,55 +12,65 @@ import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.os.Build
 import android.os.Vibrator
-import androidx.core.app.NotificationManagerCompat
-import cc.cans.canscloud.sdk.callback.CansListenerStub
-import cc.cans.canscloud.sdk.core.CorePreferences
-import cc.cans.canscloud.sdk.models.CallState
-import cc.cans.canscloud.sdk.models.CansTransport
-import cc.cans.canscloud.sdk.models.RegisterState
-import cc.cans.canscloud.sdk.utils.CansUtils
-import org.linphone.core.AudioDevice
-import org.linphone.core.Call
-import org.linphone.core.Core
-import org.linphone.core.CoreListenerStub
-import org.linphone.core.Factory
-import org.linphone.core.MediaEncryption
-import org.linphone.core.ProxyConfig
-import org.linphone.core.RegistrationState
-import org.linphone.core.TransportType
+import android.util.Base64
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.WorkerThread
 import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.MutableLiveData
+import cc.cans.canscloud.data.AESFactory
 import cc.cans.canscloud.data.ProvisioningData
 import cc.cans.canscloud.data.ProvisioningInterceptor
 import cc.cans.canscloud.data.ProvisioningResult
 import cc.cans.canscloud.data.ProvisioningService
+import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
+import cc.cans.canscloud.sdk.core.CorePreferences
 import cc.cans.canscloud.sdk.core.CoreService
 import cc.cans.canscloud.sdk.data.GroupedCallLogData
 import cc.cans.canscloud.sdk.models.CallModel
+import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.CansAddress
+import cc.cans.canscloud.sdk.models.CansTransport
 import cc.cans.canscloud.sdk.models.ConferenceState
 import cc.cans.canscloud.sdk.models.HistoryModel
+import cc.cans.canscloud.sdk.models.RegisterState
+import cc.cans.canscloud.sdk.okta.models.SignIn
+import cc.cans.canscloud.sdk.okta.models.SignInOKTAResponseData
+import cc.cans.canscloud.sdk.okta.repository.OKTARepository
+import cc.cans.canscloud.sdk.okta.service.OktaWebAuth
+import cc.cans.canscloud.sdk.okta.service.OktaWebAuth.Companion.webAuth
 import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
+import cc.cans.canscloud.sdk.utils.CansUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
 import cc.cans.canscloud.sdk.utils.TimestampUtils
+import com.google.gson.Gson
+import com.okta.oidc.AuthenticationPayload
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import org.linphone.core.Account
 import org.linphone.core.AccountCreator
 import org.linphone.core.AccountListenerStub
 import org.linphone.core.Address
+import org.linphone.core.AudioDevice
+import org.linphone.core.Call
 import org.linphone.core.CallLog
 import org.linphone.core.Conference
 import org.linphone.core.ConferenceListenerStub
+import org.linphone.core.Core
+import org.linphone.core.CoreListenerStub
+import org.linphone.core.Factory
 import org.linphone.core.LogCollectionState
 import org.linphone.core.LogLevel
+import org.linphone.core.MediaEncryption
 import org.linphone.core.Participant
+import org.linphone.core.ProxyConfig
+import org.linphone.core.RegistrationState
+import org.linphone.core.TransportType
 import org.linphone.core.tools.compatibility.DeviceUtils
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -105,11 +113,11 @@ class CansCenter() : Cans {
     var callingLogs = ArrayList<CallModel>()
     val callList = ArrayList<Call>()
 
-    override lateinit var conferenceCore : Conference
+    override lateinit var conferenceCore: Conference
 
-    override var isInConference : Boolean = false
+    override var isInConference: Boolean = false
 
-    override var isMeConferenceFocus : Boolean = false
+    override var isMeConferenceFocus: Boolean = false
 
     override val account: String
         get() {
@@ -272,7 +280,7 @@ class CansCenter() : Cans {
             state: RegistrationState,
             message: String,
         ) {
-            Log.i("CansSDK: onRegistration","${cansCenter().defaultStateRegister}")
+            Log.i("CansSDK: onRegistration", "${cansCenter().defaultStateRegister}")
             if (cfg == proxyConfigToCheck) {
                 org.linphone.core.tools.Log.i("[Assistant] [Account Login] Registration state is $state: $message")
                 if (state == RegistrationState.Ok) {
@@ -315,7 +323,7 @@ class CansCenter() : Cans {
                     updateCallToPausedList(call)
                 }
 
-                Call.State.Resuming ->  {
+                Call.State.Resuming -> {
                     updateCallToPausedList(call)
                 }
 
@@ -374,7 +382,7 @@ class CansCenter() : Cans {
             conference: Conference,
             state: Conference.State,
         ) {
-            Log.i("[Conference VM]"," Conference state changed: $state")
+            Log.i("[Conference VM]", " Conference state changed: $state")
             if (state == Conference.State.Instantiated) {
                 conference.addListener(conferenceListener)
                 listeners.forEach { it.onConferenceState(ConferenceState.Instantiated) }
@@ -426,21 +434,21 @@ class CansCenter() : Cans {
     private fun mapStatusCall(state: Call.State): CallState {
         Log.i("mapCallLog111", ":$state ")
         return when (state) {
-            Call.State.IncomingEarlyMedia, Call.State.IncomingReceived ->  CallState.IncomingCall
+            Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> CallState.IncomingCall
             Call.State.OutgoingInit -> CallState.StartCall
-            Call.State.OutgoingProgress, Call.State.OutgoingEarlyMedia,  ->  CallState.CallOutgoing
+            Call.State.OutgoingProgress, Call.State.OutgoingEarlyMedia -> CallState.CallOutgoing
             Call.State.StreamsRunning -> CallState.StreamsRunning
             Call.State.Connected -> CallState.Connected
             Call.State.Paused, Call.State.Pausing -> CallState.Pause
-            Call.State.Resuming ->  CallState.Resuming
+            Call.State.Resuming -> CallState.Resuming
             Call.State.Error -> CallState.Error
-            Call.State.End ->  CallState.CallEnd
+            Call.State.End -> CallState.CallEnd
             Call.State.Released -> CallState.MissCall
             else -> CallState.Unknown
         }
     }
 
-    private fun addCallToPausedList(call : Call) {
+    private fun addCallToPausedList(call: Call) {
         if (callList.isEmpty()) {
             callList.add(call)
             mapCallLog()
@@ -448,7 +456,7 @@ class CansCenter() : Cans {
             callList.add(call)
             mapCallLog()
         }
-        Log.i("callingLogs: ","addCallToPausedList")
+        Log.i("callingLogs: ", "addCallToPausedList")
     }
 
     private fun updateCallToPausedList(call: Call) {
@@ -461,11 +469,11 @@ class CansCenter() : Cans {
         }
     }
 
-    private fun removeCallToPausedList(call : Call) {
+    private fun removeCallToPausedList(call: Call) {
         for (i in callList) {
             if (i == call) {
                 callList.remove(call)
-                Log.i("removeCallToPausedList 3","");
+                Log.i("removeCallToPausedList 3", "");
                 break
             }
         }
@@ -474,10 +482,10 @@ class CansCenter() : Cans {
             callList.clear()
         }
         mapCallLog()
-        Log.i("callingLogs: ","removeCallToPausedList")
+        Log.i("callingLogs: ", "removeCallToPausedList")
     }
 
-    private fun mapCallLog(){
+    private fun mapCallLog() {
         val list: ArrayList<CallModel> = arrayListOf()
         callList.forEach { call ->
             val sip = CansUtils.getDisplayableAddress(call.remoteAddress)
@@ -505,16 +513,16 @@ class CansCenter() : Cans {
         }
 
         callingLogs = list
-        Log.i("callingLogs1: ","${callingLogs.size}")
+        Log.i("callingLogs1: ", "${callingLogs.size}")
     }
 
     override fun getCallLog(): ArrayList<CallModel> {
-        Log.i("getCallLog: ","${callingLogs.size}")
+        Log.i("getCallLog: ", "${callingLogs.size}")
         return callingLogs
     }
 
     private fun setListenerCall(callState: CallState) {
-        Log.i("setListenerCall: ","$callState")
+        Log.i("setListenerCall: ", "$callState")
         this.callState = callState
         listeners.forEach { it.onCallState(callState) }
     }
@@ -880,11 +888,14 @@ class CansCenter() : Cans {
         accountCreator = getAccountCreator()
         val result = accountCreator.setUsername(username)
         if (result != AccountCreator.UsernameStatus.Ok) {
-            Log.e("[Assistant]"," [Account Login] Error [${result.name}] setting the username: ${username}")
+            Log.e(
+                "[Assistant]",
+                " [Account Login] Error [${result.name}] setting the username: ${username}"
+            )
             listeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
-        Log.i("[Assistant]","[Account Login] Username is ${accountCreator.username}")
+        Log.i("[Assistant]", "[Account Login] Username is ${accountCreator.username}")
 
         val result2 = accountCreator.setPassword(password)
         if (result2 != AccountCreator.PasswordStatus.Ok) {
@@ -895,7 +906,7 @@ class CansCenter() : Cans {
 
         val result3 = accountCreator.setDomain(domain)
         if (result3 != AccountCreator.DomainStatus.Ok) {
-            Log.e("[Assistant]"," [Account Login] Error [${result3.name}] setting the domain")
+            Log.e("[Assistant]", " [Account Login] Error [${result3.name}] setting the domain")
             listeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
@@ -988,14 +999,14 @@ class CansCenter() : Cans {
         proxyConfigToCheck = proxyConfig
 
         if (proxyConfig == null) {
-            Log.e("[Assistant]","[Account Login] Account creator couldn't create proxy config")
+            Log.e("[Assistant]", "[Account Login] Account creator couldn't create proxy config")
             //  onErrorEvent.value = Event("Error: Failed to create account object")
             return false
         }
 
         proxyConfig.isPushNotificationAllowed = true
 
-        Log.i("[Assistant]"," [Account Login] Proxy config created")
+        Log.i("[Assistant]", " [Account Login] Proxy config created")
         return true
     }
 
@@ -1185,7 +1196,7 @@ class CansCenter() : Cans {
         }
     }
 
-    override fun updateCallLogs(){
+    override fun updateCallLogs() {
         val list = arrayListOf<GroupedCallLogData>()
         var previousCallLogGroup: GroupedCallLogData? = null
         callLogs.clear()
@@ -1201,7 +1212,8 @@ class CansCenter() : Cans {
                 duration = duration(callLog),
                 callID = callLog.callId.toString(),
                 localAddress = callLog.localAddress,
-                remoteAddress = callLog.remoteAddress)
+                remoteAddress = callLog.remoteAddress
+            )
 
             if (previousCallLogGroup == null) {
                 previousCallLogGroup = GroupedCallLogData(historyModel)
@@ -1246,7 +1258,7 @@ class CansCenter() : Cans {
 
 
     override fun updateMissedCallLogs() {
-        val missedList : ArrayList<GroupedCallLogData> = arrayListOf()
+        val missedList: ArrayList<GroupedCallLogData> = arrayListOf()
         var previousMissedCallLogGroup: GroupedCallLogData? = null
         missedCallLogs.clear()
 
@@ -1261,7 +1273,8 @@ class CansCenter() : Cans {
                 duration = duration(callLog),
                 callID = callLog.callId.toString(),
                 localAddress = callLog.localAddress,
-                remoteAddress = callLog.remoteAddress)
+                remoteAddress = callLog.remoteAddress
+            )
 
             if (historyModel.state == CallState.MissCall) {
                 if (previousMissedCallLogGroup == null) {
@@ -1269,7 +1282,11 @@ class CansCenter() : Cans {
                 } else if (previousMissedCallLogGroup.lastCallLog.localAddress.weakEqual(callLog.localAddress) &&
                     previousMissedCallLogGroup.lastCallLog.remoteAddress.weakEqual(callLog.remoteAddress)
                 ) {
-                    if (TimestampUtils.isSameDay(previousMissedCallLogGroup.lastCallLog.startDate, callLog.startDate)) {
+                    if (TimestampUtils.isSameDay(
+                            previousMissedCallLogGroup.lastCallLog.startDate,
+                            callLog.startDate
+                        )
+                    ) {
                         previousMissedCallLogGroup.callLogs.add(historyModel)
                         previousMissedCallLogGroup.lastCallLog = historyModel
                     } else {
@@ -1317,7 +1334,7 @@ class CansCenter() : Cans {
     }
 
     private fun transport(transport: TransportType): CansTransport {
-        return when(transport) {
+        return when (transport) {
             TransportType.Tcp -> CansTransport.TCP
             TransportType.Udp -> CansTransport.UDP
             TransportType.Tls -> CansTransport.TLS
@@ -1333,7 +1350,7 @@ class CansCenter() : Cans {
                 address1.username == address2.username
     }
 
-    override fun transferNow(phoneNumber: String) : Boolean {
+    override fun transferNow(phoneNumber: String): Boolean {
         val currentCall = core.currentCall ?: core.calls.firstOrNull()
         if (currentCall == null) {
             Log.e("[Context]", "Couldn't find a call to transfer")
@@ -1341,7 +1358,7 @@ class CansCenter() : Cans {
         } else {
             val address = core.interpretUrl(phoneNumber)
             if (address != null) {
-                Log.i("[Context]" ,"Transferring current call to $phoneNumber")
+                Log.i("[Context]", "Transferring current call to $phoneNumber")
                 currentCall.transferTo(address)
                 return true
             } else {
@@ -1391,6 +1408,217 @@ class CansCenter() : Cans {
         } else {
             conference.addParticipants(core.calls)
         }
+    }
+
+    override fun signOutOKTADomain(
+        activity: Activity,
+        callback: (Boolean) -> Unit
+    ) {
+        OKTARepository.signOutOKTA(
+            activity = activity,
+            callback = callback
+        )
+    }
+
+    override fun signInOKTADomain(
+        apiURL: String,
+        domain: String,
+        activity: Activity,
+        onResult: (Int) -> Unit
+    ) {
+         var usernameOKTA: String
+         var passwordOKTA: String
+         var domainNameOKTA: String
+         var transportOKTA: TransportType?
+
+//        val usernameOKTA = MutableLiveData<String>()
+//
+//        val passwordOKTA = MutableLiveData<String>()
+//
+//        val domainNameOKTA = MutableLiveData<String>()
+//
+//        val displayNameOKTA = MutableLiveData<String>()
+//
+//        val transportOKTA = MutableLiveData<TransportType>()
+
+        OKTARepository.fetchOKTAClient(
+            apiURL = apiURL,
+            inputDomain = domain,
+            context = context,
+        ) { response ->
+            response?.let { data ->
+                cansCenter().corePreferences.discoveryURL =
+                    data.discoveryUrl
+                cansCenter().corePreferences.clientID = data.clientId
+
+                OktaWebAuth.setupWebAuth(
+                    context,
+                    data.discoveryUrl,
+                    data.clientId
+                )
+
+                OktaWebAuth.setupWebAuthCallback(
+                    activity,
+                    webAuth,
+                    object :
+                        OktaWebAuth.Companion.TokenRefreshCallback {
+                        override fun onTokenRefreshed(
+                            isAuthenticated: Boolean
+                        ) {
+                            val token =
+                                cansCenter().corePreferences.loginInfo.tokenOkta
+                                    ?: ""
+                            val domainOKTA = data.domainName
+
+                            OKTARepository.fetchSignInOKTA(
+                                context,
+                                apiURL,
+                                token,
+                                domainOKTA
+                            ) { signInResponse ->
+                                if (signInResponse != null) {
+                                    if (signInResponse.data != null) {
+                                        decryptLogin(signInResponse.data) { decodedPassword, signInData ->
+                                            if (decodedPassword != null && signInData != null) {
+                                                usernameOKTA = signInData.sip_username
+                                                passwordOKTA = decodedPassword
+                                                domainNameOKTA =
+                                                    "${signInResponse.data.domain_name}:8446"
+                                                transportOKTA = TransportType.Tcp
+//                                                        core.accountList.forEach { deleteAccount(it) }
+                                                removeAccount()
+                                                createProxyConfigFromSignInOKTA(
+                                                    usernameOKTA,
+                                                    passwordOKTA,
+                                                    domainNameOKTA,
+                                                    transportOKTA ?: TransportType.Tcp
+                                                ) { resultProxy ->
+                                                    if (resultProxy) {
+                                                        listeners.forEach {
+                                                            it.onRegistration(
+                                                                RegisterState.OK
+                                                            )
+                                                        }
+                                                    } else {
+                                                        listeners.forEach {
+                                                            it.onRegistration(
+                                                                RegisterState.FAIL
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            } else {
+                                                listeners.forEach {
+                                                    it.onRegistration(
+                                                        RegisterState.FAIL
+                                                    )
+                                                }
+                                            }
+                                        }
+                                        onResult(signInResponse.code)
+                                        cansCenter().corePreferences.isSignInOKTANotConnected =
+                                            false
+                                    } else {
+                                        when (signInResponse.code) {
+                                            301, 400 -> {
+                                                cansCenter().corePreferences.isSignInOKTANotConnected =
+                                                    true
+                                            }
+
+                                            else -> {
+                                                cansCenter().corePreferences.isSignInOKTANotConnected =
+                                                    false
+                                            }
+                                        }
+                                        onResult(signInResponse.code)
+                                        listeners.forEach {
+                                            it.onRegistration(
+                                                RegisterState.FAIL
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    onResult(-1)
+                                    listeners.forEach {
+                                        it.onRegistration(
+                                            RegisterState.FAIL
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    })
+                val payload =
+                    AuthenticationPayload.Builder().build()
+                webAuth.signIn(activity, payload)
+            } ?: onResult(-1)
+            listeners.forEach {
+                it.onRegistration(
+                    RegisterState.FAIL
+                )
+            }
+        }
+    }
+
+    private fun decryptLogin(
+        dataLogin: SignInOKTAResponseData.Data,
+        callback: (String?, SignIn?) -> Unit
+    ) {
+        val jsonString = AESFactory.decrypt(dataLogin.user_credentials)
+        if (jsonString != null) {
+            val dataSignIn = Gson().fromJson(jsonString, SignIn::class.java)
+            val loginInfo = cansCenter().corePreferences.loginInfo
+            val newLoginInfo = loginInfo.copy(tokenSignIn = dataLogin.access_token)
+            cansCenter().corePreferences.loginInfo = newLoginInfo
+
+            decodeBase64(dataSignIn.sip_password) { passwordDecode ->
+                callback(passwordDecode, dataSignIn)
+            }
+        } else {
+            callback(null, null)
+        }
+    }
+
+    private fun decodeBase64(encodedString: String, callback: (String?) -> Unit) {
+        try {
+            val decodedBytes = Base64.decode(encodedString, Base64.DEFAULT)
+            callback(String(decodedBytes, Charsets.UTF_8))
+        } catch (e: IllegalArgumentException) {
+            callback(null)
+        }
+    }
+
+    private fun createProxyConfigFromSignInOKTA(
+        username: String,
+        password: String,
+        domain: String,
+        transport: TransportType,
+        callback: (Boolean) -> Unit
+    ) {
+        val accountCreator = getAccountCreator()
+        accountCreator.username = username
+        accountCreator.password = password
+        accountCreator.domain = domain
+        accountCreator.displayName = ""
+        accountCreator.transport = transport
+
+        val proxyConfig: ProxyConfig? = accountCreator.createProxyConfig()
+        proxyConfigToCheck = proxyConfig
+
+        if (proxyConfig == null) {
+            callback(false)
+            return
+        }
+
+        if (domain != cansCenter().corePreferences.defaultDomain) {
+            cansCenter().corePreferences.keepServiceAlive = true
+            cansCenter().coreContext.notificationsManager.startForeground()
+            callback(true)
+        }
+    }
+
+    override fun isSignInOKTANotConnected(): Boolean {
+        return corePreferences.isSignInOKTANotConnected
     }
 
     override fun addListener(listener: CansListenerStub) {
