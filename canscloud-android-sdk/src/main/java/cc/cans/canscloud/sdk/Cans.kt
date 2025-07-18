@@ -168,11 +168,9 @@ interface Cans {
 
     fun mergeCallsIntoConference()
 
-    fun signInOKTADomain(domain: String, activity: Activity, onResult: (Int) -> Unit)
+    fun signInOKTADomain(apiURL: String, domain: String, activity: Activity, onResult: (Int) -> Unit)
 
-    fun signOutOKTADomain(activity: Activity,onResult: (Int) -> Unit)
+    fun signOutOKTADomain(activity: Activity,callback: (Boolean) -> Unit)
 
     fun isSignInOKTANotConnected() : Boolean
-
-    fun setUpConfigOKTA(apiUrl: String, apiUser: String, apiPassword: String)
 }

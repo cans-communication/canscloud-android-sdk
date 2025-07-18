@@ -1,5 +1,6 @@
 package cc.cans.canscloud.sdk.okta.service
 
+import cc.cans.canscloud.sdk.BuildConfig
 import okhttp3.Credentials
 import okhttp3.Interceptor
 import okhttp3.Request
@@ -15,7 +16,7 @@ class OKTAInterceptor(private val apiUser: String,private val apiPassword: Strin
             .header(
                 "Authorization",
                 Credentials.basic(
-                    apiUser, apiPassword
+                    BuildConfig.OKTA_API_USER, BuildConfig.OKTA_API_PASSWORD
                 )
             )
         val newRequest: Request = builder.build()
