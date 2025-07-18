@@ -18,6 +18,7 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.WorkerThread
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.MutableLiveData
 import cc.cans.canscloud.data.AESFactory
 import cc.cans.canscloud.data.ProvisioningData
 import cc.cans.canscloud.data.ProvisioningInterceptor
@@ -1425,11 +1426,20 @@ class CansCenter() : Cans {
         activity: Activity,
         onResult: (Int) -> Unit
     ) {
-        lateinit var usernameOKTA: String
-        lateinit var passwordOKTA: String
-        lateinit var domainNameOKTA: String
-        lateinit var displayNameOKTA: String
-        lateinit var transportOKTA: TransportType
+         var usernameOKTA: String
+         var passwordOKTA: String
+         var domainNameOKTA: String
+         var transportOKTA: TransportType?
+
+//        val usernameOKTA = MutableLiveData<String>()
+//
+//        val passwordOKTA = MutableLiveData<String>()
+//
+//        val domainNameOKTA = MutableLiveData<String>()
+//
+//        val displayNameOKTA = MutableLiveData<String>()
+//
+//        val transportOKTA = MutableLiveData<TransportType>()
 
         OKTARepository.fetchOKTAClient(
             apiURL = apiURL,
@@ -1481,8 +1491,7 @@ class CansCenter() : Cans {
                                                     usernameOKTA,
                                                     passwordOKTA,
                                                     domainNameOKTA,
-                                                    displayNameOKTA,
-                                                    transportOKTA
+                                                    transportOKTA ?: TransportType.Tcp
                                                 ) { resultProxy ->
                                                     if (resultProxy) {
                                                         listeners.forEach {
@@ -1580,18 +1589,17 @@ class CansCenter() : Cans {
     }
 
     private fun createProxyConfigFromSignInOKTA(
-        username: String?,
-        password: String?,
-        domain: String?,
-        displayName: String?,
-        transport: TransportType?,
+        username: String,
+        password: String,
+        domain: String,
+        transport: TransportType,
         callback: (Boolean) -> Unit
     ) {
         val accountCreator = getAccountCreator()
         accountCreator.username = username
         accountCreator.password = password
         accountCreator.domain = domain
-        accountCreator.displayName = displayName
+        accountCreator.displayName = ""
         accountCreator.transport = transport
 
         val proxyConfig: ProxyConfig? = accountCreator.createProxyConfig()
@@ -1602,7 +1610,7 @@ class CansCenter() : Cans {
             return
         }
 
-        if (domain.orEmpty() != cansCenter().corePreferences.defaultDomain) {
+        if (domain != cansCenter().corePreferences.defaultDomain) {
             cansCenter().corePreferences.keepServiceAlive = true
             cansCenter().coreContext.notificationsManager.startForeground()
             callback(true)
