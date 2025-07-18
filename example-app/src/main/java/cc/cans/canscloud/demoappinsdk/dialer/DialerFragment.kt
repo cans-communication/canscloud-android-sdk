@@ -143,12 +143,6 @@ class DialerFragment : Fragment() {
 
         val signInOKTANotConnected = cansCenter().isSignInOKTANotConnected()
         Log.i("OKTA signInOKTANotConnected : $signInOKTANotConnected")
-
-        if (signInOKTANotConnected) {
-            binding.buttonSignOutOkta.visibility = View.VISIBLE
-        } else {
-            binding.buttonSignOutOkta.visibility = View.GONE
-        }
     }
 
     override fun onDestroyView() {
