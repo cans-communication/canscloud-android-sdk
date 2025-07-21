@@ -480,20 +480,8 @@ class CansCenter() : Cans {
     private fun mapCallLog(){
         val list: ArrayList<CallModel> = arrayListOf()
         callList.forEach { call ->
-            val sip = CansUtils.getDisplayableAddress(call.remoteAddress)
-            val domain = core.defaultAccount?.params?.domain.orEmpty()
-            val port = core.defaultAccount?.params?.identityAddress?.port.toString()
-            val address = if (sip.startsWith("sip:509")) {
-                "sip:" + sip.substring(7, 16) + "@" + domain + ":" + port
-            } else if (sip.startsWith("sip:510")) {
-                "sip:" + sip.substring(7, 17) + "@" + domain + ":" + port
-            } else {
-                sip
-            }
-
             val data = CallModel(
                 callID = call.callLog.callId ?: "",
-                address = address,
                 phoneNumber = call.remoteAddress.username ?: "",
                 name = call.remoteAddress.displayName ?: "",
                 isPaused = call.state == Call.State.Paused,
@@ -506,6 +494,7 @@ class CansCenter() : Cans {
 
         callingLogs = list
         Log.i("callingLogs1: ","${callingLogs.size}")
+        Log.i("callingLogs1: ","${callingLogs}")
     }
 
     override fun getCallLog(): ArrayList<CallModel> {
