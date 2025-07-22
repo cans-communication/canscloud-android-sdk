@@ -17,8 +17,8 @@ class CallsViewModel : ViewModel() {
 
     private val listener = object : CansListenerStub {
         override fun onAudioDeviceChanged() {
-            isSpeaker.value = cansCenter().isSpeakerState
-            isBluetooth.value = cansCenter().isBluetoothState
+//            isSpeaker.value = cansCenter().isSpeakerState
+//            isBluetooth.value = cansCenter().isBluetoothState
         }
 
         override fun onAudioDevicesListUpdated() {}
