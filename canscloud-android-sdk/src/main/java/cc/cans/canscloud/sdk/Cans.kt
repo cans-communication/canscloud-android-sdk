@@ -126,6 +126,10 @@ interface Cans {
 
     fun startAnswerCall()
 
+    fun accountList(): ArrayList<String>
+
+    fun defaultAccount(index: Int, phoneNumber: String)
+
     fun updateAudioRelated()
 
     fun updateAudioRoutesState()
