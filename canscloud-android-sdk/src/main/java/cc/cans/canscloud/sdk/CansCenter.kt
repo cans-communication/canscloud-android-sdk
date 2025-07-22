@@ -835,6 +835,20 @@ class CansCenter() : Cans {
         answerCall(call)
     }
 
+    override fun accountList(): ArrayList<String> {
+        val accounts = cansCenter().core.accountList
+        return ArrayList(
+            accounts.map { it.params.identityAddress?.username.orEmpty() }
+        )
+    }
+
+    override fun defaultAccount(index: Int, phoneNumber: String) {
+        val account = cansCenter().core.accountList[index]
+        if (account.params.identityAddress?.username == phoneNumber) {
+            cansCenter().core.defaultAccount = account
+        }
+    }
+
     private fun answerCall(call: Call) {
         Log.i("[CansSDK]", "Answering call $call")
         val params = core.createCallParams(call)
