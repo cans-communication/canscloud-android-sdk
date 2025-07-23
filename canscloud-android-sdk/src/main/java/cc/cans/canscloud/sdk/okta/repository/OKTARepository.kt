@@ -9,6 +9,7 @@ import cc.cans.canscloud.sdk.okta.models.OKTAClientResponseData
 import cc.cans.canscloud.sdk.okta.models.SignInOKTAResponseData
 import cc.cans.canscloud.sdk.okta.service.OKTAInterceptor
 import cc.cans.canscloud.sdk.okta.service.OKTAService
+import cc.cans.canscloud.sdk.okta.service.OktaWebAuth
 import cc.cans.canscloud.sdk.okta.service.OktaWebAuth.Companion.webAuth
 import com.okta.oidc.RequestCallback
 import com.okta.oidc.util.AuthorizationException
@@ -16,6 +17,7 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
+import org.linphone.mediastream.Log
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.Locale
@@ -175,24 +177,29 @@ object OKTARepository {
     }
 
     fun signOutOKTA(activity: Activity, callback: (Boolean) -> Unit) {
-        webAuth.signOut(activity, object :
-            RequestCallback<Int, AuthorizationException> {
-            override fun onSuccess(result: Int) {
-                val loginInfo = cansCenter().corePreferences.loginInfo
-                val newLoginInfo = loginInfo.copy(
-                    logInType = "",
-                    tokenSignIn = "",
-                    tokenOkta = ""
-                )
-                cansCenter().corePreferences.loginInfo = newLoginInfo
-                cansCenter().corePreferences.isSignInOKTANotConnected = false
-                callback(true)
-            }
+        Log.i("OKTARepository call signOutOKTA ${OktaWebAuth.isWebAuthInitialized()}")
+        if (OktaWebAuth.isWebAuthInitialized()) {
+            webAuth.signOut(activity, object :
+                RequestCallback<Int, AuthorizationException> {
+                override fun onSuccess(result: Int) {
+                    val loginInfo = cansCenter().corePreferences.loginInfo
+                    val newLoginInfo = loginInfo.copy(
+                        logInType = "",
+                        tokenSignIn = "",
+                        tokenOkta = "",
+                        domainOKTACurrent = ""
+                    )
+                    cansCenter().corePreferences.loginInfo = newLoginInfo
+                    Log.i("OKTALogout","Repo signOutOKTA cansCenter().corePreferences.loginInfo : ${cansCenter().corePreferences.loginInfo}")
+                    cansCenter().corePreferences.isSignInOKTANotConnected = false
+                    callback(true)
+                }
 
-            override fun onError(error: String?, exception: AuthorizationException?) {
-                callback(false)
-            }
-        })
+                override fun onError(error: String?, exception: AuthorizationException?) {
+                    callback(false)
+                }
+            })
+        }
     }
 
     private fun getAppVersion(context: Context): Pair<String, Long> {
