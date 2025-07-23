@@ -94,6 +94,6 @@ class SharedMainViewModel : ViewModel() {
     }
 
     fun unregister(){
-        cansCenter().removeAccount()
+        cansCenter().removeAccountAll()
     }
 }

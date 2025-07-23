@@ -702,15 +702,38 @@ class CansCenter() : Cans {
         }
 
         core.removeAccount(account)
-        accountToDelete = null
-        core.clearAccounts()
-        core.clearAllAuthInfo()
-
         Log.i("[Account Removal]", "Removed account: ${account.params.identityAddress?.asString()}")
     }
 
+    override fun removeAccount(index: Int, username: String, domain: String) {
+        val account = core.accountList[index]
+        accountToDelete = account
 
-    override fun removeAccount() {
+        val registered = account.state == RegistrationState.Ok
+
+        if (core.defaultAccount == account) {
+            Log.i("[Account Settings]", "Account was default, let's look for a replacement")
+            for (accountIterator in core.accountList) {
+                if (account != accountIterator) {
+                    core.defaultAccount = accountIterator
+                    Log.i("[Account Settings]","New default account is $accountIterator")
+                    break
+                }
+            }
+        }
+
+        val params = account.params.clone()
+        params.isRegisterEnabled = false
+        account.params = params
+
+        if (!registered) {
+            Log.w("[Account Settings]"," Account isn't registered, don't unregister before removing it")
+            deleteAccount(account)
+        }
+    }
+
+
+    override fun removeAccountAll() {
         core.accountList.forEach { account ->
             accountToDelete = account
             accountDefault = account

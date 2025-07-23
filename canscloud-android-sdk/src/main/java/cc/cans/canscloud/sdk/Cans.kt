@@ -110,7 +110,9 @@ interface Cans {
 
     fun checkTelecomManagerPermissions(activity: Activity)
 
-    fun removeAccount()
+    fun removeAccountAll()
+
+    fun removeAccount(index: Int, username: String, domain: String)
 
     fun startCall(addressToCall: String)
 
