@@ -28,7 +28,6 @@ class OktaWebAuth {
     companion object {
         var TAG = "OktaWebAuth: "
         lateinit var webAuth: WebAuthClient
-        var pageCurrent = ""
         private var isCheckedSession: Boolean = false
         @SuppressLint("StaticFieldLeak")
         lateinit var corePreferences: CorePreferences
@@ -36,6 +35,9 @@ class OktaWebAuth {
         interface TokenRefreshCallback {
             fun onTokenRefreshed(isAuthenticated: Boolean)
         }
+
+        fun isWebAuthInitialized(): Boolean =
+            ::webAuth.isInitialized
 
         private fun getBaseUrl(url: String): String {
             val uri = URI(url)
@@ -91,7 +93,6 @@ class OktaWebAuth {
                     if (status == AuthorizationStatus.AUTHORIZED) {
                         val accessToken = webAuth.sessionClient.tokens?.accessToken.orEmpty()
 
-                        // Read & copy your LoginInfo
                         val current = getLoginInfo()
                         if (current != null) {
                             val updated = current.copy(tokenOkta = accessToken)
@@ -109,12 +110,10 @@ class OktaWebAuth {
                 }
 
                 override fun onCancel() {
-                    Log.d(TAG, "CANCELED")
                     callback.onTokenRefreshed(false)
                 }
 
                 override fun onError(msg: String?, error: AuthorizationException?) {
-                    Log.d(TAG, "onError: $msg", error)
                     callback.onTokenRefreshed(false)
                 }
             }
@@ -124,11 +123,11 @@ class OktaWebAuth {
         }
 
 
-        fun checkSession(page: String, activity: Activity, callback: (Boolean) -> Unit) {
-            if (pageCurrent == page || isCheckedSession) return
+        fun checkSession(activity: Activity, callback: (Boolean) -> Unit) {
+
+            if (isCheckedSession) return
             if (webAuth.isInProgress) return
 
-            pageCurrent = page
             isCheckedSession = true
             val loginInfo = getLoginInfo()
 
@@ -137,11 +136,9 @@ class OktaWebAuth {
                     object : RequestCallback<IntrospectInfo, AuthorizationException> {
                         override fun onSuccess(introspectInfo: IntrospectInfo) {
                             if (introspectInfo.isActive) {
-                                println("Token is active. User ID: ${introspectInfo.sub}")
                                 callback(false)
                                 isCheckedSession = false
                             } else {
-                                println("Token is inactive or expired.")
                                 signOut(activity) {
                                     callback(it)
                                 }
@@ -153,7 +150,6 @@ class OktaWebAuth {
                             error: String?,
                             exception: AuthorizationException?
                         ) {
-                            println("Token introspection failed: ${error}")
                             callback(false)
                             isCheckedSession = false
                         }
@@ -165,17 +161,13 @@ class OktaWebAuth {
             }
         }
 
-
         private fun signOut(activity: Activity, callback: (Boolean) -> Unit) {
             CoroutineScope(Dispatchers.IO).launch {
 
                 cansCenter().core.defaultAccount?.let {
                     val authInfo = it.findAuthInfo()
                     if (authInfo != null) {
-                        Log.i("[Account Settings] Found auth info $authInfo, removing it.")
                         cansCenter().core.removeAuthInfo(authInfo)
-                    } else {
-                        Log.w("[Account Settings] Couldn't find matching auth info...")
                     }
 
                     cansCenter().core.removeAccount(it)
@@ -185,25 +177,25 @@ class OktaWebAuth {
                 CansUtils.isSignOutLoading = true
                 webAuth.signOut(activity, object : RequestCallback<Int, AuthorizationException> {
                     override fun onSuccess(result: Int) {
-                        Log.d("OktaAuth1", "Successfully signed out")
 
                         val current = getLoginInfo()
+                        Log.d("OKTALogout","webAuth current login : $current")
                         if (current != null) {
-                            val updated = current.copy(logInType = "", tokenSignIn = "", tokenOkta = "")
+                            val updated = current.copy(logInType = "", tokenSignIn = "", tokenOkta = "", domainOKTACurrent = "")
+                            Log.i("OKTALogout","webAuth updated : $updated")
                             val json = Gson().toJson(updated)
+                            Log.i("OKTALogout","webAuth json : $json")
                             cansCenter().core.config.setString("app", "login_info", json)
+                            Log.i("OKTALogout","webAuth json : $json")
+                            Log.i("OKTALogout","webAuth signOut cansCenter().corePreferences.loginInfo : ${cansCenter().corePreferences.loginInfo}")
                         }
-
-//                        corePreferences.loginInfo = corePreferences.loginInfo?.copy(logInType = "", tokenSignIn = "", tokenOkta = "")
+                        cansCenter().corePreferences.isSignInOKTANotConnected = false
                         CansUtils.isSignOutLoading = false
-
-                        // Call the callback after sign-out
                         callback(true)
                         isCheckedSession = false
                     }
 
                     override fun onError(error: String?, exception: AuthorizationException?) {
-                        Log.e("OktaAuth1", "Sign out failed: $error", exception)
                         CansUtils.isSignOutLoading = false
                         callback(false)
                         isCheckedSession = false

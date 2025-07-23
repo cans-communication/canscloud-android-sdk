@@ -44,6 +44,26 @@
             android:noHistory="true"
             android:theme="@style/Theme.CansCloudAndroidSDK"/>
 
+        <activity
+            android:name="com.okta.oidc.OktaAuthenticationActivity"
+            android:autoRemoveFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <activity
+            android:name="com.okta.oidc.OktaRedirectActivity"
+            android:autoRemoveFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleInstance" >
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="${appAuthRedirectScheme}" />
+            </intent-filter>
+        </activity>
+
         <receiver
             android:name=".notifaication.AnswerCallReceiver"
             android:enabled="true"
