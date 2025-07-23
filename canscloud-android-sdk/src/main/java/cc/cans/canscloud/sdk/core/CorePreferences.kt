@@ -6,6 +6,8 @@ import androidx.annotation.WorkerThread
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
+import cc.cans.canscloud.sdk.okta.models.LoginInfo
+import com.google.gson.Gson
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -502,6 +504,43 @@ class CorePreferences constructor(private val context: Context) {
     // and will be able to choose which one to use if not using it's device's default
     val showAllRingtones: Boolean
         get() = config.getBool("app", "show_all_available_ringtones", false)
+
+    // add for OKTA
+    var loginInfo: LoginInfo
+        get() {
+            val json = config.getString("app", "login_info", "")
+            return json?.let {
+                try {
+                    Gson().fromJson(it, LoginInfo::class.java)
+                } catch (e: Exception) {
+                    LoginInfo("", "", "", "")
+                }
+            } ?: LoginInfo("", "", "", "")
+        }
+        set(value) {
+            val json = Gson().toJson(value)
+            config.setString("app", "login_info", json)
+        }
+
+    var isSignInOKTANotConnected: Boolean
+        get() = config.getBool("app", "is_sign_in_okta_not_connected", false)
+        set(value) {
+            val json = Gson().toJson(value)
+            config.setBool("app", "is_sign_in_okta_not_connected", value)
+        }
+
+    var clientID: String
+        get() = config.getString("app", "client_in_okta", "") ?: ""
+        set(value) {
+            config.setString("app", "client_in_okta", value)
+        }
+
+    var discoveryURL: String?
+        get() = config.getString("app", "discovery_sign_in_okta", "")
+        set(value) {
+            config.setString("app", "discovery_sign_in_okta", value)
+        }
+    // end for OKTA
 
     /* Default values related */
 
