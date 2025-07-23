@@ -640,11 +640,6 @@ class CansCenter() : Cans {
             return
         }
 
-        if ((username == this.username) || (domain == this.domain)) {
-            removeAccount()
-            core.clearAccounts()
-        }
-
         val serverAddress = "${domain}:${port}"
         val transportType = if (transport.name.lowercase() == "tcp") {
             TransportType.Tcp
