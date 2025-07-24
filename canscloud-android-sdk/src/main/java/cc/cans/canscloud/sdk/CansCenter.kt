@@ -16,9 +16,11 @@ import android.util.Base64
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.WorkerThread
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.MutableLiveData
+import androidx.navigation.fragment.findNavController
 import cc.cans.canscloud.data.AESFactory
 import cc.cans.canscloud.data.ProvisioningData
 import cc.cans.canscloud.data.ProvisioningInterceptor
@@ -38,6 +40,7 @@ import cc.cans.canscloud.sdk.models.CansTransport
 import cc.cans.canscloud.sdk.models.ConferenceState
 import cc.cans.canscloud.sdk.models.HistoryModel
 import cc.cans.canscloud.sdk.models.RegisterState
+import cc.cans.canscloud.sdk.okta.models.LogInType
 import cc.cans.canscloud.sdk.okta.models.SignIn
 import cc.cans.canscloud.sdk.okta.models.SignInOKTAResponseData
 import cc.cans.canscloud.sdk.okta.repository.OKTARepository
@@ -316,11 +319,11 @@ class CansCenter() : Cans {
 
                 Call.State.StreamsRunning -> {
                     mVibrator.cancel()
-                    addCallToPausedList(call)
+                    updateCallToPausedList(call)
                 }
 
                 Call.State.Paused -> {
-                    addCallToPausedList(call)
+                    updateCallToPausedList(call)
                 }
 
                 Call.State.Resuming -> {
@@ -654,6 +657,7 @@ class CansCenter() : Cans {
         } else {
             TransportType.Udp
         }
+
         accountCreator = getAccountCreator()
         accountCreator.username = username
         accountCreator.password = password
@@ -1448,9 +1452,14 @@ class CansCenter() : Cans {
         callback: (Boolean) -> Unit
     ) {
         OKTARepository.signOutOKTA(
-            activity = activity,
-            callback = callback
-        )
+            activity = activity
+        ){
+            resultCallback ->
+            if (resultCallback){
+                removeAccountAll()
+            }
+            callback(resultCallback)
+        }
     }
 
     override fun signInOKTADomain(
@@ -1459,20 +1468,12 @@ class CansCenter() : Cans {
         activity: Activity,
         onResult: (Int) -> Unit
     ) {
-         var usernameOKTA: String
-         var passwordOKTA: String
-         var domainNameOKTA: String
-         var transportOKTA: TransportType?
+        var usernameOKTA: String
+        var passwordOKTA: String
+        var domainNameOKTA: String
+        var transportOKTA: TransportType?
 
-//        val usernameOKTA = MutableLiveData<String>()
-//
-//        val passwordOKTA = MutableLiveData<String>()
-//
-//        val domainNameOKTA = MutableLiveData<String>()
-//
-//        val displayNameOKTA = MutableLiveData<String>()
-//
-//        val transportOKTA = MutableLiveData<TransportType>()
+        var isWaitingWebView = false
 
         OKTARepository.fetchOKTAClient(
             apiURL = apiURL,
@@ -1483,6 +1484,13 @@ class CansCenter() : Cans {
                 cansCenter().corePreferences.discoveryURL =
                     data.discoveryUrl
                 cansCenter().corePreferences.clientID = data.clientId
+
+                // Save Domain
+                val loginInfo = cansCenter().corePreferences.loginInfo
+                val newLoginInfo = loginInfo.copy(
+                    domainOKTACurrent = data.domainName,
+                )
+                cansCenter().corePreferences.loginInfo = newLoginInfo
 
                 OktaWebAuth.setupWebAuth(
                     context,
@@ -1503,92 +1511,107 @@ class CansCenter() : Cans {
                                     ?: ""
                             val domainOKTA = data.domainName
 
-                            OKTARepository.fetchSignInOKTA(
-                                context,
-                                apiURL,
-                                token,
-                                domainOKTA
-                            ) { signInResponse ->
-                                if (signInResponse != null) {
-                                    if (signInResponse.data != null) {
-                                        decryptLogin(signInResponse.data) { decodedPassword, signInData ->
-                                            if (decodedPassword != null && signInData != null) {
-                                                usernameOKTA = signInData.sip_username
-                                                passwordOKTA = decodedPassword
-                                                domainNameOKTA =
-                                                    "${signInResponse.data.domain_name}:8446"
-                                                transportOKTA = TransportType.Tcp
-//                                                        core.accountList.forEach { deleteAccount(it) }
-                                                removeAccount()
-                                                createProxyConfigFromSignInOKTA(
-                                                    usernameOKTA,
-                                                    passwordOKTA,
-                                                    domainNameOKTA,
-                                                    transportOKTA ?: TransportType.Tcp
-                                                ) { resultProxy ->
-                                                    if (resultProxy) {
-                                                        listeners.forEach {
-                                                            it.onRegistration(
-                                                                RegisterState.OK
-                                                            )
-                                                        }
-                                                    } else {
-                                                        listeners.forEach {
-                                                            it.onRegistration(
-                                                                RegisterState.FAIL
-                                                            )
-                                                        }
+                            if (isAuthenticated) {
+                                fetchSignInOKTA(
+                                    apiURL,
+                                ) { signInResponse ->
+                                    if (signInResponse != null) {
+                                        if (signInResponse.data != null) {
+                                            decryptLogin(signInResponse.data) { decodedPassword, signInData ->
+                                                if (decodedPassword != null && signInData != null) {
+                                                    usernameOKTA = signInData.sip_username ?: ""
+                                                    passwordOKTA = decodedPassword
+                                                    domainNameOKTA = signInResponse.data.domain_name
+                                                    transportOKTA = TransportType.Tcp
+
+//                                                    removeAccount()
+                                                    removeAccountAll()
+                                                    register(
+                                                        usernameOKTA,
+                                                        passwordOKTA,
+                                                        domainNameOKTA,
+                                                        "8446",
+                                                        CansTransport.TCP
+                                                    )
+                                                } else {
+                                                    listeners.forEach {
+                                                        it.onRegistration(
+                                                            RegisterState.FAIL
+                                                        )
                                                     }
                                                 }
-                                            } else {
-                                                listeners.forEach {
-                                                    it.onRegistration(
-                                                        RegisterState.FAIL
-                                                    )
+                                            }
+                                            onResult(signInResponse.code)
+                                            cansCenter().corePreferences.isSignInOKTANotConnected =
+                                                false
+                                        } else { // ELSE signInResponse.data != null
+                                            when (signInResponse.code) {
+                                                301 -> {
+                                                    cansCenter().corePreferences.isSignInOKTANotConnected =
+                                                        true
+                                                }
+
+                                                else -> {
+                                                    cansCenter().corePreferences.isSignInOKTANotConnected =
+                                                        false
                                                 }
                                             }
-                                        }
-                                        onResult(signInResponse.code)
-                                        cansCenter().corePreferences.isSignInOKTANotConnected =
-                                            false
-                                    } else {
-                                        when (signInResponse.code) {
-                                            301, 400 -> {
-                                                cansCenter().corePreferences.isSignInOKTANotConnected =
-                                                    true
-                                            }
-
-                                            else -> {
-                                                cansCenter().corePreferences.isSignInOKTANotConnected =
-                                                    false
+                                            onResult(signInResponse.code)
+                                            listeners.forEach {
+                                                it.onRegistration(
+                                                    RegisterState.FAIL
+                                                )
                                             }
                                         }
-                                        onResult(signInResponse.code)
+                                    } else { // ELSE signInResponse != null
+                                        onResult(-1)
                                         listeners.forEach {
                                             it.onRegistration(
                                                 RegisterState.FAIL
                                             )
                                         }
                                     }
-                                } else {
-                                    onResult(-1)
-                                    listeners.forEach {
-                                        it.onRegistration(
-                                            RegisterState.FAIL
-                                        )
-                                    }
+                                }
+                            } else { // ELSE isAuthenticated
+                                onResult(-1)
+                                listeners.forEach {
+                                    it.onRegistration(
+                                        RegisterState.FAIL
+                                    )
                                 }
                             }
                         }
                     })
+
                 val payload =
                     AuthenticationPayload.Builder().build()
                 webAuth.signIn(activity, payload)
-            } ?: onResult(-1)
-            listeners.forEach {
-                it.onRegistration(
-                    RegisterState.FAIL
-                )
+                isWaitingWebView = true
+
+            } ?: run {
+                if (!isWaitingWebView) {
+                    onResult(-1)
+                    listeners.forEach {
+                        it.onRegistration(
+                            RegisterState.FAIL
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    override fun fetchSignInOKTA(apiURL: String, callback: (SignInOKTAResponseData?) -> Unit){
+        OKTARepository.fetchSignInOKTA(
+            context,
+            apiURL,
+            cansCenter().corePreferences.loginInfo.tokenOkta ?: "",
+            cansCenter().corePreferences.loginInfo.domainOKTACurrent ?: ""
+        ) { signInResponse ->
+            if (signInResponse != null) {
+                callback(signInResponse)
+            } else {
+                callback(null)
             }
         }
     }
@@ -1598,14 +1621,23 @@ class CansCenter() : Cans {
         callback: (String?, SignIn?) -> Unit
     ) {
         val jsonString = AESFactory.decrypt(dataLogin.user_credentials)
+
         if (jsonString != null) {
             val dataSignIn = Gson().fromJson(jsonString, SignIn::class.java)
             val loginInfo = cansCenter().corePreferences.loginInfo
-            val newLoginInfo = loginInfo.copy(tokenSignIn = dataLogin.access_token)
+            val newLoginInfo = loginInfo.copy(
+                tokenSignIn = dataLogin.access_token,
+                logInType = LogInType.OKTA.value,
+                domainOKTACurrent = dataLogin.domain_name,
+            )
             cansCenter().corePreferences.loginInfo = newLoginInfo
 
-            decodeBase64(dataSignIn.sip_password) { passwordDecode ->
-                callback(passwordDecode, dataSignIn)
+            if (dataSignIn.sip_password != null) {
+                decodeBase64(dataSignIn.sip_password) { passwordDecode ->
+                    callback(passwordDecode, dataSignIn)
+                }
+            } else {
+                callback(null, null)
             }
         } else {
             callback(null, null)
@@ -1621,37 +1653,32 @@ class CansCenter() : Cans {
         }
     }
 
-    private fun createProxyConfigFromSignInOKTA(
-        username: String,
-        password: String,
-        domain: String,
-        transport: TransportType,
-        callback: (Boolean) -> Unit
-    ) {
-        val accountCreator = getAccountCreator()
-        accountCreator.username = username
-        accountCreator.password = password
-        accountCreator.domain = domain
-        accountCreator.displayName = ""
-        accountCreator.transport = transport
-
-        val proxyConfig: ProxyConfig? = accountCreator.createProxyConfig()
-        proxyConfigToCheck = proxyConfig
-
-        if (proxyConfig == null) {
-            callback(false)
-            return
-        }
-
-        if (domain != cansCenter().corePreferences.defaultDomain) {
-            cansCenter().corePreferences.keepServiceAlive = true
-            cansCenter().coreContext.notificationsManager.startForeground()
-            callback(true)
-        }
-    }
-
     override fun isSignInOKTANotConnected(): Boolean {
         return corePreferences.isSignInOKTANotConnected
+    }
+
+    override fun checkSessionOKTAExpire(activity: Activity, callback: (Boolean) -> Unit) {
+        if (core.callsNb == 0) {
+            if (corePreferences.loginInfo?.logInType == LogInType.OKTA.value) {
+                if (OktaWebAuth.isWebAuthInitialized()) {
+                    // webAuth is ready to use
+                    OktaWebAuth.checkSession(activity) { isSessionValid ->
+                        if(isSessionValid){
+//                            removeAccount()
+                            removeAccountAll()
+                        }
+                        callback(isSessionValid)
+                    }
+                } else {
+                    // webAuth is NOT initialized
+                    callback(false)
+                }
+            }else {
+                callback(false)
+            }
+        } else {
+            callback(false)
+        }
     }
 
     override fun addListener(listener: CansListenerStub) {

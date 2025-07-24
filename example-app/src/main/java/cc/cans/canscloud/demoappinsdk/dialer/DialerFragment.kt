@@ -15,6 +15,7 @@ import cc.cans.canscloud.sdk.BuildConfig
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CansTransport
 import cc.cans.canscloud.sdk.models.RegisterState
+import cc.cans.canscloud.sdk.okta.service.OktaWebAuth
 import org.linphone.core.RegistrationState
 import org.linphone.mediastream.Log
 
@@ -126,15 +127,22 @@ class DialerFragment : Fragment() {
         }
 
         binding.buttonSignOutOkta.setOnClickListener {
-            Toast.makeText(requireContext(), "Sign out OKTA Clicked", Toast.LENGTH_SHORT).show()
-
-            if (cansCenter().isSignInOKTANotConnected()) {
-                cansCenter().signOutOKTADomain(requireActivity()) { status ->
-                    Toast.makeText(activity, "Logout status : $status", Toast.LENGTH_LONG).show()
-                }
-            } else {
-                Toast.makeText(activity, "No OKTA sign in", Toast.LENGTH_LONG).show()
+            /* Test Sign Out */
+            cansCenter().signOutOKTADomain(requireActivity()) { status ->
+                Toast.makeText(activity, "Logout status : $status", Toast.LENGTH_LONG).show()
             }
+
+            /* Test check session */
+//            if (OktaWebAuth.isWebAuthInitialized()) {
+//                cansCenter().checkSessionOKTAExpire(requireActivity()) { status ->
+//                    Toast.makeText(
+//                        activity,
+//                        "checkSessionOKTAExpire status : $status",
+//                        Toast.LENGTH_LONG
+//                    )
+//                        .show()
+//                }
+//            }
         }
     }
 
@@ -143,6 +151,10 @@ class DialerFragment : Fragment() {
 
         val signInOKTANotConnected = cansCenter().isSignInOKTANotConnected()
         Log.i("OKTA signInOKTANotConnected : $signInOKTANotConnected")
+
+        cansCenter().core.accountList.forEach { account ->
+            Log.i("OKTA loop account : $account")
+        }
     }
 
     override fun onDestroyView() {

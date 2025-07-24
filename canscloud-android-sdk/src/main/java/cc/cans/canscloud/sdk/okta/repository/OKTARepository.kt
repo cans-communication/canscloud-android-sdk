@@ -9,6 +9,7 @@ import cc.cans.canscloud.sdk.okta.models.OKTAClientResponseData
 import cc.cans.canscloud.sdk.okta.models.SignInOKTAResponseData
 import cc.cans.canscloud.sdk.okta.service.OKTAInterceptor
 import cc.cans.canscloud.sdk.okta.service.OKTAService
+import cc.cans.canscloud.sdk.okta.service.OktaWebAuth
 import cc.cans.canscloud.sdk.okta.service.OktaWebAuth.Companion.webAuth
 import com.okta.oidc.RequestCallback
 import com.okta.oidc.util.AuthorizationException
@@ -16,28 +17,12 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
+import org.linphone.mediastream.Log
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.Locale
 
 object OKTARepository {
-    //    private val okHttpClient: OkHttpClient = OkHttpClient.Builder()
-//        .addInterceptor(OKTAInterceptor(BuildConfig.OKTA_API_USER, BuildConfig.OKTA_API_PASSWORD))
-//        .addNetworkInterceptor(
-//            OKTAInterceptor(BuildConfig.OKTA_API_USER, BuildConfig.OKTA_API_PASSWORD),
-//        )
-//        .build()
-//
-//    private val retrofit: Retrofit = Retrofit.Builder()
-//        .client(okHttpClient)
-//        .addConverterFactory(GsonConverterFactory.create())
-//        .baseUrl(BuildConfig.OKTA_API_URL)
-//        .build()
-//
-//    private val oktaService: OKTAService =
-//        retrofit.create(OKTAService::class.java)
-//
-
     private fun createOKTAService(apiURL: String):OKTAService {
         val okHttpClient = OkHttpClient.Builder()
             .addInterceptor(
@@ -175,24 +160,27 @@ object OKTARepository {
     }
 
     fun signOutOKTA(activity: Activity, callback: (Boolean) -> Unit) {
-        webAuth.signOut(activity, object :
-            RequestCallback<Int, AuthorizationException> {
-            override fun onSuccess(result: Int) {
-                val loginInfo = cansCenter().corePreferences.loginInfo
-                val newLoginInfo = loginInfo.copy(
-                    logInType = "",
-                    tokenSignIn = "",
-                    tokenOkta = ""
-                )
-                cansCenter().corePreferences.loginInfo = newLoginInfo
-                cansCenter().corePreferences.isSignInOKTANotConnected = false
-                callback(true)
-            }
+        if (OktaWebAuth.isWebAuthInitialized()) {
+            webAuth.signOut(activity, object :
+                RequestCallback<Int, AuthorizationException> {
+                override fun onSuccess(result: Int) {
+                    val loginInfo = cansCenter().corePreferences.loginInfo
+                    val newLoginInfo = loginInfo.copy(
+                        logInType = "",
+                        tokenSignIn = "",
+                        tokenOkta = "",
+                        domainOKTACurrent = ""
+                    )
+                    cansCenter().corePreferences.loginInfo = newLoginInfo
+                    cansCenter().corePreferences.isSignInOKTANotConnected = false
+                    callback(true)
+                }
 
-            override fun onError(error: String?, exception: AuthorizationException?) {
-                callback(false)
-            }
-        })
+                override fun onError(error: String?, exception: AuthorizationException?) {
+                    callback(false)
+                }
+            })
+        }
     }
 
     private fun getAppVersion(context: Context): Pair<String, Long> {

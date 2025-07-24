@@ -12,6 +12,7 @@ import cc.cans.canscloud.sdk.models.CallModel
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.CansTransport
 import cc.cans.canscloud.sdk.models.RegisterState
+import cc.cans.canscloud.sdk.okta.models.SignInOKTAResponseData
 import org.linphone.core.Call
 import org.linphone.core.Conference
 import org.linphone.core.Core
@@ -179,4 +180,8 @@ interface Cans {
     fun signOutOKTADomain(activity: Activity,callback: (Boolean) -> Unit)
 
     fun isSignInOKTANotConnected() : Boolean
+
+    fun checkSessionOKTAExpire(activity: Activity,callback: (Boolean) -> Unit)
+
+    fun fetchSignInOKTA(apiURL: String, callback: (SignInOKTAResponseData?) -> Unit)
 }
