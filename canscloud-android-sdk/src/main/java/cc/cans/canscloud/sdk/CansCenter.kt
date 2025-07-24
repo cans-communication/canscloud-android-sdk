@@ -646,12 +646,6 @@ class CansCenter() : Cans {
         port: String,
         transport: CansTransport
     ) {
-        Log.i("OKTA", "register username : $username")
-        Log.i("OKTA", "register password : $password")
-        Log.i("OKTA", "register domain : $domain")
-        Log.i("OKTA", "register port : $port")
-        Log.i("OKTA", "register transport : $transport")
-
         if (username.isEmpty() || password.isEmpty() || domain.isEmpty() || port.isEmpty()) {
             listeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
@@ -674,17 +668,10 @@ class CansCenter() : Cans {
         val proxyConfig = accountCreator.createAccountInCore()
         accountToCheck = proxyConfig
 
-        Log.i("OKTA", "register proxyConfig : $proxyConfig")
-
-
         if (proxyConfig == null) {
-            Log.i("OKTA", "register proxyConfig is null : RegisterState.FAIL")
-
             listeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
-
-        Log.i("OKTA", "register startForeground")
 
         corePreferences.keepServiceAlive = true
         coreContext.notificationsManager.startForeground()
@@ -1464,20 +1451,12 @@ class CansCenter() : Cans {
         activity: Activity,
         callback: (Boolean) -> Unit
     ) {
-//        removeAccount()
-//        OKTARepository.signOutOKTA(
-//            activity = activity,
-//            callback = callback
-//        )
-
         OKTARepository.signOutOKTA(
             activity = activity
-//            callback = callback
         ){
             resultCallback ->
             if (resultCallback){
-                Log.i("OKTA","OKTARepository.signOutOKTA removeAccount ")
-                removeAccount()
+                removeAccountAll()
             }
             callback(resultCallback)
         }
@@ -1532,9 +1511,6 @@ class CansCenter() : Cans {
                                     ?: ""
                             val domainOKTA = data.domainName
 
-                            Log.i("OKTA","OKTA TokenRefreshCallback cansCenter().corePreferences.tokenOkta : ${cansCenter().corePreferences.loginInfo.tokenOkta} ")
-                            Log.i("OKTA","OKTA TokenRefreshCallback cansCenter().corePreferences.loginInfo : ${cansCenter().corePreferences.loginInfo.domainOKTACurrent} ")
-
                             if (isAuthenticated) {
                                 fetchSignInOKTA(
                                     apiURL,
@@ -1548,7 +1524,8 @@ class CansCenter() : Cans {
                                                     domainNameOKTA = signInResponse.data.domain_name
                                                     transportOKTA = TransportType.Tcp
 
-                                                    removeAccount()
+//                                                    removeAccount()
+                                                    removeAccountAll()
                                                     register(
                                                         usernameOKTA,
                                                         passwordOKTA,
@@ -1625,9 +1602,6 @@ class CansCenter() : Cans {
     }
 
     override fun fetchSignInOKTA(apiURL: String, callback: (SignInOKTAResponseData?) -> Unit){
-        Log.i("OKTA", "fetchSignInOKTA call with token : ${cansCenter().corePreferences.loginInfo.tokenOkta}")
-        Log.i("OKTA", "fetchSignInOKTA call with domainOKTACurrent : ${cansCenter().corePreferences.loginInfo.domainOKTACurrent}")
-
         OKTARepository.fetchSignInOKTA(
             context,
             apiURL,
@@ -1635,10 +1609,8 @@ class CansCenter() : Cans {
             cansCenter().corePreferences.loginInfo.domainOKTACurrent ?: ""
         ) { signInResponse ->
             if (signInResponse != null) {
-                Log.i("OKTA","fetchSignInOKTA with res : $signInResponse")
                 callback(signInResponse)
             } else {
-                Log.i("OKTA","fetchSignInOKTA with null")
                 callback(null)
             }
         }
@@ -1686,21 +1658,14 @@ class CansCenter() : Cans {
     }
 
     override fun checkSessionOKTAExpire(activity: Activity, callback: (Boolean) -> Unit) {
-        Log.i("OKTA","checkSessionOKTAExpire ")
         if (core.callsNb == 0) {
-            Log.i("OKTA","corePreferences.loginInfo?.logInType : ${corePreferences.loginInfo?.logInType}")
-
             if (corePreferences.loginInfo?.logInType == LogInType.OKTA.value) {
-                Log.i("OKTA","cOktaWebAuth.isWebAuthInitialized() : ${OktaWebAuth.isWebAuthInitialized()}")
                 if (OktaWebAuth.isWebAuthInitialized()) {
                     // webAuth is ready to use
-                    Log.i("OKTA","call OktaWebAuth.checkSession() : ")
-
                     OktaWebAuth.checkSession(activity) { isSessionValid ->
-                        Log.i("OKTA","call OktaWebAuth.checkSession() result callback : $isSessionValid")
                         if(isSessionValid){
-                            Log.i("OKTA","call OktaWebAuth.checkSession() removeAccount ")
-                            removeAccount()
+//                            removeAccount()
+                            removeAccountAll()
                         }
                         callback(isSessionValid)
                     }
