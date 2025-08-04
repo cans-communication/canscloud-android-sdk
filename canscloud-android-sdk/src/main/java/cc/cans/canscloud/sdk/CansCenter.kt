@@ -977,7 +977,7 @@ class CansCenter() : Cans {
                         call: retrofit2.Call<ProvisioningData?>,
                         response: retrofit2.Response<ProvisioningData?>,
                     ) {
-                        Log.e("Response success", response.message())
+                        Log.i("Response success", response.message())
                         if (response.isSuccessful) {
                             response.body().let { body ->
                                 val provisioningData: ProvisioningData? = body
@@ -993,8 +993,8 @@ class CansCenter() : Cans {
                                         } else {
                                             accountCreator.transport = TransportType.Udp
                                         }
-                                        val proxyConfig = accountCreator.createAccountInCore()
-                                        accountToCheck = proxyConfig
+
+                                        Log.i("[registerAccount]", "[Account Login] Username is 3333")
 
                                         if (!createProxyConfig()) {
                                             Log.i(
