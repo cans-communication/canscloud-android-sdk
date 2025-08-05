@@ -5,8 +5,6 @@ import cc.cans.canscloud.sdk.models.ConferenceState
 import cc.cans.canscloud.sdk.models.RegisterState
 
 interface CansListenerStub {
-   fun onRegistration(state : RegisterState, message: String? = null)
-   fun onUnRegister()
    fun onCallState(state : CallState, message: String? = null)
    fun onLastCallEnded()
    fun onAudioDeviceChanged()

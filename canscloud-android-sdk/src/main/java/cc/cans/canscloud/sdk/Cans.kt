@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.os.Vibrator
 import cc.cans.canscloud.sdk.callback.CansListenerStub
+import cc.cans.canscloud.sdk.callback.CansRegisterListenerStub
 import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CorePreferences
 import cc.cans.canscloud.sdk.core.CoreService
@@ -161,9 +162,13 @@ interface Cans {
 
     fun updateMissedCallLogs()
 
-    fun addListener(listener: CansListenerStub)
+    fun addCansCallListener(listener: CansListenerStub)
 
-    fun removeListener(listener: CansListenerStub)
+    fun removeCansCallListener(listener: CansListenerStub)
+
+    fun addCansRegisterListener(listener: CansRegisterListenerStub)
+
+    fun removeCansRegisterListener(listener: CansRegisterListenerStub)
 
     fun removeAllListener()
 

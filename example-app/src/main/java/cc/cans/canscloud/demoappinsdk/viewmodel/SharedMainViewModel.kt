@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.sdk.callback.CansListenerStub
+import cc.cans.canscloud.sdk.callback.CansRegisterListenerStub
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.ConferenceState
@@ -15,7 +16,7 @@ class SharedMainViewModel : ViewModel() {
     val statusRegister = MutableLiveData<Int>()
     val isRegister = MutableLiveData<Boolean>()
 
-    private val listener = object : CansListenerStub {
+    private val listener = object : CansRegisterListenerStub {
         override fun onRegistration(state: RegisterState, message: String?) {
             Log.i("[SharedMainViewModel]","onRegistration ${state}")
             when (state) {
@@ -28,21 +29,37 @@ class SharedMainViewModel : ViewModel() {
                     isRegister.value = false
                 }
 
-                RegisterState.None -> {
+                RegisterState.NONE -> {
                     statusRegister.value = R.string.un_register
                     isRegister.value = false
+                }
+
+                RegisterState.CLEARED -> {
+
                 }
             }
         }
 
-        override fun onUnRegister() {
-            if (cansCenter().username.isEmpty()) {
-                statusRegister.value = R.string.un_register
-                isRegister.value = false
-            }
+        override fun onUpdateAccountRegistration(
+            state: RegisterState,
+            message: String?
+        ) {
+            Log.i("[SharedMainViewModel]","onRegistration ${state}")
         }
 
-        override fun onCallState(state: CallState, message: String?) {
+        override fun onSettingAccountRegistration(
+            state: RegisterState,
+            message: String?
+        ) {
+            Log.i("[SharedMainViewModel]","onRegistration ${state}")
+        }
+    }
+
+    private val listenerCall = object : CansListenerStub {
+        override fun onCallState(
+            state: CallState,
+            message: String?
+        ) {
             Log.i("[SharedMainViewModel] onCallState: ","$state")
             when (state) {
                 CallState.Idle -> {}
@@ -74,14 +91,17 @@ class SharedMainViewModel : ViewModel() {
 
         override fun onConferenceState(state: ConferenceState) {
         }
+
     }
 
     init {
-        cansCenter().addListener(listener)
+        cansCenter().addCansCallListener(listenerCall)
+        cansCenter().addCansRegisterListener(listener)
     }
 
     override fun onCleared() {
-        cansCenter().removeListener(listener)
+        cansCenter().removeCansCallListener(listenerCall)
+        cansCenter().removeCansRegisterListener(listener)
         super.onCleared()
     }
 
@@ -90,7 +110,8 @@ class SharedMainViewModel : ViewModel() {
     }
 
     fun register(){
-        cansCenter().addListener(listener)
+        cansCenter().addCansCallListener(listenerCall)
+        cansCenter().addCansRegisterListener(listener)
     }
 
     fun unregister(){
