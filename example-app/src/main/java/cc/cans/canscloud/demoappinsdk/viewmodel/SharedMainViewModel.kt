@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.sdk.callback.CansListenerStub
+import cc.cans.canscloud.sdk.callback.CansRegisterAccountListenerStub
 import cc.cans.canscloud.sdk.callback.CansRegisterListenerStub
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.models.CallState
@@ -23,6 +24,7 @@ class SharedMainViewModel : ViewModel() {
                 RegisterState.OK -> {
                     statusRegister.value = R.string.register_success
                     isRegister.value = true
+                    registerAccount()
                 }
                 RegisterState.FAIL -> {
                     statusRegister.value = R.string.register_fail
@@ -35,19 +37,13 @@ class SharedMainViewModel : ViewModel() {
                 }
 
                 RegisterState.CLEARED -> {
-
+                    statusRegister.value = R.string.un_register
+                    isRegister.value = false
                 }
             }
         }
 
         override fun onUpdateAccountRegistration(
-            state: RegisterState,
-            message: String?
-        ) {
-            Log.i("[SharedMainViewModel]","onRegistration ${state}")
-        }
-
-        override fun onSettingAccountRegistration(
             state: RegisterState,
             message: String?
         ) {
@@ -94,14 +90,47 @@ class SharedMainViewModel : ViewModel() {
 
     }
 
+    private val listenerCallAccount = object : CansRegisterAccountListenerStub {
+        override fun onRegistration(
+            state: RegisterState,
+            message: String?
+        ) {
+            Log.i("[SharedMainViewModel]","onRegistration ${state}")
+            when (state) {
+                RegisterState.OK -> {
+                    statusRegister.value = R.string.register_success
+                    isRegister.value = true
+                }
+                RegisterState.FAIL -> {
+                    statusRegister.value = R.string.register_fail
+                    isRegister.value = false
+                }
+
+                RegisterState.NONE -> {
+                    statusRegister.value = R.string.un_register
+                    isRegister.value = false
+                }
+
+                RegisterState.CLEARED -> {
+                    statusRegister.value = R.string.un_register
+                    isRegister.value = false
+                }
+            }
+        }
+
+    }
+
+
     init {
         cansCenter().addCansCallListener(listenerCall)
         cansCenter().addCansRegisterListener(listener)
+
     }
 
     override fun onCleared() {
         cansCenter().removeCansCallListener(listenerCall)
         cansCenter().removeCansRegisterListener(listener)
+        cansCenter().removeCansRegisterAccountListener(listenerCallAccount)
         super.onCleared()
     }
 
@@ -112,9 +141,15 @@ class SharedMainViewModel : ViewModel() {
     fun register(){
         cansCenter().addCansCallListener(listenerCall)
         cansCenter().addCansRegisterListener(listener)
+
+    }
+
+    fun registerAccount(){
+        cansCenter().addCansRegisterAccountListener(0,listenerCallAccount)
+
     }
 
     fun unregister(){
-        cansCenter().removeAccountAll()
+        cansCenter().removeAccount(0)
     }
 }

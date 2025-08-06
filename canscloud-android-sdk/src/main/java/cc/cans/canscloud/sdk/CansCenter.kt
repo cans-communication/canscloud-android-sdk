@@ -27,6 +27,7 @@ import cc.cans.canscloud.data.ProvisioningInterceptor
 import cc.cans.canscloud.data.ProvisioningResult
 import cc.cans.canscloud.data.ProvisioningService
 import cc.cans.canscloud.sdk.callback.CansListenerStub
+import cc.cans.canscloud.sdk.callback.CansRegisterAccountListenerStub
 import cc.cans.canscloud.sdk.callback.CansRegisterListenerStub
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK
@@ -113,6 +114,7 @@ class CansCenter() : Cans {
 
     private var listeners = mutableListOf<CansListenerStub>()
     private var registerListeners = mutableListOf<CansRegisterListenerStub>()
+    private var registerAccountListeners = mutableListOf<CansRegisterAccountListenerStub>()
     override val callLogs = ArrayList<GroupedCallLogData>()
     override val missedCallLogs = ArrayList<GroupedCallLogData>()
     var callingLogs = ArrayList<CallModel>()
@@ -233,7 +235,6 @@ class CansCenter() : Cans {
         get() = AudioRouteUtils.isHeadsetAudioRouteAvailable()
 
     private var accountToDelete: Account? = null
-    private var accountToCheck: Account? = null
 
     private val accountListener: AccountListenerStub = object : AccountListenerStub() {
         override fun onRegistrationStateChanged(
@@ -244,12 +245,12 @@ class CansCenter() : Cans {
             Log.i("[$TAG: onRegistrationStateChanged]", "Registration state is $state: $message")
             if (state == RegistrationState.Cleared && account == accountToDelete) {
                 deleteAccount(account)
-                registerListeners.forEach { it.onSettingAccountRegistration(RegisterState.CLEARED) }
+                registerAccountListeners.forEach { it.onRegistration(RegisterState.CLEARED) }
             } else {
                 if (state == RegistrationState.Ok) {
-                    registerListeners.forEach { it.onSettingAccountRegistration(RegisterState.OK, message) }
+                    registerAccountListeners.forEach { it.onRegistration(RegisterState.OK, message) }
                 } else if (state == RegistrationState.Failed) {
-                    registerListeners.forEach { it.onSettingAccountRegistration(RegisterState.FAIL, message) }
+                    registerAccountListeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
                 }
             }
         }
@@ -658,8 +659,8 @@ class CansCenter() : Cans {
         accountCreator.displayName = ""
         accountCreator.transport = transportType
 
-        val proxyConfig = accountCreator.createAccountInCore()
-        accountToCheck = proxyConfig
+        val proxyConfig : ProxyConfig? = accountCreator.createProxyConfig()
+        proxyConfigToCheck = proxyConfig
 
         if (proxyConfig == null) {
             registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
@@ -671,9 +672,6 @@ class CansCenter() : Cans {
     }
 
     private fun removeInvalidProxyConfig() {
-        val account = accountToCheck
-        account ?: return
-
         val cfg = proxyConfigToCheck
         cfg ?: return
         val authInfo = cfg.findAuthInfo()
@@ -705,7 +703,7 @@ class CansCenter() : Cans {
         Log.i("[Account Removal]", "Removed account: ${account.params.identityAddress?.asString()}")
     }
 
-    override fun removeAccount(index: Int, username: String, domain: String) {
+    override fun removeAccount(index: Int) {
         val account = core.accountList[index]
         accountToDelete = account
 
@@ -736,9 +734,6 @@ class CansCenter() : Cans {
     override fun removeAccountAll() {
         core.accountList.forEach { account ->
             accountToDelete = account
-            accountDefault = account
-            accountDefault.addListener(accountListener)
-
             Log.i(
                 "[Account Removal]",
                 "Removed account: ${account.params.identityAddress?.asString()}"
@@ -1683,6 +1678,23 @@ class CansCenter() : Cans {
 
     override fun removeCansCallListener(listener: CansListenerStub) {
         listeners.remove(listener)
+    }
+
+    override fun addCansRegisterAccountListener(
+        indexAccount: Int,
+        listener: CansRegisterAccountListenerStub
+    ) {
+        val account = core.accountList[indexAccount]
+        accountDefault = account
+        accountDefault.addListener(accountListener)
+        registerAccountListeners.add(listener)
+    }
+
+    override fun removeCansRegisterAccountListener(
+        listener: CansRegisterAccountListenerStub
+    ) {
+        accountDefault.removeListener(accountListener)
+        registerAccountListeners.remove(listener)
     }
 
 

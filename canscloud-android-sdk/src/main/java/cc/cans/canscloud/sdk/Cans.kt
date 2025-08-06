@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.os.Vibrator
 import cc.cans.canscloud.sdk.callback.CansListenerStub
+import cc.cans.canscloud.sdk.callback.CansRegisterAccountListenerStub
 import cc.cans.canscloud.sdk.callback.CansRegisterListenerStub
 import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CorePreferences
@@ -114,7 +115,7 @@ interface Cans {
 
     fun removeAccountAll()
 
-    fun removeAccount(index: Int, username: String, domain: String)
+    fun removeAccount(index: Int)
 
     fun startCall(addressToCall: String)
 
@@ -169,6 +170,10 @@ interface Cans {
     fun addCansRegisterListener(listener: CansRegisterListenerStub)
 
     fun removeCansRegisterListener(listener: CansRegisterListenerStub)
+
+    fun addCansRegisterAccountListener(indexAccount: Int, listener: CansRegisterAccountListenerStub)
+
+    fun removeCansRegisterAccountListener(listener: CansRegisterAccountListenerStub)
 
     fun removeAllListener()
 
