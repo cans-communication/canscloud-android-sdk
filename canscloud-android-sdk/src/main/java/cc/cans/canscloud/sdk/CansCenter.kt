@@ -27,6 +27,8 @@ import cc.cans.canscloud.data.ProvisioningInterceptor
 import cc.cans.canscloud.data.ProvisioningResult
 import cc.cans.canscloud.data.ProvisioningService
 import cc.cans.canscloud.sdk.callback.CansListenerStub
+import cc.cans.canscloud.sdk.callback.CansRegisterAccountListenerStub
+import cc.cans.canscloud.sdk.callback.CansRegisterListenerStub
 import cc.cans.canscloud.sdk.compatibility.Compatibility
 import cc.cans.canscloud.sdk.core.CoreContextSDK
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
@@ -111,6 +113,8 @@ class CansCenter() : Cans {
     }
 
     private var listeners = mutableListOf<CansListenerStub>()
+    private var registerListeners = mutableListOf<CansRegisterListenerStub>()
+    private var registerAccountListeners = mutableListOf<CansRegisterAccountListenerStub>()
     override val callLogs = ArrayList<GroupedCallLogData>()
     override val missedCallLogs = ArrayList<GroupedCallLogData>()
     var callingLogs = ArrayList<CallModel>()
@@ -172,11 +176,11 @@ class CansCenter() : Cans {
 
                 return when (state) {
                     RegistrationState.Ok -> RegisterState.OK
-                    RegistrationState.None -> RegisterState.None
+                    RegistrationState.None -> RegisterState.NONE
                     else -> RegisterState.FAIL
                 }
             }
-            return RegisterState.None
+            return RegisterState.NONE
         }
 
     override val destinationRemoteAddress: String
@@ -231,7 +235,6 @@ class CansCenter() : Cans {
         get() = AudioRouteUtils.isHeadsetAudioRouteAvailable()
 
     private var accountToDelete: Account? = null
-    private var accountToCheck: Account? = null
 
     private val accountListener: AccountListenerStub = object : AccountListenerStub() {
         override fun onRegistrationStateChanged(
@@ -239,15 +242,15 @@ class CansCenter() : Cans {
             state: RegistrationState,
             message: String
         ) {
-            Log.i("[CansSDK: onRegistrationStateChanged]", "Registration state is $state: $message")
+            Log.i("[$TAG: onRegistrationStateChanged]", "Registration state is $state: $message")
             if (state == RegistrationState.Cleared && account == accountToDelete) {
                 deleteAccount(account)
-                listeners.forEach { it.onUnRegister() }
+                registerAccountListeners.forEach { it.onRegistration(RegisterState.CLEARED) }
             } else {
                 if (state == RegistrationState.Ok) {
-                    listeners.forEach { it.onRegistration(RegisterState.OK, message) }
+                    registerAccountListeners.forEach { it.onRegistration(RegisterState.OK, message) }
                 } else if (state == RegistrationState.Failed) {
-                    listeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
+                    registerAccountListeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
                 }
             }
         }
@@ -260,20 +263,11 @@ class CansCenter() : Cans {
             state: RegistrationState?,
             message: String
         ) {
-            Log.i("[CansSDK: onAccount]", "Registration state is $state: $message")
-            if (account == accountToCheck) {
-                if (state == RegistrationState.Ok) {
-                    listeners.forEach { it.onRegistration(RegisterState.OK, message) }
-                } else if (state == RegistrationState.Failed) {
-                    removeInvalidProxyConfig()
-                    listeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
-                }
-            } else {
-                if (account == core.defaultAccount) {
-                    listeners.forEach { it.onRegistration(RegisterState.OK, message) }
-                } else if (core.accountList.isEmpty()) {
-                    listeners.forEach { it.onRegistration(RegisterState.None, message) }
-                }
+            Log.i("[$TAG: onAccount]", "Registration state is $state: $message")
+            if (account == core.defaultAccount) {
+                registerListeners.forEach { it.onUpdateAccountRegistration(RegisterState.OK, message) }
+            } else if (core.accountList.isEmpty()) {
+                registerListeners.forEach { it.onUpdateAccountRegistration(RegisterState.NONE, message) }
             }
         }
 
@@ -283,14 +277,14 @@ class CansCenter() : Cans {
             state: RegistrationState,
             message: String,
         ) {
-            Log.i("CansSDK: onRegistration", "${cansCenter().defaultStateRegister}")
+            Log.i("$TAG: onRegistration", "${cansCenter().defaultStateRegister}")
             if (cfg == proxyConfigToCheck) {
-                org.linphone.core.tools.Log.i("[Assistant] [Account Login] Registration state is $state: $message")
+                Log.i(TAG,"[Account Login] Registration state is $state: $message")
                 if (state == RegistrationState.Ok) {
-                    listeners.forEach { it.onRegistration(RegisterState.OK, message) }
+                    registerListeners.forEach { it.onRegistration(RegisterState.OK, message) }
                 } else if (state == RegistrationState.Failed) {
                     removeInvalidProxyConfig()
-                    listeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
+                    registerListeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
                 }
             }
         }
@@ -647,7 +641,7 @@ class CansCenter() : Cans {
         transport: CansTransport
     ) {
         if (username.isEmpty() || password.isEmpty() || domain.isEmpty() || port.isEmpty()) {
-            listeners.forEach { it.onRegistration(RegisterState.FAIL) }
+            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
 
@@ -665,11 +659,11 @@ class CansCenter() : Cans {
         accountCreator.displayName = ""
         accountCreator.transport = transportType
 
-        val proxyConfig = accountCreator.createAccountInCore()
-        accountToCheck = proxyConfig
+        val proxyConfig : ProxyConfig? = accountCreator.createProxyConfig()
+        proxyConfigToCheck = proxyConfig
 
         if (proxyConfig == null) {
-            listeners.forEach { it.onRegistration(RegisterState.FAIL) }
+            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
 
@@ -678,20 +672,12 @@ class CansCenter() : Cans {
     }
 
     private fun removeInvalidProxyConfig() {
-        val account = accountToCheck
-        account ?: return
-
-        val authInfo = account.findAuthInfo()
+        val cfg = proxyConfigToCheck
+        cfg ?: return
+        val authInfo = cfg.findAuthInfo()
         if (authInfo != null) core.removeAuthInfo(authInfo)
-        core.removeAccount(account)
-        accountToCheck = null
-
-        // Make sure there is a valid default account
-        val accounts = core.accountList
-        if (accounts.isNotEmpty() && core.defaultAccount == null) {
-            core.defaultAccount = accounts.first()
-            core.refreshRegisters()
-        }
+        core.removeProxyConfig(cfg)
+        proxyConfigToCheck = null
     }
 
     private fun computeUserAgent() {
@@ -717,7 +703,7 @@ class CansCenter() : Cans {
         Log.i("[Account Removal]", "Removed account: ${account.params.identityAddress?.asString()}")
     }
 
-    override fun removeAccount(index: Int, username: String, domain: String) {
+    override fun removeAccount(index: Int) {
         val account = core.accountList[index]
         accountToDelete = account
 
@@ -748,9 +734,6 @@ class CansCenter() : Cans {
     override fun removeAccountAll() {
         core.accountList.forEach { account ->
             accountToDelete = account
-            accountDefault = account
-            accountDefault.addListener(accountListener)
-
             Log.i(
                 "[Account Removal]",
                 "Removed account: ${account.params.identityAddress?.asString()}"
@@ -911,7 +894,7 @@ class CansCenter() : Cans {
 
     override fun registerAccount(username: String, password: String, domain: String) {
         if (username.isEmpty() || password.isEmpty() || domain.isEmpty()) {
-            listeners.forEach { it.onRegistration(RegisterState.FAIL) }
+            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
 
@@ -922,7 +905,7 @@ class CansCenter() : Cans {
                 "[Assistant]",
                 " [Account Login] Error [${result.name}] setting the username: ${username}"
             )
-            listeners.forEach { it.onRegistration(RegisterState.FAIL) }
+            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
         Log.i("[Assistant]", "[Account Login] Username is ${accountCreator.username}")
@@ -930,14 +913,14 @@ class CansCenter() : Cans {
         val result2 = accountCreator.setPassword(password)
         if (result2 != AccountCreator.PasswordStatus.Ok) {
             Log.e("[Assistant]", " [Account Login] Error [${result2.name}] setting the password")
-            listeners.forEach { it.onRegistration(RegisterState.FAIL) }
+            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
 
         val result3 = accountCreator.setDomain(domain)
         if (result3 != AccountCreator.DomainStatus.Ok) {
             Log.e("[Assistant]", " [Account Login] Error [${result3.name}] setting the domain")
-            listeners.forEach { it.onRegistration(RegisterState.FAIL) }
+            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
 
@@ -1001,13 +984,13 @@ class CansCenter() : Cans {
                                                 "createProxyConfig",
                                                 "Error: Failed to create account object"
                                             )
-                                            listeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                                            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                                         }
                                     }
                                 }
                             }
                         } else {
-                            listeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                             return
                         }
                     }
@@ -1016,7 +999,7 @@ class CansCenter() : Cans {
                         call: retrofit2.Call<ProvisioningData?>,
                         t: Throwable,
                     ) {
-                        listeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         Log.e("Response fail", "${t.message}")
                     }
                 },
@@ -1534,7 +1517,7 @@ class CansCenter() : Cans {
                                                         CansTransport.TCP
                                                     )
                                                 } else {
-                                                    listeners.forEach {
+                                                    registerListeners.forEach {
                                                         it.onRegistration(
                                                             RegisterState.FAIL
                                                         )
@@ -1557,7 +1540,7 @@ class CansCenter() : Cans {
                                                 }
                                             }
                                             onResult(signInResponse.code)
-                                            listeners.forEach {
+                                            registerListeners.forEach {
                                                 it.onRegistration(
                                                     RegisterState.FAIL
                                                 )
@@ -1565,7 +1548,7 @@ class CansCenter() : Cans {
                                         }
                                     } else { // ELSE signInResponse != null
                                         onResult(-1)
-                                        listeners.forEach {
+                                        registerListeners.forEach {
                                             it.onRegistration(
                                                 RegisterState.FAIL
                                             )
@@ -1574,7 +1557,7 @@ class CansCenter() : Cans {
                                 }
                             } else { // ELSE isAuthenticated
                                 onResult(-1)
-                                listeners.forEach {
+                                registerListeners.forEach {
                                     it.onRegistration(
                                         RegisterState.FAIL
                                     )
@@ -1591,7 +1574,7 @@ class CansCenter() : Cans {
             } ?: run {
                 if (!isWaitingWebView) {
                     onResult(-1)
-                    listeners.forEach {
+                    registerListeners.forEach {
                         it.onRegistration(
                             RegisterState.FAIL
                         )
@@ -1681,15 +1664,42 @@ class CansCenter() : Cans {
         }
     }
 
-    override fun addListener(listener: CansListenerStub) {
+    override fun addCansRegisterListener(listener: CansRegisterListenerStub) {
+        registerListeners.add(listener)
+    }
+
+    override fun removeCansRegisterListener(listener: CansRegisterListenerStub) {
+        registerListeners.remove(listener)
+    }
+
+    override fun addCansCallListener(listener: CansListenerStub) {
         listeners.add(listener)
     }
 
-    override fun removeListener(listener: CansListenerStub) {
+    override fun removeCansCallListener(listener: CansListenerStub) {
         listeners.remove(listener)
     }
 
+    override fun addCansRegisterAccountListener(
+        indexAccount: Int,
+        listener: CansRegisterAccountListenerStub
+    ) {
+        val account = core.accountList[indexAccount]
+        accountDefault = account
+        accountDefault.addListener(accountListener)
+        registerAccountListeners.add(listener)
+    }
+
+    override fun removeCansRegisterAccountListener(
+        listener: CansRegisterAccountListenerStub
+    ) {
+        accountDefault.removeListener(accountListener)
+        registerAccountListeners.remove(listener)
+    }
+
+
     override fun removeAllListener() {
         listeners.clear()
+        registerListeners.clear()
     }
 }

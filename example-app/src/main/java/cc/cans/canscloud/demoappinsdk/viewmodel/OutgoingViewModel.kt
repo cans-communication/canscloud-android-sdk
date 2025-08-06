@@ -13,13 +13,6 @@ class OutgoingViewModel : ViewModel() {
     var isCallEnd = MutableLiveData<Boolean>()
 
     private val listener = object : CansListenerStub {
-        override fun onRegistration(state: RegisterState, message: String?) {
-            Log.i("[OutgoingViewModel]", "onRegistration ${state}")
-        }
-
-        override fun onUnRegister() {
-        }
-
         override fun onCallState(state: CallState, message: String?) {
             Log.i("[OutgoingViewModel] onCallState: ", "$state")
             when (state) {
@@ -57,11 +50,11 @@ class OutgoingViewModel : ViewModel() {
 
     init {
         cansCenter().isSpeakerState
-        cansCenter().addListener(listener)
+        cansCenter().addCansCallListener(listener)
     }
 
     override fun onCleared() {
-        cansCenter().removeListener(listener)
+        cansCenter().removeCansCallListener(listener)
         super.onCleared()
     }
 }

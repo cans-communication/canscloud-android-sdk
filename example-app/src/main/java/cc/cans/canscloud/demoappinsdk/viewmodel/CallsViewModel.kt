@@ -48,13 +48,6 @@ class CallsViewModel : ViewModel() {
         override fun onLastCallEnded() {
             isCallEnd.value = true
         }
-
-        override fun onRegistration(state: RegisterState, message: String?) {
-            Log.i("[CallsViewModel]","onRegistration ${state}")
-        }
-
-        override fun onUnRegister() {
-        }
     }
 
     init {
@@ -62,12 +55,12 @@ class CallsViewModel : ViewModel() {
         isBluetooth.value = cansCenter().isBluetoothState
         cansCenter().updateAudioRelated()
 
-        cansCenter().addListener(listener)
+        cansCenter().addCansCallListener(listener)
         callDuration.value = cansCenter().durationTime
     }
 
     override fun onCleared() {
-        cansCenter().removeListener(listener)
+        cansCenter().removeCansCallListener(listener)
         super.onCleared()
     }
 }

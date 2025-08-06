@@ -38,13 +38,6 @@ class CoreContext(
     private var previousCallState = CallState.Idle
 
     private val listener = object : CansListenerStub {
-        override fun onRegistration(state: RegisterState, message: String?) {
-            Log.i("[CoreContext]","onRegistration ${state}")
-        }
-
-        override fun onUnRegister() {
-            Log.i("[Context]","onUnRegistration")
-        }
 
         override fun onCallState(state: CallState, message: String?) {
             Log.i("[Context] onCallState: ","$state")
@@ -88,7 +81,7 @@ class CoreContext(
     }
 
     init {
-        CoreContextSDK.cansCenter().addListener(listener)
+        CoreContextSDK.cansCenter().addCansCallListener(listener)
         stopped = false
         _lifecycleRegistry.currentState = Lifecycle.State.INITIALIZED
         notificationsManager.onCoreReady()

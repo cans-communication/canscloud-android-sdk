@@ -1,21 +1,14 @@
 package cc.cans.canscloud.sdk.core
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
-import android.os.Handler
-import android.os.HandlerThread
-import android.os.Looper
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import android.telecom.TelecomManager
 import android.telephony.TelephonyManager
 import android.util.Base64
 import android.util.Log
 import android.util.Pair
-import androidx.annotation.AnyThread
 import androidx.annotation.Keep
-import androidx.annotation.WorkerThread
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -29,7 +22,6 @@ import cc.cans.canscloud.sdk.CansCenter
 import cc.cans.canscloud.sdk.Cans
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.models.CallState
-import cc.cans.canscloud.sdk.models.RegisterState
 import kotlinx.coroutines.cancel
 import org.linphone.mediastream.Version
 import java.io.File
@@ -41,7 +33,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.linphone.core.Core
 import org.linphone.core.Factory
 import org.linphone.core.LogLevel
 import org.linphone.core.LoggingService
@@ -83,13 +74,6 @@ class CoreContextSDK(
     }
 
     private val listener = object : CansListenerStub {
-        override fun onRegistration(state: RegisterState, message: String?) {
-            Log.i("[CoreContextSDK]","onRegistration ${state}")
-        }
-
-        override fun onUnRegister() {
-            Log.i("[CoreContextSDK]","onUnRegistration")
-        }
 
         override fun onCallState(state: CallState, message: String?) {
             Log.i("[CoreContextSDK] onCallState: ","$state")
@@ -158,7 +142,7 @@ class CoreContextSDK(
     }
 
     init {
-        cans.addListener(listener)
+        cans.addCansCallListener(listener)
         stopped = false
         _lifecycleRegistry.currentState = Lifecycle.State.INITIALIZED
         Log.i("[CoreContextSDK]","Ready")
@@ -166,7 +150,7 @@ class CoreContextSDK(
 
     fun start() {
 
-        cans.addListener(listener)
+        cans.addCansCallListener(listener)
         //CoreContext listener must be added first!
         if (Version.sdkAboveOrEqual(Version.API26_O_80) && cans.corePreferences.useTelecomManager) {
             if (Compatibility.hasTelecomManagerPermissions(context)) {
@@ -213,7 +197,7 @@ class CoreContextSDK(
         }
 
         cans.core.stop()
-        cans.removeListener(listener)
+        cans.removeCansCallListener(listener)
         stopped = true
         loggingService.removeListener(loggingServiceListener)
 

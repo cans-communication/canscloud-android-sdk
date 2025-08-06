@@ -38,14 +38,6 @@ class NotificationsManager(private val context: Context) {
     }
 
     private val listener = object : CansListenerStub {
-        override fun onRegistration(state: RegisterState, message: String?) {
-            Log.i("[NotificationsManager]","onRegistration ${state}")
-        }
-
-        override fun onUnRegister() {
-            Log.i("[NotificationsManager]","onUnRegistration")
-        }
-
         override fun onCallState(state: CallState, message: String?) {
             Log.i("[NotificationsManager] onCallState: ", "$state")
             when (state) {
@@ -85,7 +77,7 @@ class NotificationsManager(private val context: Context) {
     }
 
     fun onCoreReady() {
-        cansCenter().addListener(listener)
+        cansCenter().addCansCallListener(listener)
     }
 
     fun displayIncomingCallNotification(context: Context) {
