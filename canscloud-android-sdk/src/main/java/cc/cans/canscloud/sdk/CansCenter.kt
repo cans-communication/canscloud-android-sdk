@@ -283,7 +283,6 @@ class CansCenter() : Cans {
                 if (state == RegistrationState.Ok) {
                     registerListeners.forEach { it.onRegistration(RegisterState.OK, message) }
                 } else if (state == RegistrationState.Failed) {
-                    removeInvalidProxyConfig()
                     registerListeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
                 }
             }
@@ -671,7 +670,7 @@ class CansCenter() : Cans {
         coreContext.notificationsManager.startForeground()
     }
 
-    private fun removeInvalidProxyConfig() {
+    override fun removeInvalidProxyConfig() {
         val cfg = proxyConfigToCheck
         cfg ?: return
         val authInfo = cfg.findAuthInfo()
