@@ -1429,6 +1429,15 @@ class CansCenter() : Cans {
         }.start()
     }
 
+    override fun splitConference() {
+        Thread {
+            for (participant in conferenceCore.participantList) {
+                conferenceCore.removeParticipant(participant)
+            }
+        }.start()
+    }
+
+
     override fun signOutOKTADomain(
         activity: Activity,
         callback: (Boolean) -> Unit

@@ -185,6 +185,8 @@ interface Cans {
 
     fun mergeCallsIntoConference()
 
+    fun splitConference()
+
     fun removeInvalidProxyConfig()
 
     fun signInOKTADomain(apiURL: String, domain: String, activity: Activity, onResult: (Int) -> Unit)

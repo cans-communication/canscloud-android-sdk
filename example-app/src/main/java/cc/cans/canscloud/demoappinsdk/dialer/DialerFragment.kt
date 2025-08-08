@@ -95,14 +95,14 @@ class DialerFragment : Fragment() {
         }
 
         binding.buttonRegister.setOnClickListener {
-//            cansCenter().register(
-//                "1003",
-//                "p1003",
-//                "sitmms.cans.cc",
-//                "8446",
-//                CansTransport.UDP
-//            )
-            cansCenter().registerAccount("706", "p39706C@NS", "cns.cans.cc")
+            cansCenter().register(
+                "1003",
+                "p1003",
+                "sitmms.cans.cc",
+                "8446",
+                CansTransport.UDP
+            )
+      //      cansCenter().registerAccount("706", "p39706C@NS", "cns.cans.cc")
             sharedViewModel.register()
         }
 

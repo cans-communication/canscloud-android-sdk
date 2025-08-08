@@ -12,6 +12,7 @@ import cc.cans.canscloud.demoappinsdk.R
 import cc.cans.canscloud.demoappinsdk.databinding.FragmentCallBinding
 import cc.cans.canscloud.demoappinsdk.viewmodel.CallsViewModel
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
+import cc.cans.canscloud.sdk.models.CansTransport
 
 /**
  * A simple [Fragment] subclass.
@@ -77,12 +78,19 @@ class CallFragment : Fragment() {
         }
 
         binding.buttonCall1.setOnClickListener {
+            cansCenter().startCall(
+                "1007"
+            )
         }
 
         binding.buttonCall2.setOnClickListener {
+            cansCenter().startCall(
+                "0838927729"
+            )
         }
 
-        binding.buttonCall3.setOnClickListener {
+        binding.buttonSplitConference.setOnClickListener {
+            cansCenter().splitConference()
         }
 
         binding.buttonConference.setOnClickListener {
