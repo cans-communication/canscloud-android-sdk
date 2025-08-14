@@ -57,6 +57,7 @@ class SharedMainViewModel : ViewModel() {
             message: String?
         ) {
             Log.i("[SharedMainViewModel] onCallState: ","$state")
+
             when (state) {
                 CallState.Idle -> {}
                 CallState.IncomingCall -> {}

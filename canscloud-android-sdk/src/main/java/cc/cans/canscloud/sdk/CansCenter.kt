@@ -412,6 +412,9 @@ class CansCenter() : Cans {
                 Log.i("[Conference VM]", "Participant removed")
                 conferenceCore = conference
                 isInConference = conference.participantList.isNotEmpty()
+
+                val participants = conferenceCore.participantList
+                Log.i("callingLogs1: SP2", "${participants.size}")
             }
         }
 
@@ -428,7 +431,6 @@ class CansCenter() : Cans {
 
 
     private fun mapStatusCall(state: Call.State): CallState {
-        Log.i("mapCallLog111", ":$state ")
         return when (state) {
             Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> CallState.IncomingCall
             Call.State.OutgoingInit -> CallState.StartCall
@@ -447,10 +449,8 @@ class CansCenter() : Cans {
     private fun addCallToPausedList(call: Call) {
         if (callList.isEmpty()) {
             callList.add(call)
-            mapCallLog()
         } else if (callList.none { it == call }) {
             callList.add(call)
-            mapCallLog()
         }
         Log.i("callingLogs: ", "addCallToPausedList")
     }
@@ -460,7 +460,6 @@ class CansCenter() : Cans {
             val callData = callList[i]
             if (callData == call) {
                 callList[i] = call
-                mapCallLog()
             }
         }
     }
@@ -477,12 +476,13 @@ class CansCenter() : Cans {
         if (cansCenter().countCalls == 0) {
             callList.clear()
         }
-        mapCallLog()
         Log.i("callingLogs: ", "removeCallToPausedList")
     }
 
-    private fun mapCallLog() {
+    override fun getCallLog() : ArrayList<CallModel> {
         val list: ArrayList<CallModel> = arrayListOf()
+        Log.w("CansSDK: onCallStateChanged mapCallLog: ", "")
+
         callList.forEach { call ->
             val data = CallModel(
                 callID = call.callLog.callId ?: "",
@@ -499,10 +499,6 @@ class CansCenter() : Cans {
         callingLogs = list
         Log.i("callingLogs1: ","${callingLogs.size}")
         Log.i("callingLogs1: ","${callingLogs}")
-    }
-
-    override fun getCallLog(): ArrayList<CallModel> {
-        Log.i("getCallLog: ", "${callingLogs.size}")
         return callingLogs
     }
 
@@ -1431,9 +1427,14 @@ class CansCenter() : Cans {
 
     override fun splitConference() {
         Thread {
-            for (participant in conferenceCore.participantList) {
-                conferenceCore.removeParticipant(participant)
-            }
+
+            val participants =  conferenceCore.participantList
+            Log.i("callingLogs1: SP1", "${participants.size}")
+            conferenceCore.removeParticipant(participants[0])
+//            for (i in 0 until participants.size.minus(1)) {
+//                Log.i("callingLogs1: SP", "${participants[i]?.address?.username}")
+//                conferenceCore.removeParticipant(participants[1])
+//            }
         }.start()
     }
 
