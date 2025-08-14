@@ -88,7 +88,7 @@
                 android:id="@+id/buttonSplitConference"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Split Conference"
+                android:text="Split"
                 android:layout_alignParentBottom="true"
                 android:layout_centerHorizontal="true"
                 android:contentDescription="Hang Up"/>
