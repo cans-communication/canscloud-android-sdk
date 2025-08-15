@@ -115,10 +115,7 @@ class CansCenter() : Cans {
     private var listeners = mutableListOf<CansListenerStub>()
     private var registerListeners = mutableListOf<CansRegisterListenerStub>()
     private var registerAccountListeners = mutableListOf<CansRegisterAccountListenerStub>()
-    override val callLogs = ArrayList<GroupedCallLogData>()
     override val missedCallLogs = ArrayList<GroupedCallLogData>()
-    var callingLogs = ArrayList<CallModel>()
-    val callList = ArrayList<Call>()
 
     override lateinit var conferenceCore: Conference
 
@@ -297,36 +294,20 @@ class CansCenter() : Cans {
             callCans = call
             destinationCall = call.remoteAddress.username ?: ""
 
-            updateCallLogs()
             Log.w("CansSDK: onCallStateChanged: ", "$state : $message")
 
             when (state) {
                 Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> {
-                    addCallToPausedList(call)
                     vibrator()
-                }
-
-                Call.State.OutgoingInit -> {
-                    addCallToPausedList(call)
                 }
 
                 Call.State.StreamsRunning -> {
                     mVibrator.cancel()
-                    updateCallToPausedList(call)
-                }
-
-                Call.State.Paused -> {
-                    updateCallToPausedList(call)
-                }
-
-                Call.State.Resuming -> {
-                    updateCallToPausedList(call)
                 }
 
                 Call.State.Error -> {
                     updateMissedCallLogs()
                     mVibrator.cancel()
-                    removeCallToPausedList(call)
 
                     setListenerCall(CallState.Error)
                 }
@@ -334,11 +315,6 @@ class CansCenter() : Cans {
                 Call.State.End -> {
                     updateMissedCallLogs()
                     mVibrator.cancel()
-                    removeCallToPausedList(call)
-                }
-
-                Call.State.Released -> {
-                    removeCallToPausedList(call)
                 }
 
                 else -> {
@@ -446,60 +422,21 @@ class CansCenter() : Cans {
         }
     }
 
-    private fun addCallToPausedList(call: Call) {
-        if (callList.isEmpty()) {
-            callList.add(call)
-        } else if (callList.none { it == call }) {
-            callList.add(call)
-        }
-        Log.i("callingLogs: ", "addCallToPausedList")
-    }
-
-    private fun updateCallToPausedList(call: Call) {
-        for (i in callList.indices) {
-            val callData = callList[i]
-            if (callData == call) {
-                callList[i] = call
-            }
-        }
-    }
-
-    private fun removeCallToPausedList(call: Call) {
-        for (i in callList) {
-            if (i == call) {
-                callList.remove(call)
-                Log.i("removeCallToPausedList 3", "");
-                break
-            }
-        }
-
-        if (cansCenter().countCalls == 0) {
-            callList.clear()
-        }
-        Log.i("callingLogs: ", "removeCallToPausedList")
-    }
-
     override fun getCallLog() : ArrayList<CallModel> {
         val list: ArrayList<CallModel> = arrayListOf()
-        Log.w("CansSDK: onCallStateChanged mapCallLog: ", "")
-
-        callList.forEach { call ->
-            val data = CallModel(
-                callID = call.callLog.callId ?: "",
-                phoneNumber = call.remoteAddress.username ?: "",
-                name = call.remoteAddress.displayName ?: "",
-                isPaused = call.state == Call.State.Paused,
-                status = mapStatusCall(call.state),
-                duration = call.duration.toString()
+        val calls = cansCenter().core.calls.toList()
+        calls.mapTo(list)  { call ->
+            CallModel(
+                call.callLog.callId.orEmpty(),
+                call.remoteAddress.username.orEmpty(),
+                call.remoteAddress.displayName.orEmpty(),
+                call.state == Call.State.Paused,
+                mapStatusCall(call.state),
+                call.duration.toString()
             )
-
-            list.add(data)
         }
 
-        callingLogs = list
-        Log.i("callingLogs1: ","${callingLogs.size}")
-        Log.i("callingLogs1: ","${callingLogs}")
-        return callingLogs
+        return list
     }
 
     private fun setListenerCall(callState: CallState) {
@@ -811,21 +748,21 @@ class CansCenter() : Cans {
     }
 
     override fun pause(index: Int, addressToCall: String) {
-        val call = callList[index]
+        val call = cansCenter().core.calls[index]
         if (call.remoteAddress.username == addressToCall) {
             call.pause()
         }
     }
 
     override fun resume(index: Int, addressToCall: String) {
-        val call = callList[index]
+        val call = cansCenter().core.calls[index]
         if (call.remoteAddress.username == addressToCall) {
             call.resume()
         }
     }
 
     override fun terminate(index: Int, addressToCall: String) {
-        val call = callList[index]
+        val call = cansCenter().core.calls[index]
         if (call.remoteAddress.username == addressToCall) {
             call.terminate()
         }
@@ -1204,10 +1141,9 @@ class CansCenter() : Cans {
         }
     }
 
-    override fun updateCallLogs() {
+    override fun callLogsAll() : ArrayList<GroupedCallLogData> {
         val list = arrayListOf<GroupedCallLogData>()
         var previousCallLogGroup: GroupedCallLogData? = null
-        callLogs.clear()
 
         for (callLog in core.callLogs) {
             val historyModel = HistoryModel(
@@ -1255,13 +1191,7 @@ class CansCenter() : Cans {
             list.add(previousCallLogGroup)
         }
 
-        callLogs.addAll(list)
-
-        val callLogsAll: ArrayList<HistoryModel> = arrayListOf()
-        callLogs.forEach {
-            it.lastCallLog.listCall = it.callLogs.size
-            callLogsAll.add(it.lastCallLog)
-        }
+        return list
     }
 
 
@@ -1427,14 +1357,11 @@ class CansCenter() : Cans {
 
     override fun splitConference() {
         Thread {
-
             val participants =  conferenceCore.participantList
-            Log.i("callingLogs1: SP1", "${participants.size}")
-            conferenceCore.removeParticipant(participants[0])
-//            for (i in 0 until participants.size.minus(1)) {
-//                Log.i("callingLogs1: SP", "${participants[i]?.address?.username}")
-//                conferenceCore.removeParticipant(participants[1])
-//            }
+            for (i in 0 until participants.size.minus(1)) {
+                Log.i("splitConference:", "${participants[i]?.address?.username}")
+                conferenceCore.removeParticipant(participants[i])
+            }
         }.start()
     }
 
