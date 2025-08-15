@@ -81,8 +81,6 @@ interface Cans {
 
     val wasBluetoothPreviouslyAvailable: Boolean
 
-    val callLogs: ArrayList<GroupedCallLogData>
-
     val missedCallLogs:ArrayList<GroupedCallLogData>
 
     val isInConference: Boolean
@@ -159,7 +157,7 @@ interface Cans {
 
     fun isOutgoingState() : Boolean
 
-    fun updateCallLogs()
+    fun callLogsAll(): ArrayList<GroupedCallLogData>
 
     fun updateMissedCallLogs()
 
