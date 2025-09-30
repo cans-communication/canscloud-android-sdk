@@ -26,6 +26,9 @@ import cc.cans.canscloud.data.ProvisioningData
 import cc.cans.canscloud.data.ProvisioningInterceptor
 import cc.cans.canscloud.data.ProvisioningResult
 import cc.cans.canscloud.data.ProvisioningService
+import cc.cans.canscloud.sdk.bcrypt.LoginBcryptService
+import cc.cans.canscloud.sdk.bcrypt.models.LoginCpanelRequest
+import cc.cans.canscloud.sdk.bcrypt.models.LoginCpanelResponse
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.callback.CansRegisterAccountListenerStub
 import cc.cans.canscloud.sdk.callback.CansRegisterListenerStub
@@ -1749,7 +1752,6 @@ class CansCenter() : Cans {
             return
         }
 
-        val serverAddress = "${domain}:${port}"
         val transportType = if (transport.name.lowercase() == "tcp") {
             TransportType.Tcp
         } else {
@@ -1829,5 +1831,200 @@ class CansCenter() : Cans {
 
         corePreferences.keepServiceAlive = true
         coreContext.notificationsManager.startForeground()
+    }
+
+    override fun registerAccountBcrypt(username: String, password: String, domain: String) {
+        if (username.isEmpty() || password.isEmpty() || domain.isEmpty()) {
+            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+            return
+        }
+
+//        accountCreator = getAccountCreator()
+//        val result = accountCreator.setUsername(username)
+//        if (result != AccountCreator.UsernameStatus.Ok) {
+//            Log.e(
+//                "[Assistant]",
+//                " [Account Login] Error [${result.name}] setting the username: ${username}"
+//            )
+//            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+//            return
+//        }
+//        Log.i("[Assistant]", "[Account Login] Username is ${accountCreator.username}")
+
+//        val result2 = accountCreator.setPassword(password)
+//        if (result2 != AccountCreator.PasswordStatus.Ok) {
+//            Log.e("[Assistant]", " [Account Login] Error [${result2.name}] setting the password")
+//            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+//            return
+//        }
+
+//        val result3 = accountCreator.setDomain(domain)
+//        if (result3 != AccountCreator.DomainStatus.Ok) {
+//            Log.e("[Assistant]", " [Account Login] Error [${result3.name}] setting the domain")
+//            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+//            return
+//        }
+
+        val okHttpClient: OkHttpClient = OkHttpClient.Builder()
+            .addInterceptor(ProvisioningInterceptor())
+            .addNetworkInterceptor(
+                ProvisioningInterceptor(),
+            )
+            .build()
+
+        val retrofit: Retrofit = Retrofit.Builder()
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .baseUrl("https://voxxycloud.com/Cpanel/")
+            .build()
+
+        val provisioningService: ProvisioningService =
+            retrofit.create(ProvisioningService::class.java)
+
+        val requestBody = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("idToken", "")
+            .addFormDataPart("action", "provision")
+            .addFormDataPart("username", username)
+            .addFormDataPart("password", password)
+            .build()
+
+        val url = "https://" + domain + "/Cpanel/provision/mobile/"
+
+        val callProvisioningData: retrofit2.Call<ProvisioningData?>? =
+            provisioningService.getProvisioningData(url, requestBody)
+
+        callProvisioningData?.let { callProvisioning ->
+            callProvisioning.enqueue(
+                object : retrofit2.Callback<ProvisioningData?> {
+                    override fun onResponse(
+                        call: retrofit2.Call<ProvisioningData?>,
+                        response: retrofit2.Response<ProvisioningData?>,
+                    ) {
+                        Log.i("Response success", response.message())
+                        if (response.isSuccessful) {
+                            response.body().let { body ->
+                                val provisioningData: ProvisioningData? = body
+                                provisioningData?.let { provisioning ->
+                                    val results: List<ProvisioningResult> = provisioning.results
+                                    if (results.isNotEmpty()) {
+                                        val result = results[0]
+
+                                        val resUsername = result.extension?.trim() ?: ""
+                                        val resPassword = result.secret?.trim() ?: ""
+                                        val resDomain = result.domain?.trim() ?: ""
+                                        val resTransport = if (result.transport?.lowercase() == "tcp") {
+                                            TransportType.Tcp
+                                        } else {
+                                            TransportType.Udp
+                                        }
+
+                                        Log.d("SDK","registerAccountBcrypt resUsername : $resUsername")
+                                        Log.d("SDK","registerAccountBcrypt resPassword : $resPassword")
+                                        Log.d("SDK","registerAccountBcrypt resDomain : $resDomain")
+                                        Log.d("SDK","registerAccountBcrypt resTransport : $resTransport")
+
+                                        val factory = Factory.instance()
+//                                        val ha1Hex   = SecureUtils.md5("$resUsername:$resDomain:$resPassword")
+                                        val sipServer = "sip:$resDomain;transport=${resTransport.name.lowercase()}"
+                                        Log.d("SDK","registerAccountBcrypt sipServer : $sipServer")
+
+                                        // แยก host/port ให้ชัด
+                                        val host: String
+                                        if (resDomain.contains(":")) {
+                                            val parts = resDomain.split(":")
+                                            host = parts[0]
+                                        } else {
+                                            host = resDomain
+                                        }
+                                        Log.d("SDK","registerAccountBcrypt host : $host")
+
+                                        val ha1Hex   = SecureUtils.md5("$resUsername:$host:$resPassword")
+
+                                        Log.d("SDK","registerAccountBcrypt start createAuthInfo by factory")
+                                        val auth = factory.createAuthInfo(
+                                            resUsername,
+                                            null,
+                                            null,
+                                            ha1Hex,
+                                            host,
+                                            host,
+                                            null
+                                        )
+                                        core.addAuthInfo(auth)
+
+                                        Log.d("SDK","registerAccountBcrypt getAccountCreator start")
+                                        accountCreator = getAccountCreator()
+                                        Log.d("SDK","registerAccountBcrypt getAccountCreator ok accountCreator : $accountCreator")
+
+                                        val resultUsername = accountCreator.setUsername(username)
+                                        if (resultUsername != AccountCreator.UsernameStatus.Ok) {
+                                            Log.e(
+                                                "[Assistant]",
+                                                " [Account Login] Error [${resultUsername.name}] setting the username: ${username}"
+                                            )
+                                            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                                            return
+                                        }
+                                        Log.i("[Assistant]", "[Account Login] Username is ${accountCreator.username}")
+
+                                        val resultDomain = accountCreator.setDomain(domain)
+                                        if (resultDomain != AccountCreator.DomainStatus.Ok) {
+                                            Log.e("[Assistant]", " [Account Login] Error [${resultDomain.name}] setting the domain")
+                                            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                                            return
+                                        }
+                                        accountCreator.transport = resTransport
+
+                                        Log.d("SDK","registerAccountBcrypt start createProxyConfig ")
+                                        Log.d("SDK", "registerAccountBcrypt BEFORE accountList size = ${core.accountList.size}")
+                                        val proxyConfig : ProxyConfig? = accountCreator.createProxyConfig()
+                                        Log.d("SDK","registerAccountBcrypt start proxyConfig : $proxyConfig")
+                                        proxyConfigToCheck = proxyConfig
+
+                                        if (proxyConfig == null) {
+                                            Log.d("SDK","registerAccountBcrypt RegisterState.FAIL from Null ProxyConfig")
+                                            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                                            return
+                                        }
+
+                                        // สำคัญ: ใส่พอร์ตและทรานสปอร์ตให้ proxy/server
+                                        Log.d("SDK","registerAccountBcrypt ใส่พอร์ตและทรานสปอร์ตให้ proxy/server")
+                                        proxyConfig.edit()
+                                        proxyConfig.serverAddr = sipServer
+                                        proxyConfig.isRegisterEnabled = true
+                                        proxyConfig.done()
+
+                                        // เพิ่มเข้า core + ตั้ง default
+                                        Log.d("SDK","registerAccountBcrypt เพิ่มเข้า core + ตั้ง default")
+                                        if (!core.proxyConfigList.contains(proxyConfig)) {
+                                            core.addProxyConfig(proxyConfig)
+                                        }
+                                        core.defaultProxyConfig = proxyConfig
+
+                                        core.refreshRegisters()
+                                        Log.d("SDK", "registerAccountBcrypt after add: accountList size = ${core.accountList.size}")
+
+                                        corePreferences.keepServiceAlive = true
+                                        coreContext.notificationsManager.startForeground()
+                                    }
+                                }
+                            }
+                        } else {
+                            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                            return
+                        }
+                    }
+
+                    override fun onFailure(
+                        call: retrofit2.Call<ProvisioningData?>,
+                        t: Throwable,
+                    ) {
+                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                        Log.e("Response fail", "${t.message}")
+                    }
+                },
+            )
+        }
     }
 }

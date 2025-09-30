@@ -212,4 +212,6 @@ interface Cans {
         port: String,
         transport: CansTransport
     )
+
+    fun registerAccountBcrypt(username: String, password: String, domain: String)
 }
