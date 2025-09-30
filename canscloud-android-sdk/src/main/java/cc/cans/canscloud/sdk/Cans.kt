@@ -196,4 +196,20 @@ interface Cans {
     fun checkSessionOKTAExpire(activity: Activity,callback: (Boolean) -> Unit)
 
     fun fetchSignInOKTA(apiURL: String, callback: (SignInOKTAResponseData?) -> Unit)
+
+    fun testRegisterBcrypt(
+        username: String,
+        password: String,
+        domain: String,
+        port: String,
+        transport: CansTransport
+    )
+
+    fun registerSIPBcrypt(
+        username: String,
+        password: String,
+        domain: String,
+        port: String,
+        transport: CansTransport
+    )
 }
