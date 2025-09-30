@@ -1448,9 +1448,10 @@ class CansCenter() : Cans {
                                                     domainNameOKTA = signInResponse.data.domain_name
                                                     transportOKTA = TransportType.Tcp
 
-//                                                    removeAccount()
                                                     removeAccountAll()
-                                                    register(
+
+                                                    Log.d("SDK","Login With OKTA use registerSIPBcrypt")
+                                                    registerSIPBcrypt(
                                                         usernameOKTA,
                                                         passwordOKTA,
                                                         domainNameOKTA,
@@ -1644,102 +1645,6 @@ class CansCenter() : Cans {
         registerListeners.clear()
     }
 
-    override fun testRegisterBcrypt(
-        username: String,
-        password: String,
-        domain: String,
-        port: String,
-        transport: CansTransport
-    ) {
-        if (username.isEmpty() || password.isEmpty() || domain.isEmpty() || port.isEmpty()) {
-            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-            return
-        }
-
-        val serverAddress = "${domain}:${port}"
-        val transportType = if (transport.name.lowercase() == "tcp") {
-            TransportType.Tcp
-        } else {
-            TransportType.Udp
-        }
-
-        Log.d("SDK","start create account by factory")
-        val sipServer = "sip:$domain:$port;transport=${transportType.name.lowercase()}"
-
-        val factory = Factory.instance()
-        val sUsername = "1001"                      // จาก provisioning หรือ input
-        val sDomain   = "sitmms.cans.cc"
-//        val ha1Hex   = SecureUtils.md5("$username:$domain:$password")  // MD5(username:realm:password)
-
-        Log.d("SDK","start createAuthInfo by factory")
-        val auth = factory.createAuthInfo(
-            sUsername,
-            null,       // userid
-            null,       // passwd (null เพราะใช้ ha1)
-            "48d789f52af9bde24818bb3542320ccd",     // ha1
-            sDomain,
-            sDomain,
-            null        // algorithm (MD5 default)
-        )
-        core.addAuthInfo(auth)
-
-        Log.d("SDK","getAccountCreator start")
-        accountCreator = getAccountCreator()
-        Log.d("SDK","getAccountCreator ok accountCreator : $accountCreator")
-
-        val resultUsername = accountCreator.setUsername(username)
-        if (resultUsername != AccountCreator.UsernameStatus.Ok) {
-            Log.e(
-                "[Assistant]",
-                " [Account Login] Error [${resultUsername.name}] setting the username: ${username}"
-            )
-            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-            return
-        }
-        Log.i("[Assistant]", "[Account Login] Username is ${accountCreator.username}")
-
-        val resultDomain = accountCreator.setDomain(domain)
-        if (resultDomain != AccountCreator.DomainStatus.Ok) {
-            Log.e("[Assistant]", " [Account Login] Error [${resultDomain.name}] setting the domain")
-            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-            return
-        }
-        accountCreator.transport = transportType
-
-        Log.d("SDK","start createProxyConfig ")
-        Log.d("SDK", "BEFORE accountList size = ${core.accountList.size}")
-        val proxyConfig : ProxyConfig? = accountCreator.createProxyConfig()
-        Log.d("SDK","start proxyConfig : $proxyConfig")
-//        Log.d("SDK", "AFTER accountList size = ${core.accountList.size}")
-        proxyConfigToCheck = proxyConfig
-
-        if (proxyConfig == null) {
-            Log.d("SDK","RegisterState.FAIL from Null ProxyConfig")
-            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-            return
-        }
-
-        // สำคัญ: ใส่พอร์ตและทรานสปอร์ตให้ proxy/server
-        Log.d("SDK","ใส่พอร์ตและทรานสปอร์ตให้ proxy/server")
-        proxyConfig.edit()
-        proxyConfig.serverAddr = sipServer
-        proxyConfig.isRegisterEnabled = true
-        proxyConfig.done()
-
-        // เพิ่มเข้า core + ตั้ง default
-        Log.d("SDK","เพิ่มเข้า core + ตั้ง default")
-        if (!core.proxyConfigList.contains(proxyConfig)) {
-            core.addProxyConfig(proxyConfig)
-        }
-        core.defaultProxyConfig = proxyConfig
-
-        core.refreshRegisters()
-        Log.d("SDK", "after add: accountList size = ${core.accountList.size}")
-
-        corePreferences.keepServiceAlive = true
-        coreContext.notificationsManager.startForeground()
-    }
-
     override fun registerSIPBcrypt(
         username: String,
         password: String,
@@ -1838,32 +1743,6 @@ class CansCenter() : Cans {
             registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
-
-//        accountCreator = getAccountCreator()
-//        val result = accountCreator.setUsername(username)
-//        if (result != AccountCreator.UsernameStatus.Ok) {
-//            Log.e(
-//                "[Assistant]",
-//                " [Account Login] Error [${result.name}] setting the username: ${username}"
-//            )
-//            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-//            return
-//        }
-//        Log.i("[Assistant]", "[Account Login] Username is ${accountCreator.username}")
-
-//        val result2 = accountCreator.setPassword(password)
-//        if (result2 != AccountCreator.PasswordStatus.Ok) {
-//            Log.e("[Assistant]", " [Account Login] Error [${result2.name}] setting the password")
-//            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-//            return
-//        }
-
-//        val result3 = accountCreator.setDomain(domain)
-//        if (result3 != AccountCreator.DomainStatus.Ok) {
-//            Log.e("[Assistant]", " [Account Login] Error [${result3.name}] setting the domain")
-//            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-//            return
-//        }
 
         val okHttpClient: OkHttpClient = OkHttpClient.Builder()
             .addInterceptor(ProvisioningInterceptor())
