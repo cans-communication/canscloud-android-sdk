@@ -13,10 +13,10 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-object LoginBcryptManager {
+class LoginBcryptManager(url: String) {
 
-    private const val BASE_URL = "https://sit-call.cans.cc/"
-    private const val CPANEL_PREFIX = "api/resolver-api-v1/cpanel-api"
+    private val BASE_URL = url
+    private val CPANEL_PREFIX = "api/resolver-api-v1/cpanel-api"
 
     private val acceptHeaderInterceptor = Interceptor { chain ->
         val req = chain.request().newBuilder()
@@ -49,21 +49,25 @@ object LoginBcryptManager {
 
     suspend fun getLoginAccessToken(username: String, password: String): String {
 
+        Log.d("SDK", "getLoginAccessToken with password : $password")
+
         val url = "${BASE_URL}${CPANEL_PREFIX}/login/cpanel/"
         val request =
             LoginCpanelRequest(username = username, password = password, loginType = "account")
 
         val resp = api.loginCpanel(url, request)
+        Log.d("SDK", "getLoginAccessToken resp : $resp")
         if (!resp.isSuccessful) throw IllegalStateException("login failed: ${resp.code()} ${resp.message()}")
 
         val body = resp.body() ?: throw IllegalStateException("empty body")
         val token = body.data?.accessToken
+        Log.d("SDK", "getLoginAccessToken token : $token")
         return token ?: throw IllegalStateException("no access token")
     }
 
     suspend fun getLoginAccount(
         accessToken: String,
-        domainUuid: String
+        domainUuid: String,
     ): LoginSipCredentialsResponse = withContext(Dispatchers.IO) {
 
         val url = "${BASE_URL}${CPANEL_PREFIX}/api/v3/domains/$domainUuid/sip-credentials"
@@ -72,6 +76,7 @@ object LoginBcryptManager {
         Log.d("SDK", "getLoginAccount -> url: $url")
 
         val resp = api.getSipCredentials(url, bearer)
+        Log.d("SDK", "getLoginAccount -> resp: $resp")
 
         if (!resp.isSuccessful) {
             throw HttpException(resp)

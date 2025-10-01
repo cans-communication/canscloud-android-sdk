@@ -1775,7 +1775,7 @@ class CansCenter() : Cans {
         coreContext.notificationsManager.startForeground()
     }
 
-    override fun registerAccountBcrypt(username: String, password: String, domain: String) {
+    override fun registerAccountBcrypt(username: String, password: String, domain: String, apiURL: String) {
         Log.d("SDK", "registerAccountBcrypt ")
         if (username.isEmpty() || password.isEmpty() || domain.isEmpty()) {
             registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
@@ -1788,10 +1788,14 @@ class CansCenter() : Cans {
                 val usernameWithDomain = "$username@$domain"
                 Log.d("SDK", "registerAccountBcrypt pwdMD5: $pwdMD5")
                 Log.d("SDK", "registerAccountBcrypt usernameWithDomain: $usernameWithDomain")
+                Log.d("SDK", "registerAccountBcrypt apiURL: $apiURL")
+
+                val loginManager = LoginBcryptManager(apiURL)
 
                 // รอผล login ก่อน
                 val accessToken = withContext(Dispatchers.IO) {
-                    LoginBcryptManager.getLoginAccessToken(usernameWithDomain, pwdMD5)
+//                    LoginBcryptManager.getLoginAccessToken(usernameWithDomain, pwdMD5)
+                    loginManager.getLoginAccessToken(usernameWithDomain, pwdMD5)
                 }
 
                 Log.d("SDK", "registerAccountBcrypt accessToken: $accessToken")
@@ -1806,7 +1810,8 @@ class CansCenter() : Cans {
                     try {
                         Log.d("SDK", "registerAccountBcrypt getLoginAccount")
                         val resp =
-                            LoginBcryptManager.getLoginAccount(accessToken, claims.domainUuid)
+//                            LoginBcryptManager.getLoginAccount(accessToken, claims.domainUuid)
+                            loginManager.getLoginAccount(accessToken, claims.domainUuid)
                         val credentials = resp.data
                         if (credentials == null) {
                             registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
@@ -1820,7 +1825,6 @@ class CansCenter() : Cans {
                         val loginPort = 8446
                         val loginTransport = TransportType.Udp
                         val sipServer = "sip:$domain:$loginPort;transport=$loginTransport"
-//                        val sipServer = "wss://$domain:$loginPort;transport=$loginTransport"
                         Log.d("SDK", "registerAccountBcrypt sipServer : $sipServer")
 
                         val factory = Factory.instance()

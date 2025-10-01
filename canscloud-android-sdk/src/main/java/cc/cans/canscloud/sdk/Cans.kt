@@ -205,5 +205,5 @@ interface Cans {
         transport: CansTransport
     )
 
-    fun registerAccountBcrypt(username: String, password: String, domain: String)
+    fun registerAccountBcrypt(username: String, password: String, domain: String, apiURL: String)
 }
