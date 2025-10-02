@@ -694,40 +694,29 @@ class CansCenter() : Cans {
         }
     }
 
-
     override fun removeAccountAll() {
-        core.accountList.forEach { account ->
-            accountToDelete = account
-            Log.i(
-                "[Account Removal]",
-                "Removed account: ${account.params.identityAddress?.asString()}"
-            )
+        val accounts = core.accountList.toList()
 
-            val registered = account.state == RegistrationState.Ok
+        core.defaultAccount = null
 
-            if (core.defaultAccount == account) {
-                Log.i("[Account Settings]", "Account was default, let's look for a replacement")
-                for (accountIterator in core.accountList) {
-                    if (account != accountIterator) {
-                        core.defaultAccount = accountIterator
-                        Log.i("[Account Settings]", "New default account is $accountIterator")
-                        break
-                    }
-                }
-            }
+        accounts.forEach { acc ->
+            try {
+                acc.findAuthInfo()?.let { core.removeAuthInfo(it) }
 
-            val params = account.params.clone()
-            params.isRegisterEnabled = false
-            account.params = params
+                val params = acc.params.clone().apply { isRegisterEnabled = false }
+                acc.params = params
 
-            if (!registered) {
-                Log.w(
-                    "[Account Settings]",
-                    "Account isn't registered, don't unregister before removing it"
-                )
-                deleteAccount(account)
+                core.removeAccount(acc)
+                Log.i("[Account Removal]", "Removed account: ${acc.params.identityAddress?.asString()}")
+            } catch (t: Throwable) {
+                Log.w("[Account Removal]", "Failed to remove: ${acc.params.identityAddress?.asString()}", t)
             }
         }
+
+        accountToDelete = null
+        proxyConfigToCheck = null
+
+        core.refreshRegisters()
     }
 
     override fun startCall(addressToCall: String) {
@@ -1413,6 +1402,7 @@ class CansCenter() : Cans {
             activity = activity
         ) { resultCallback ->
             if (resultCallback) {
+                Log.d("SDK","signOutOKTADomain -> removeAccountAll")
                 removeAccountAll()
             }
             callback(resultCallback)
@@ -1481,6 +1471,7 @@ class CansCenter() : Cans {
                                                     domainNameOKTA = signInResponse.data.domain_name
                                                     transportOKTA = TransportType.Tcp
 
+                                                    Log.d("SDK","onTokenRefreshed -> removeAccountAll")
                                                     removeAccountAll()
 
                                                     registerSIPBcrypt(
@@ -1622,6 +1613,7 @@ class CansCenter() : Cans {
                     OktaWebAuth.checkSession(activity) { isSessionValid ->
                         if (isSessionValid) {
 //                            removeAccount()
+                            Log.d("SDK","checkSessionOKTAExpire -> removeAccountAll")
                             removeAccountAll()
                         }
                         callback(isSessionValid)
