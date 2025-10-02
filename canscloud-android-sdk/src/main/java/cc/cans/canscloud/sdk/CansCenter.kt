@@ -249,7 +249,6 @@ class CansCenter() : Cans {
             message: String
         ) {
             Log.i("[$TAG: onRegistrationStateChanged]", "Registration state is $state: $message")
-            Log.d("SDK", "Registration state is $state: $message")
             if (state == RegistrationState.Cleared && account == accountToDelete) {
                 deleteAccount(account)
                 registerAccountListeners.forEach { it.onRegistration(RegisterState.CLEARED) }
@@ -1484,10 +1483,6 @@ class CansCenter() : Cans {
 
                                                     removeAccountAll()
 
-                                                    Log.d(
-                                                        "SDK",
-                                                        "Login With OKTA use registerSIPBcrypt"
-                                                    )
                                                     registerSIPBcrypt(
                                                         usernameOKTA,
                                                         passwordOKTA,

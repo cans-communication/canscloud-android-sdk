@@ -49,19 +49,15 @@ class LoginBcryptManager(url: String) {
 
     suspend fun getLoginAccessToken(username: String, password: String): String {
 
-        Log.d("SDK", "getLoginAccessToken with password : $password")
-
         val url = "${BASE_URL}${CPANEL_PREFIX}/login/cpanel/"
         val request =
             LoginCpanelRequest(username = username, password = password, loginType = "account")
 
         val resp = api.loginCpanel(url, request)
-        Log.d("SDK", "getLoginAccessToken resp : $resp")
         if (!resp.isSuccessful) throw IllegalStateException("login failed: ${resp.code()} ${resp.message()}")
 
         val body = resp.body() ?: throw IllegalStateException("empty body")
         val token = body.data?.accessToken
-        Log.d("SDK", "getLoginAccessToken token : $token")
         return token ?: throw IllegalStateException("no access token")
     }
 
@@ -73,10 +69,8 @@ class LoginBcryptManager(url: String) {
         val url = "${BASE_URL}${CPANEL_PREFIX}/api/v3/domains/$domainUuid/sip-credentials"
 
         val bearer = "Bearer $accessToken"
-        Log.d("SDK", "getLoginAccount -> url: $url")
 
         val resp = api.getSipCredentials(url, bearer)
-        Log.d("SDK", "getLoginAccount -> resp: $resp")
 
         if (!resp.isSuccessful) {
             throw HttpException(resp)
@@ -84,7 +78,6 @@ class LoginBcryptManager(url: String) {
 
         val body = resp.body() ?: throw IllegalStateException("Empty body for SIP credentials")
 
-        Log.d("SDK", "getLoginAccount success -> $body")
         body
     }
 }
