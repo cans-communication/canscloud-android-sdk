@@ -1694,89 +1694,63 @@ class CansCenter() : Cans {
             return
         }
 
+        val serverAddress = "$domain:$port"
         val transportType = if (transport.name.lowercase() == "tcp") {
             TransportType.Tcp
         } else {
             TransportType.Udp
         }
 
-        Log.d("SDK", "SIPBcrypt start create account by factory")
-        val sipServer = "sip:$domain:$port;transport=${transportType.name.lowercase()}"
+        val realm = domain.substringBefore(':')
+        val ha1Hex = SecureUtils.md5("$username:$realm:$password") // MD5(username:realm:password)
 
         val factory = Factory.instance()
-        val ha1Hex = SecureUtils.md5("$username:$domain:$password") // MD5(username:realm:password)
-
-        Log.d("SDK", "SIPBcrypt start createAuthInfo by factory")
         val auth = factory.createAuthInfo(
-            username,
-            null,       // userid
-            null,       // passwd (null เพราะใช้ ha1)
-            ha1Hex,     // ha1
-            domain,
-            domain,
-            null        // algorithm (MD5 default)
+            /* username */ username,
+            /* userid   */ null,
+            /* passwd   */ null,
+            /* ha1      */ ha1Hex,
+            /* realm    */ realm,
+            /* domain   */ realm,
+            /* algo     */ null
         )
         core.addAuthInfo(auth)
 
-        Log.d("SDK", "SIPBcrypt getAccountCreator start")
         accountCreator = getAccountCreator()
-        Log.d("SDK", "SIPBcrypt getAccountCreator ok accountCreator : $accountCreator")
 
         val resultUsername = accountCreator.setUsername(username)
         if (resultUsername != AccountCreator.UsernameStatus.Ok) {
-            Log.e(
-                "[Assistant]",
-                " [Account Login] Error [${resultUsername.name}] setting the username: ${username}"
-            )
             registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
-        Log.i("[Assistant]", "[Account Login] Username is ${accountCreator.username}")
 
-        val resultDomain = accountCreator.setDomain(domain)
+        val resultDomain = accountCreator.setDomain(serverAddress)
         if (resultDomain != AccountCreator.DomainStatus.Ok) {
-            Log.e("[Assistant]", " [Account Login] Error [${resultDomain.name}] setting the domain")
             registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
+
+        accountCreator.displayName = ""
         accountCreator.transport = transportType
 
-        Log.d("SDK", "SIPBcrypt start createProxyConfig ")
-        Log.d("SDK", "SIPBcrypt BEFORE accountList size = ${core.accountList.size}")
         val proxyConfig: ProxyConfig? = accountCreator.createProxyConfig()
-        Log.d("SDK", "SIPBcrypt start proxyConfig : $proxyConfig")
-//        Log.d("SDK", "AFTER accountList size = ${core.accountList.size}")
         proxyConfigToCheck = proxyConfig
 
         if (proxyConfig == null) {
-            Log.d("SDK", "SIPBcrypt RegisterState.FAIL from Null ProxyConfig")
             registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
-
-        // สำคัญ: ใส่พอร์ตและทรานสปอร์ตให้ proxy/server
-        Log.d("SDK", "SIPBcrypt ใส่พอร์ตและทรานสปอร์ตให้ proxy/server")
-        proxyConfig.edit()
-        proxyConfig.serverAddr = sipServer
-        proxyConfig.isRegisterEnabled = true
-        proxyConfig.done()
-
-        // เพิ่มเข้า core + ตั้ง default
-        Log.d("SDK", "SIPBcrypt เพิ่มเข้า core + ตั้ง default")
-        if (!core.proxyConfigList.contains(proxyConfig)) {
-            core.addProxyConfig(proxyConfig)
-        }
-        core.defaultProxyConfig = proxyConfig
-
-        core.refreshRegisters()
-        Log.d("SDK", "SIPBcrypt after add: accountList size = ${core.accountList.size}")
 
         corePreferences.keepServiceAlive = true
         coreContext.notificationsManager.startForeground()
     }
 
-    override fun registerAccountBcrypt(username: String, password: String, domain: String, apiURL: String) {
-        Log.d("SDK", "registerAccountBcrypt ")
+    override fun registerAccountBcrypt(
+        username: String,
+        password: String,
+        domain: String,
+        apiURL: String
+    ) {
         if (username.isEmpty() || password.isEmpty() || domain.isEmpty()) {
             registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
@@ -1786,128 +1760,87 @@ class CansCenter() : Cans {
             try {
                 val pwdMD5 = SecureUtils.md5(password)
                 val usernameWithDomain = "$username@$domain"
-                Log.d("SDK", "registerAccountBcrypt pwdMD5: $pwdMD5")
-                Log.d("SDK", "registerAccountBcrypt usernameWithDomain: $usernameWithDomain")
-                Log.d("SDK", "registerAccountBcrypt apiURL: $apiURL")
 
                 val loginManager = LoginBcryptManager(apiURL)
 
-                // รอผล login ก่อน
                 val accessToken = withContext(Dispatchers.IO) {
-//                    LoginBcryptManager.getLoginAccessToken(usernameWithDomain, pwdMD5)
                     loginManager.getLoginAccessToken(usernameWithDomain, pwdMD5)
                 }
 
-                Log.d("SDK", "registerAccountBcrypt accessToken: $accessToken")
-
-                // ไปต่อได้อย่างปลอดภัย (token มีแล้ว)
                 val claims: AccessTokenClaims? =
                     JwtMapper.decodePayload(accessToken, AccessTokenClaims::class.java)
-                Log.d("SDK", "registerAccountBcrypt claims: $claims")
 
-                if (claims?.domainUuid?.isEmpty()?.not() == true) {
-                    Log.d("SDK", "registerAccountBcrypt claims?.domainUuid: ${claims?.domainUuid}")
-                    try {
-                        Log.d("SDK", "registerAccountBcrypt getLoginAccount")
-                        val resp =
-//                            LoginBcryptManager.getLoginAccount(accessToken, claims.domainUuid)
-                            loginManager.getLoginAccount(accessToken, claims.domainUuid)
-                        val credentials = resp.data
-                        if (credentials == null) {
-                            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-                            return@launch
-                        }
-
-                        Log.d("SDK", "registerAccountBcrypt credentials : $credentials")
-
-                        Log.d("SDK", "registerAccountBcrypt credentials.sipCreds : ${credentials.sipCreds}")
-
-                        val loginPort = 8446
-                        val loginTransport = TransportType.Udp
-                        val sipServer = "sip:$domain:$loginPort;transport=$loginTransport"
-                        Log.d("SDK", "registerAccountBcrypt sipServer : $sipServer")
-
-                        val factory = Factory.instance()
-
-                        Log.d("SDK", "registerAccountBcrypt start createAuthInfo by factory")
-                        val auth = factory.createAuthInfo(
-                            credentials.extension ?: "",
-                            null,
-                            null,
-                            credentials.sipCreds,
-                            credentials.domainName ?: "",
-                            credentials.domainName ?: "",
-                            null
-                        )
-                        core.addAuthInfo(auth)
-
-                        Log.d("SDK", "registerAccountBcrypt getAccountCreator start")
-                        accountCreator = getAccountCreator()
-                        Log.d("SDK", "registerAccountBcrypt getAccountCreator ok accountCreator : $accountCreator")
-
-                        val resultUsername = accountCreator.setUsername(username)
-                        if (resultUsername != AccountCreator.UsernameStatus.Ok) {
-                            Log.e(
-                                "[Assistant]",
-                                " [Account Login] Error [${resultUsername.name}] setting the username: ${username}"
-                            )
-                            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-                            return@launch
-                        }
-                        Log.i("[Assistant]", "[Account Login] Username is ${accountCreator.username}")
-
-                        val resultDomain = accountCreator.setDomain(domain)
-                        if (resultDomain != AccountCreator.DomainStatus.Ok) {
-                            Log.e("[Assistant]", " [Account Login] Error [${resultDomain.name}] setting the domain")
-                            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-                            return@launch
-                        }
-                        accountCreator.transport = loginTransport
-
-                        Log.d("SDK", "registerAccountBcrypt start createProxyConfig ")
-                        Log.d("SDK", "registerAccountBcrypt BEFORE accountList size = ${core.accountList.size}")
-                        val proxyConfig: ProxyConfig? = accountCreator.createProxyConfig()
-                        Log.d("SDK", "registerAccountBcrypt start proxyConfig : $proxyConfig")
-                        proxyConfigToCheck = proxyConfig
-
-                        if (proxyConfig == null) {
-                            Log.d("SDK", "registerAccountBcrypt RegisterState.FAIL from Null ProxyConfig")
-                            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-                            return@launch
-                        }
-
-                        // สำคัญ: ใส่พอร์ตและทรานสปอร์ตให้ proxy/server
-                        Log.d("SDK", "registerAccountBcrypt ใส่พอร์ตและทรานสปอร์ตให้ proxy/server")
-                        proxyConfig.edit()
-                        proxyConfig.serverAddr = sipServer
-                        proxyConfig.isRegisterEnabled = true
-                        proxyConfig.done()
-
-                        // เพิ่มเข้า core + ตั้ง default
-                        Log.d("SDK", "registerAccountBcrypt เพิ่มเข้า core + ตั้ง default")
-                        if (!core.proxyConfigList.contains(proxyConfig)) {
-                            core.addProxyConfig(proxyConfig)
-                        }
-                        core.defaultProxyConfig = proxyConfig
-
-                        core.refreshRegisters()
-                        Log.d("SDK", "registerAccountBcrypt after add: accountList size = ${core.accountList.size}")
-
-                        corePreferences.keepServiceAlive = true
-                        coreContext.notificationsManager.startForeground()
-
-                    } catch (e: Exception) {
-                        Log.e("SDK", "getLoginAccount error", e)
-                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-                    }
-                } else {
+                if (claims?.domainUuid?.isNullOrEmpty() == true) {
                     registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                     return@launch
                 }
 
+                try {
+                    val resp = loginManager.getLoginAccount(accessToken, claims?.domainUuid ?: "")
+                    val credentials = resp.data
+                    if (credentials == null) {
+                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                        return@launch
+                    }
+
+                    val loginPort = 8446
+                    val loginTransport = TransportType.Tcp
+
+                    val domainFromApi = credentials.domainName ?: domain
+                    val realm = domainFromApi.substringBefore(':')
+                    val serverAddress = "${domainFromApi.substringBefore(':')}:$loginPort"
+
+                    val factory = Factory.instance()
+                    val auth = factory.createAuthInfo(
+                        /* username */ credentials.extension ?: username,
+                        /* userid   */ null,
+                        /* passwd   */ null,
+                        /* ha1      */ credentials.sipCreds,
+                        /* realm    */ realm,
+                        /* domain   */ realm,
+                        /* algo     */ null
+                    )
+                    core.addAuthInfo(auth)
+
+                    accountCreator = getAccountCreator()
+
+                    val resultUsername = accountCreator.setUsername(credentials.extension ?: username)
+                    if (resultUsername != AccountCreator.UsernameStatus.Ok) {
+                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                        return@launch
+                    }
+
+                    val resultDomain = accountCreator.setDomain(serverAddress)
+                    if (resultDomain != AccountCreator.DomainStatus.Ok) {
+                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                        return@launch
+                    }
+
+                    accountCreator.displayName = ""
+                    accountCreator.transport = loginTransport
+
+                    val proxyConfig: ProxyConfig? = accountCreator.createProxyConfig()
+                    proxyConfigToCheck = proxyConfig
+
+                    if (proxyConfig == null) {
+                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                        return@launch
+                    }
+
+                    if (!core.proxyConfigList.contains(proxyConfig)) {
+                        core.addProxyConfig(proxyConfig)
+                    }
+
+                    corePreferences.keepServiceAlive = true
+                    coreContext.notificationsManager.startForeground()
+
+                } catch (e: Exception) {
+                    registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                    return@launch
+                }
             } catch (e: Exception) {
-                Log.e("SDK", "registerAccountBcrypt login error", e)
                 registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                return@launch
             }
         }
     }
