@@ -16,16 +16,16 @@ import android.util.Base64
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.WorkerThread
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.lifecycle.MutableLiveData
-import androidx.navigation.fragment.findNavController
 import cc.cans.canscloud.data.AESFactory
 import cc.cans.canscloud.data.ProvisioningData
 import cc.cans.canscloud.data.ProvisioningInterceptor
 import cc.cans.canscloud.data.ProvisioningResult
 import cc.cans.canscloud.data.ProvisioningService
+import cc.cans.canscloud.sdk.bcrypt.AccessTokenClaims
+import cc.cans.canscloud.sdk.bcrypt.JwtMapper
+import cc.cans.canscloud.sdk.bcrypt.LoginBcryptManager
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.callback.CansRegisterAccountListenerStub
 import cc.cans.canscloud.sdk.callback.CansRegisterListenerStub
@@ -52,9 +52,15 @@ import cc.cans.canscloud.sdk.telecom.TelecomHelper
 import cc.cans.canscloud.sdk.utils.AudioRouteUtils
 import cc.cans.canscloud.sdk.utils.CansUtils
 import cc.cans.canscloud.sdk.utils.PermissionHelper
+import cc.cans.canscloud.sdk.utils.SecureUtils
 import cc.cans.canscloud.sdk.utils.TimestampUtils
 import com.google.gson.Gson
 import com.okta.oidc.AuthenticationPayload
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import org.linphone.core.Account
@@ -100,6 +106,9 @@ class CansCenter() : Cans {
 
     override lateinit var coreContext: CoreContextSDK
     private var proxyConfigToCheck: ProxyConfig? = null
+    private val sdkScope = CoroutineScope(
+        SupervisorJob() + Dispatchers.Main.immediate
+    )
 
     @SuppressLint("StaticFieldLeak")
     override lateinit var corePreferences: CorePreferences
@@ -245,9 +254,19 @@ class CansCenter() : Cans {
                 registerAccountListeners.forEach { it.onRegistration(RegisterState.CLEARED) }
             } else {
                 if (state == RegistrationState.Ok) {
-                    registerAccountListeners.forEach { it.onRegistration(RegisterState.OK, message) }
+                    registerAccountListeners.forEach {
+                        it.onRegistration(
+                            RegisterState.OK,
+                            message
+                        )
+                    }
                 } else if (state == RegistrationState.Failed) {
-                    registerAccountListeners.forEach { it.onRegistration(RegisterState.FAIL, message) }
+                    registerAccountListeners.forEach {
+                        it.onRegistration(
+                            RegisterState.FAIL,
+                            message
+                        )
+                    }
                 }
             }
         }
@@ -262,9 +281,19 @@ class CansCenter() : Cans {
         ) {
             Log.i("[$TAG: onAccount]", "Registration state is $state: $message")
             if (account == core.defaultAccount) {
-                registerListeners.forEach { it.onUpdateAccountRegistration(RegisterState.OK, message) }
+                registerListeners.forEach {
+                    it.onUpdateAccountRegistration(
+                        RegisterState.OK,
+                        message
+                    )
+                }
             } else if (core.accountList.isEmpty()) {
-                registerListeners.forEach { it.onUpdateAccountRegistration(RegisterState.NONE, message) }
+                registerListeners.forEach {
+                    it.onUpdateAccountRegistration(
+                        RegisterState.NONE,
+                        message
+                    )
+                }
             }
         }
 
@@ -276,7 +305,7 @@ class CansCenter() : Cans {
         ) {
             Log.i("$TAG: onRegistration", "${cansCenter().defaultStateRegister}")
             if (cfg == proxyConfigToCheck) {
-                Log.i(TAG,"[Account Login] Registration state is $state: $message")
+                Log.i(TAG, "[Account Login] Registration state is $state: $message")
                 if (state == RegistrationState.Ok) {
                     registerListeners.forEach { it.onRegistration(RegisterState.OK, message) }
                 } else if (state == RegistrationState.Failed) {
@@ -422,10 +451,10 @@ class CansCenter() : Cans {
         }
     }
 
-    override fun getCallLog() : ArrayList<CallModel> {
+    override fun getCallLog(): ArrayList<CallModel> {
         val list: ArrayList<CallModel> = arrayListOf()
         val calls = cansCenter().core.calls.toList()
-        calls.mapTo(list)  { call ->
+        calls.mapTo(list) { call ->
             CallModel(
                 call.callLog.callId.orEmpty(),
                 call.remoteAddress.username.orEmpty(),
@@ -591,7 +620,7 @@ class CansCenter() : Cans {
         accountCreator.displayName = ""
         accountCreator.transport = transportType
 
-        val proxyConfig : ProxyConfig? = accountCreator.createProxyConfig()
+        val proxyConfig: ProxyConfig? = accountCreator.createProxyConfig()
         proxyConfigToCheck = proxyConfig
 
         if (proxyConfig == null) {
@@ -646,7 +675,7 @@ class CansCenter() : Cans {
             for (accountIterator in core.accountList) {
                 if (account != accountIterator) {
                     core.defaultAccount = accountIterator
-                    Log.i("[Account Settings]","New default account is $accountIterator")
+                    Log.i("[Account Settings]", "New default account is $accountIterator")
                     break
                 }
             }
@@ -657,45 +686,37 @@ class CansCenter() : Cans {
         account.params = params
 
         if (!registered) {
-            Log.w("[Account Settings]"," Account isn't registered, don't unregister before removing it")
+            Log.w(
+                "[Account Settings]",
+                " Account isn't registered, don't unregister before removing it"
+            )
             deleteAccount(account)
         }
     }
 
-
     override fun removeAccountAll() {
-        core.accountList.forEach { account ->
-            accountToDelete = account
-            Log.i(
-                "[Account Removal]",
-                "Removed account: ${account.params.identityAddress?.asString()}"
-            )
+        val accounts = core.accountList.toList()
 
-            val registered = account.state == RegistrationState.Ok
+        core.defaultAccount = null
 
-            if (core.defaultAccount == account) {
-                Log.i("[Account Settings]", "Account was default, let's look for a replacement")
-                for (accountIterator in core.accountList) {
-                    if (account != accountIterator) {
-                        core.defaultAccount = accountIterator
-                        Log.i("[Account Settings]", "New default account is $accountIterator")
-                        break
-                    }
-                }
-            }
+        accounts.forEach { acc ->
+            try {
+                acc.findAuthInfo()?.let { core.removeAuthInfo(it) }
 
-            val params = account.params.clone()
-            params.isRegisterEnabled = false
-            account.params = params
+                val params = acc.params.clone().apply { isRegisterEnabled = false }
+                acc.params = params
 
-            if (!registered) {
-                Log.w(
-                    "[Account Settings]",
-                    "Account isn't registered, don't unregister before removing it"
-                )
-                deleteAccount(account)
+                core.removeAccount(acc)
+                Log.i("[Account Removal]", "Removed account: ${acc.params.identityAddress?.asString()}")
+            } catch (t: Throwable) {
+                Log.w("[Account Removal]", "Failed to remove: ${acc.params.identityAddress?.asString()}", t)
             }
         }
+
+        accountToDelete = null
+        proxyConfigToCheck = null
+
+        core.refreshRegisters()
     }
 
     override fun startCall(addressToCall: String) {
@@ -909,14 +930,21 @@ class CansCenter() : Cans {
                                             accountCreator.transport = TransportType.Udp
                                         }
 
-                                        Log.i("[registerAccount]", "[Account Login] Username is 3333")
+                                        Log.i(
+                                            "[registerAccount]",
+                                            "[Account Login] Username is 3333"
+                                        )
 
                                         if (!createProxyConfig()) {
                                             Log.i(
                                                 "createProxyConfig",
                                                 "Error: Failed to create account object"
                                             )
-                                            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                                            registerListeners.forEach {
+                                                it.onRegistration(
+                                                    RegisterState.FAIL
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -1141,7 +1169,7 @@ class CansCenter() : Cans {
         }
     }
 
-    override fun callLogsAll() : ArrayList<GroupedCallLogData> {
+    override fun callLogsAll(): ArrayList<GroupedCallLogData> {
         val list = arrayListOf<GroupedCallLogData>()
         var previousCallLogGroup: GroupedCallLogData? = null
 
@@ -1357,7 +1385,7 @@ class CansCenter() : Cans {
 
     override fun splitConference() {
         Thread {
-            val participants =  conferenceCore.participantList
+            val participants = conferenceCore.participantList
             for (i in 0 until participants.size.minus(1)) {
                 Log.i("splitConference:", "${participants[i]?.address?.username}")
                 conferenceCore.removeParticipant(participants[i])
@@ -1372,9 +1400,9 @@ class CansCenter() : Cans {
     ) {
         OKTARepository.signOutOKTA(
             activity = activity
-        ){
-            resultCallback ->
-            if (resultCallback){
+        ) { resultCallback ->
+            if (resultCallback) {
+                Log.d("SDK","signOutOKTADomain -> removeAccountAll")
                 removeAccountAll()
             }
             callback(resultCallback)
@@ -1443,9 +1471,10 @@ class CansCenter() : Cans {
                                                     domainNameOKTA = signInResponse.data.domain_name
                                                     transportOKTA = TransportType.Tcp
 
-//                                                    removeAccount()
+                                                    Log.d("SDK","onTokenRefreshed -> removeAccountAll")
                                                     removeAccountAll()
-                                                    register(
+
+                                                    registerSIPBcrypt(
                                                         usernameOKTA,
                                                         passwordOKTA,
                                                         domainNameOKTA,
@@ -1520,7 +1549,7 @@ class CansCenter() : Cans {
         }
     }
 
-    override fun fetchSignInOKTA(apiURL: String, callback: (SignInOKTAResponseData?) -> Unit){
+    override fun fetchSignInOKTA(apiURL: String, callback: (SignInOKTAResponseData?) -> Unit) {
         OKTARepository.fetchSignInOKTA(
             context,
             apiURL,
@@ -1582,8 +1611,9 @@ class CansCenter() : Cans {
                 if (OktaWebAuth.isWebAuthInitialized()) {
                     // webAuth is ready to use
                     OktaWebAuth.checkSession(activity) { isSessionValid ->
-                        if(isSessionValid){
+                        if (isSessionValid) {
 //                            removeAccount()
+                            Log.d("SDK","checkSessionOKTAExpire -> removeAccountAll")
                             removeAccountAll()
                         }
                         callback(isSessionValid)
@@ -1592,7 +1622,7 @@ class CansCenter() : Cans {
                     // webAuth is NOT initialized
                     callback(false)
                 }
-            }else {
+            } else {
                 callback(false)
             }
         } else {
@@ -1637,5 +1667,168 @@ class CansCenter() : Cans {
     override fun removeAllListener() {
         listeners.clear()
         registerListeners.clear()
+    }
+
+    override fun registerSIPBcrypt(
+        username: String,
+        password: String,
+        domain: String,
+        port: String,
+        transport: CansTransport
+    ) {
+        if (username.isEmpty() || password.isEmpty() || domain.isEmpty() || port.isEmpty()) {
+            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+            return
+        }
+
+        val serverAddress = "$domain:$port"
+        val transportType = if (transport.name.lowercase() == "tcp") {
+            TransportType.Tcp
+        } else {
+            TransportType.Udp
+        }
+
+        val realm = domain.substringBefore(':')
+        val ha1Hex = SecureUtils.md5("$username:$realm:$password") // MD5(username:realm:password)
+
+        val factory = Factory.instance()
+        val auth = factory.createAuthInfo(
+            /* username */ username,
+            /* userid   */ null,
+            /* passwd   */ null,
+            /* ha1      */ ha1Hex,
+            /* realm    */ realm,
+            /* domain   */ realm,
+            /* algo     */ null
+        )
+        core.addAuthInfo(auth)
+
+        accountCreator = getAccountCreator()
+
+        val resultUsername = accountCreator.setUsername(username)
+        if (resultUsername != AccountCreator.UsernameStatus.Ok) {
+            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+            return
+        }
+
+        val resultDomain = accountCreator.setDomain(serverAddress)
+        if (resultDomain != AccountCreator.DomainStatus.Ok) {
+            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+            return
+        }
+
+        accountCreator.displayName = ""
+        accountCreator.transport = transportType
+
+        val proxyConfig: ProxyConfig? = accountCreator.createProxyConfig()
+        proxyConfigToCheck = proxyConfig
+
+        if (proxyConfig == null) {
+            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+            return
+        }
+
+        corePreferences.keepServiceAlive = true
+        coreContext.notificationsManager.startForeground()
+    }
+
+    override fun registerAccountBcrypt(
+        username: String,
+        password: String,
+        domain: String,
+        apiURL: String
+    ) {
+        if (username.isEmpty() || password.isEmpty() || domain.isEmpty()) {
+            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+            return
+        }
+
+        sdkScope.launch {
+            try {
+                val pwdMD5 = SecureUtils.md5(password)
+                val usernameWithDomain = "$username@$domain"
+
+                val loginManager = LoginBcryptManager(apiURL)
+
+                val accessToken = withContext(Dispatchers.IO) {
+                    loginManager.getLoginAccessToken(usernameWithDomain, pwdMD5)
+                }
+
+                val claims: AccessTokenClaims? =
+                    JwtMapper.decodePayload(accessToken, AccessTokenClaims::class.java)
+
+                if (claims?.domainUuid?.isNullOrEmpty() == true) {
+                    registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                    return@launch
+                }
+
+                try {
+                    val resp = loginManager.getLoginAccount(accessToken, claims?.domainUuid ?: "")
+                    val credentials = resp.data
+                    if (credentials == null) {
+                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                        return@launch
+                    }
+
+                    val loginPort = 8446
+                    val loginTransport = TransportType.Tcp
+
+                    val domainFromApi = credentials.domainName ?: domain
+                    val realm = domainFromApi.substringBefore(':')
+                    val serverAddress = "${domainFromApi.substringBefore(':')}:$loginPort"
+
+                    val factory = Factory.instance()
+                    val auth = factory.createAuthInfo(
+                        /* username */ credentials.extension ?: username,
+                        /* userid   */ null,
+                        /* passwd   */ null,
+                        /* ha1      */ credentials.sipCreds,
+                        /* realm    */ realm,
+                        /* domain   */ realm,
+                        /* algo     */ null
+                    )
+                    core.addAuthInfo(auth)
+
+                    accountCreator = getAccountCreator()
+
+                    val resultUsername = accountCreator.setUsername(credentials.extension ?: username)
+                    if (resultUsername != AccountCreator.UsernameStatus.Ok) {
+                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                        return@launch
+                    }
+
+                    val resultDomain = accountCreator.setDomain(serverAddress)
+                    if (resultDomain != AccountCreator.DomainStatus.Ok) {
+                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                        return@launch
+                    }
+
+                    accountCreator.displayName = ""
+                    accountCreator.transport = loginTransport
+
+                    val proxyConfig: ProxyConfig? = accountCreator.createProxyConfig()
+                    proxyConfigToCheck = proxyConfig
+
+                    if (proxyConfig == null) {
+                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                        return@launch
+                    }
+
+                    if (!core.proxyConfigList.contains(proxyConfig)) {
+                        core.addProxyConfig(proxyConfig)
+                    }
+
+                    corePreferences.keepServiceAlive = true
+                    coreContext.notificationsManager.startForeground()
+
+                } catch (e: Exception) {
+                    registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                    return@launch
+                }
+            } catch (e: Exception) {
+                registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                return@launch
+            }
+        }
     }
 }
