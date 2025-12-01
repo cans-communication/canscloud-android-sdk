@@ -35,6 +35,7 @@ import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.core.CorePreferences
 import cc.cans.canscloud.sdk.core.CoreService
 import cc.cans.canscloud.sdk.data.GroupedCallLogData
+import cc.cans.canscloud.sdk.models.AudioRoute
 import cc.cans.canscloud.sdk.models.CallModel
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.CansAddress
@@ -228,8 +229,33 @@ class CansCenter() : Cans {
     override val isMicState: Boolean
         get() = !core.isMicEnabled
 
+//    override val isSpeakerState: Boolean
+//        get() = AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
     override val isSpeakerState: Boolean
-        get() = AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
+        get() {
+            return try {
+                when {
+                    // No active calls
+                    core.callsNb == 0 -> false
+
+                    // In conference and conference is initialized
+                    isInConference && ::conferenceCore.isInitialized -> {
+                        AudioRouteUtils.isSpeakerRouteForCall(core.currentCall)
+                    }
+
+                    // Regular call (not in conference)
+                    core.currentCall != null -> {
+                        AudioRouteUtils.isSpeakerRouteForCall(core.currentCall)
+                    }
+
+                    // Fallback
+                    else -> AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error checking speaker state: ${e.message}", e)
+                false
+            }
+        }
 
     override val isBluetoothState: Boolean
         get() = AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
@@ -241,6 +267,11 @@ class CansCenter() : Cans {
         get() = AudioRouteUtils.isHeadsetAudioRouteAvailable()
 
     private var accountToDelete: Account? = null
+
+    private var currentAudioRoute: AudioRoute = AudioRoute.EARPIECE_OR_HEADSET
+
+    val isConference: Conference?
+        get() = if (::conferenceCore.isInitialized) conferenceCore else null
 
     private val accountListener: AccountListenerStub = object : AccountListenerStub() {
         override fun onRegistrationStateChanged(
@@ -332,6 +363,30 @@ class CansCenter() : Cans {
 
                 Call.State.StreamsRunning -> {
                     mVibrator.cancel()
+
+                    when (currentAudioRoute) {
+                        AudioRoute.SPEAKER -> {
+                            AudioRouteUtils.routeAudioToSpeaker(call)
+                        }
+                        AudioRoute.BLUETOOTH -> {
+                            if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
+                                AudioRouteUtils.routeAudioToBluetooth(call)
+                            } else {
+                                if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
+                                    AudioRouteUtils.routeAudioToHeadset(call)
+                                } else {
+                                    AudioRouteUtils.routeAudioToEarpiece(call)
+                                }
+                            }
+                        }
+                        AudioRoute.EARPIECE_OR_HEADSET -> {
+                            if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
+                                AudioRouteUtils.routeAudioToHeadset(call)
+                            } else {
+                                AudioRouteUtils.routeAudioToEarpiece(call)
+                            }
+                        }
+                    }
                 }
 
                 Call.State.Error -> {
@@ -367,8 +422,10 @@ class CansCenter() : Cans {
         }
 
         override fun onAudioDeviceChanged(core: Core, audioDevice: AudioDevice) {
+//            AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
             AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
             AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
+            AudioRouteUtils.syncCurrentRouteFromCore()
             listeners.forEach { it.onAudioDeviceChanged() }
         }
 
@@ -1383,16 +1440,56 @@ class CansCenter() : Cans {
         }.start()
     }
 
+//    override fun splitConference() {
+//        Thread {
+//            val participants = conferenceCore.participantList
+//            for (i in 0 until participants.size.minus(1)) {
+//                Log.i("splitConference:", "${participants[i]?.address?.username}")
+//                conferenceCore.removeParticipant(participants[i])
+//            }
+//        }.start()
+//    }
     override fun splitConference() {
         Thread {
-            val participants = conferenceCore.participantList
-            for (i in 0 until participants.size.minus(1)) {
-                Log.i("splitConference:", "${participants[i]?.address?.username}")
-                conferenceCore.removeParticipant(participants[i])
+            try {
+                if (!::conferenceCore.isInitialized) {
+                    Log.e("splitConference:", "Conference not initialized")
+                    return@Thread
+                }
+
+                val conference = conferenceCore
+
+                // Get all participants first
+                val participants = conference.participantList.toList()
+                Log.i("splitConference:", "Removing ${participants.size} participants")
+
+                // Remove ALL participants (not .minus(1))
+                participants.forEach { participant ->
+                    Log.i("splitConference:", "Removing participant: ${participant?.address?.username}")
+                    try {
+                        conference.removeParticipant(participant)
+                    } catch (e: Exception) {
+                        Log.e("splitConference:", "Error removing participant: ${e.message}")
+                    }
+                }
+
+                // Wait a bit for participants to be removed
+                Thread.sleep(200)
+
+                // Terminate the conference
+                Log.i("splitConference:", "Terminating conference")
+                conference.terminate()
+
+                // Reset state
+                isInConference = false
+
+                Log.i("splitConference:", "Conference split complete")
+
+            } catch (e: Exception) {
+                Log.e("splitConference:", "Error splitting conference: ${e.message}", e)
             }
         }.start()
     }
-
 
     override fun signOutOKTADomain(
         activity: Activity,
@@ -1831,4 +1928,6 @@ class CansCenter() : Cans {
             }
         }
     }
+
+    override fun isConferenceInitialized(): Boolean = ::conferenceCore.isInitialized
 }
