@@ -1385,14 +1385,30 @@ class CansCenter() : Cans {
 
     override fun splitConference() {
         Thread {
-            val participants = conferenceCore.participantList
-            for (i in 0 until participants.size.minus(1)) {
-                Log.i("splitConference:", "${participants[i]?.address?.username}")
-                conferenceCore.removeParticipant(participants[i])
+            try {
+                if (!::conferenceCore.isInitialized) {
+                    return@Thread
+                }
+                val conference = conferenceCore
+
+                val participants = conference.participantList.toList()
+                participants.forEach { participant ->
+                    try {
+                        conference.removeParticipant(participant)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error removing participant: ${e.message}")
+                    }
+                }
+
+                Thread.sleep(200)
+
+                conference.terminate()
+                isInConference = false
+            } catch (e: Exception) {
+                Log.e(TAG, "Error splitting conference: ${e.message}", e)
             }
         }.start()
     }
-
 
     override fun signOutOKTADomain(
         activity: Activity,
