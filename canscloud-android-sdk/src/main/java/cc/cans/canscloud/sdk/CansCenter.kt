@@ -35,6 +35,7 @@ import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import cc.cans.canscloud.sdk.core.CorePreferences
 import cc.cans.canscloud.sdk.core.CoreService
 import cc.cans.canscloud.sdk.data.GroupedCallLogData
+import cc.cans.canscloud.sdk.models.AudioRoute
 import cc.cans.canscloud.sdk.models.CallModel
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.CansAddress
@@ -229,7 +230,30 @@ class CansCenter() : Cans {
         get() = !core.isMicEnabled
 
     override val isSpeakerState: Boolean
-        get() = AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
+        get() {
+            return try {
+                when {
+                    // No active calls
+                    core.callsNb == 0 -> false
+
+                    // In conference and conference is initialized
+                    isInConference && ::conferenceCore.isInitialized -> {
+                        AudioRouteUtils.isSpeakerRouteForCall(core.currentCall)
+                    }
+
+                    // Regular call (not in conference)
+                    core.currentCall != null -> {
+                        AudioRouteUtils.isSpeakerRouteForCall(core.currentCall)
+                    }
+
+                    // Fallback
+                    else -> AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error checking speaker state: ${e.message}", e)
+                false
+            }
+        }
 
     override val isBluetoothState: Boolean
         get() = AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
@@ -241,6 +265,11 @@ class CansCenter() : Cans {
         get() = AudioRouteUtils.isHeadsetAudioRouteAvailable()
 
     private var accountToDelete: Account? = null
+
+    private var currentAudioRoute: AudioRoute = AudioRoute.EARPIECE_OR_HEADSET
+
+    val isConference: Conference?
+        get() = if (::conferenceCore.isInitialized) conferenceCore else null
 
     private val accountListener: AccountListenerStub = object : AccountListenerStub() {
         override fun onRegistrationStateChanged(
@@ -332,6 +361,30 @@ class CansCenter() : Cans {
 
                 Call.State.StreamsRunning -> {
                     mVibrator.cancel()
+
+                    when (currentAudioRoute) {
+                        AudioRoute.SPEAKER -> {
+                            AudioRouteUtils.routeAudioToSpeaker(call)
+                        }
+                        AudioRoute.BLUETOOTH -> {
+                            if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
+                                AudioRouteUtils.routeAudioToBluetooth(call)
+                            } else {
+                                if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
+                                    AudioRouteUtils.routeAudioToHeadset(call)
+                                } else {
+                                    AudioRouteUtils.routeAudioToEarpiece(call)
+                                }
+                            }
+                        }
+                        AudioRoute.EARPIECE_OR_HEADSET -> {
+                            if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
+                                AudioRouteUtils.routeAudioToHeadset(call)
+                            } else {
+                                AudioRouteUtils.routeAudioToEarpiece(call)
+                            }
+                        }
+                    }
                 }
 
                 Call.State.Error -> {
@@ -369,6 +422,7 @@ class CansCenter() : Cans {
         override fun onAudioDeviceChanged(core: Core, audioDevice: AudioDevice) {
             AudioRouteUtils.isSpeakerAudioRouteCurrentlyUsed()
             AudioRouteUtils.isBluetoothAudioRouteCurrentlyUsed()
+            AudioRouteUtils.syncCurrentRouteFromCore()
             listeners.forEach { it.onAudioDeviceChanged() }
         }
 
@@ -1847,4 +1901,6 @@ class CansCenter() : Cans {
             }
         }
     }
+
+    override fun isConferenceInitialized(): Boolean = ::conferenceCore.isInitialized
 }
