@@ -206,8 +206,16 @@ class CansCenter() : Cans {
             return ""
         }
 
-    override val durationTime: Int?
-        get() = core.currentCall?.duration
+    override val durationTime: Int
+        get() {
+            if (core.callsNb == 0) return 0
+
+            if (isInConference) {
+                return core.calls.maxOfOrNull { it.duration } ?: 0
+            }
+
+            return core.currentCall?.duration ?: 0
+        }
 
     override val startDateCall: Int
         get() = core.currentCall?.callLog?.startDate?.toInt() ?: 0
@@ -1904,6 +1912,16 @@ class CansCenter() : Cans {
                 return@launch
             }
         }
+    }
+
+    override fun getDurationByAddress(address: String): Int {
+        if (core.callsNb == 0) return 0
+
+        val targetCall = core.calls.find { call ->
+            call.remoteAddress.username == address
+        }
+
+        return targetCall?.duration ?: 0
     }
 
     override fun isConferenceInitialized(): Boolean = ::conferenceCore.isInitialized

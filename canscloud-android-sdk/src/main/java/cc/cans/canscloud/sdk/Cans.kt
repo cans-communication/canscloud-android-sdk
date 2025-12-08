@@ -207,5 +207,7 @@ interface Cans {
 
     fun registerAccountBcrypt(username: String, password: String, domain: String, apiURL: String)
 
+    fun getDurationByAddress(address: String): Int
+
     fun isConferenceInitialized(): Boolean
 }
