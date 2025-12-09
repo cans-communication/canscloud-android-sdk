@@ -71,14 +71,6 @@ class AudioRouteUtils {
                 }
 
                 if (foundAudioDevice != null) {
-                    android.util.Log.i(
-                        "FIX_BUG",
-                        "Routing CONFERENCE audio to [${foundAudioDevice.deviceName}] type: ${foundAudioDevice.type}"
-                    )
-                    Log.i(
-                        "[Audio Route Helper]",
-                        "Routing CONFERENCE audio to [${foundAudioDevice.deviceName}] type: ${foundAudioDevice.type}"
-                    )
                     try {
                         if (output) {
                             conference.outputAudioDevice = foundAudioDevice
@@ -112,13 +104,6 @@ class AudioRouteUtils {
             }
 
             val extendedAudioDevices = cansCenter().core.extendedAudioDevices
-            android.util.Log.i(
-                "FIX_BUG",
-                "[Audio Route Helper] Looking for an ${if (output) "output" else "input"} audio device with capability [$capability], driver name [$preferredDriver] and type [$types] in extended audio devices list (size ${extendedAudioDevices.size})"
-            )
-            Log.i(
-                "[Audio Route Helper] Looking for an ${if (output) "output" else "input"} audio device with capability [$capability], driver name [$preferredDriver] and type [$types] in extended audio devices list (size ${extendedAudioDevices.size})"
-            )
             val foundAudioDevice = extendedAudioDevices.find {
                 Log.w("[AudioRouteHelperDevice:] [${it.type}]")
                 it.driverName == preferredDriver && types.contains(it.type) && it.hasCapability(
@@ -126,9 +111,6 @@ class AudioRouteUtils {
                 )
             }
             val audioDevice = if (foundAudioDevice == null) {
-                Log.w(
-                    "[Audio Route Helper] Failed to find an audio device with capability [$capability], driver name [$preferredDriver] and type [$types]"
-                )
                 extendedAudioDevices.find {
                     types.contains(it.type) && it.hasCapability(capability)
                 }
@@ -137,45 +119,16 @@ class AudioRouteUtils {
             }
 
             if (audioDevice == null) {
-                Log.e(
-                    "[Audio Route Helper] Couldn't find audio device with capability [$capability] and type [$types]"
-                )
-                android.util.Log.i(
-                    "FIX_BUG",
-                    "[Audio Route Helper] Couldn't find audio device with capability [$capability] and type [$types]"
-                )
-                for (device in extendedAudioDevices) {
-                    android.util.Log.i(
-                        "FIX_BUG",
-                        "[Audio Route Helper] Extended audio device: [${device.deviceName} (${device.driverName}) ${device.type} / ${device.capabilities}]"
-                    )
-                    Log.i(
-                        "[Audio Route Helper] Extended audio device: [${device.deviceName} (${device.driverName}) ${device.type} / ${device.capabilities}]"
-                    )
-                }
                 return
             }
+
             if (currentCall != null) {
-                Log.i(
-                    "[Audio Route Helper] Found [${audioDevice.type}] ${if (output) "playback" else "recorder"} audio device [${audioDevice.deviceName} (${audioDevice.driverName})], routing conference audio to it"
-                )
-                android.util.Log.i(
-                    "FIX_BUG",
-                    "[Audio Route Helper] Found [${audioDevice.type}] ${if (output) "playback" else "recorder"} audio device [${audioDevice.deviceName} (${audioDevice.driverName})], routing conference audio to it"
-                )
                 if (output) {
                     currentCall.outputAudioDevice = audioDevice
                 } else {
                     currentCall.inputAudioDevice = audioDevice
                 }
             } else {
-                Log.i(
-                    "[Audio Route Helper] Found [${audioDevice.type}] [${if (output) "playback" else "recorder"}] audio device [${audioDevice.deviceName} (${audioDevice.driverName})], changing core default audio device"
-                )
-                android.util.Log.i(
-                    "FIX_BUG",
-                    "[Audio Route Helper] Found [${audioDevice.type}] [${if (output) "playback" else "recorder"}] audio device [${audioDevice.deviceName} (${audioDevice.driverName})], changing core default audio device"
-                )
                 if (output) {
                     cansCenter().core.outputAudioDevice = audioDevice
                 } else {
@@ -208,9 +161,6 @@ class AudioRouteUtils {
                 }
 
                 AudioDevice.Type.Speaker -> {
-                    android.util.Log.i(
-                        "FIX_BUG", "Switched to Speaker, keeping default input device"
-                    )
                     Log.i(
                         "[Audio Route Helper]",
                         "Switched to Speaker, keeping default input device"
@@ -276,8 +226,7 @@ class AudioRouteUtils {
                     Log.i(
                         "[Audio Route Helper] Telecom Helper & matching connection found, dispatching audio route change through it"
                     )
-                    // We will be called here again by NativeCallWrapper.onCallAudioStateChanged()
-                    // but this time with skipTelecom = true
+
                     if (!Compatibility.changeAudioRouteForTelecomManager(connection, route)) {
                         Log.w(
                             "[Audio Route Helper] Connection is already using this route internally, make the change!"
@@ -405,15 +354,6 @@ class AudioRouteUtils {
             return false
         }
 
-        //        fun isSpeakerRouteForCall(call: Call? = null): Boolean {
-//            if (cansCenter().core.callsNb == 0) return false
-//            val currentCall = call ?: cansCenter().core.currentCall ?: cansCenter().core.calls[0]
-//            val conference = cansCenter().conferenceCore
-//
-//            val audioDevice =
-//                if (conference.isIn) conference.outputAudioDevice else currentCall.outputAudioDevice
-//            return audioDevice?.type == AudioDevice.Type.Speaker
-//        }
         fun isSpeakerRouteForCall(call: Call? = null): Boolean {
             if (audioManager.isSpeakerphoneOn) {
                 return true
@@ -422,83 +362,21 @@ class AudioRouteUtils {
             if (cansCenter().core.callsNb == 0) return false
             val currentCall = call ?: cansCenter().core.currentCall ?: cansCenter().core.calls[0]
 
-            android.util.Log.d("FIX_BUG", "isSpeakerRouteForCall : currentCall : $currentCall")
-            android.util.Log.d(
-                "FIX_BUG",
-                "isSpeakerRouteForCall : cansCenter().isInConference : ${cansCenter().isInConference}"
-            )
-            android.util.Log.d(
-                "FIX_BUG",
-                "isSpeakerRouteForCall : cansCenter().isConferenceInitialized() : ${cansCenter().isConferenceInitialized()}"
-            )
             val audioDevice =
                 if (cansCenter().isInConference && cansCenter().isConferenceInitialized()) {
-                    // Safe access with try-catch or null-safe call
                     try {
-                        android.util.Log.d(
-                            "FIX_BUG",
-                            "isSpeakerRouteForCall : cansCenter().conferenceCore.outputAudioDevice ?: currentCall.outputAudioDevice"
-                        )
                         cansCenter().conferenceCore.outputAudioDevice
                             ?: currentCall.outputAudioDevice
                     } catch (e: Exception) {
-                        android.util.Log.d(
-                            "FIX_BUG",
-                            "isSpeakerRouteForCall : Exception : ${e.message}"
-                        )
                         currentCall.outputAudioDevice
                     }
                 } else {
-                    android.util.Log.d(
-                        "FIX_BUG",
-                        "isSpeakerRouteForCall : currentCall.outputAudioDevice"
-                    )
                     currentCall.outputAudioDevice
                 }
 
             return audioDevice?.type == AudioDevice.Type.Speaker
         }
 
-        //        fun syncCurrentRouteFromCore() {
-//            val core = cansCenter().core
-//            val currentCall = core.currentCall
-//            val conference = cansCenter().conferenceCore
-//
-//            val audioDevice = if (conference.isIn) {
-//                conference.outputAudioDevice
-//            } else {
-//                currentCall?.outputAudioDevice
-//            }
-//
-//            when (audioDevice?.type) {
-//                AudioDevice.Type.Speaker -> routeAudioToSpeaker(currentCall)
-//                AudioDevice.Type.Bluetooth,
-//                AudioDevice.Type.BluetoothA2DP -> if (isBluetoothAudioRouteAvailable()) {
-//                    routeAudioToBluetooth(currentCall)
-//                } else {
-//                    if (isHeadsetAudioRouteAvailable()) {
-//                        routeAudioToHeadset(currentCall)
-//                    } else {
-//                        routeAudioToEarpiece(currentCall)
-//                    }
-//                }
-//
-//                AudioDevice.Type.Headphones,
-//                AudioDevice.Type.Headset,
-//                AudioDevice.Type.Earpiece,
-//                null -> if (isHeadsetAudioRouteAvailable()) {
-//                    routeAudioToHeadset(currentCall)
-//                } else {
-//                    routeAudioToEarpiece(currentCall)
-//                }
-//
-//                else -> if (isHeadsetAudioRouteAvailable()) {
-//                    routeAudioToHeadset(currentCall)
-//                } else {
-//                    routeAudioToEarpiece(currentCall)
-//                }
-//            }
-//        }
         fun syncCurrentRouteFromCore() {
             val core = cansCenter().core
             val currentCall = core.currentCall
