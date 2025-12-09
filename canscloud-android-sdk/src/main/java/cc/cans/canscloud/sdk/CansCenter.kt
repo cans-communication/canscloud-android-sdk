@@ -892,6 +892,7 @@ class CansCenter() : Cans {
             forceEarpieceAudioRoute()
         } else {
             routeAudioToSpeaker()
+            currentAudioRoute = AudioRoute.SPEAKER
         }
     }
 
@@ -1058,6 +1059,7 @@ class CansCenter() : Cans {
     }
 
     override fun forceEarpieceAudioRoute() {
+        currentAudioRoute = AudioRoute.EARPIECE_OR_HEADSET
         if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
             AudioRouteUtils.routeAudioToHeadset()
         } else {
@@ -1066,10 +1068,12 @@ class CansCenter() : Cans {
     }
 
     override fun routeAudioToHeadset() {
+        currentAudioRoute = AudioRoute.EARPIECE_OR_HEADSET
         AudioRouteUtils.routeAudioToHeadset()
     }
 
     override fun routeAudioToBluetooth() {
+        currentAudioRoute = AudioRoute.BLUETOOTH
         AudioRouteUtils.routeAudioToBluetooth()
         audioManager?.startBluetoothSco()
         audioManager?.isBluetoothScoOn = true

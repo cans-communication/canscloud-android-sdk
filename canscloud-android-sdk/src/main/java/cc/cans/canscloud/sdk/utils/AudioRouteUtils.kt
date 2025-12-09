@@ -48,10 +48,56 @@ class AudioRouteUtils {
             types: List<AudioDevice.Type>,
             output: Boolean = true
         ) {
+            if (cansCenter().isInConference && cansCenter().isConferenceInitialized()) {
+                val conference = cansCenter().conferenceCore
+                val preferredDriver = if (output) {
+                    cansCenter().core.defaultOutputAudioDevice?.driverName
+                } else {
+                    cansCenter().core.defaultInputAudioDevice?.driverName
+                }
+                val capability = if (output) {
+                    AudioDevice.Capabilities.CapabilityPlay
+                } else {
+                    AudioDevice.Capabilities.CapabilityRecord
+                }
+
+                val extendedAudioDevices = cansCenter().core.extendedAudioDevices
+                val foundAudioDevice = extendedAudioDevices.find {
+                    it.driverName == preferredDriver && types.contains(it.type) && it.hasCapability(
+                        capability
+                    )
+                } ?: extendedAudioDevices.find {
+                    types.contains(it.type) && it.hasCapability(capability)
+                }
+
+                if (foundAudioDevice != null) {
+                    android.util.Log.i(
+                        "FIX_BUG",
+                        "Routing CONFERENCE audio to [${foundAudioDevice.deviceName}] type: ${foundAudioDevice.type}"
+                    )
+                    Log.i(
+                        "[Audio Route Helper]",
+                        "Routing CONFERENCE audio to [${foundAudioDevice.deviceName}] type: ${foundAudioDevice.type}"
+                    )
+                    try {
+                        if (output) {
+                            conference.outputAudioDevice = foundAudioDevice
+                        } else {
+                            conference.inputAudioDevice = foundAudioDevice
+                        }
+                    } catch (e: Exception) {
+                        Log.e(
+                            "[Audio Route Helper]",
+                            "Error setting conference audio device: ${e.message}"
+                        )
+                    }
+                    return
+                }
+            }
+
             val currentCall = if (cansCenter().core.callsNb > 0) {
                 call ?: cansCenter().core.currentCall ?: cansCenter().core.calls[0]
             } else {
-                Log.w("[Audio Route Helper] No call found, setting audio route on Core")
                 null
             }
             val capability = if (output) {
@@ -66,6 +112,10 @@ class AudioRouteUtils {
             }
 
             val extendedAudioDevices = cansCenter().core.extendedAudioDevices
+            android.util.Log.i(
+                "FIX_BUG",
+                "[Audio Route Helper] Looking for an ${if (output) "output" else "input"} audio device with capability [$capability], driver name [$preferredDriver] and type [$types] in extended audio devices list (size ${extendedAudioDevices.size})"
+            )
             Log.i(
                 "[Audio Route Helper] Looking for an ${if (output) "output" else "input"} audio device with capability [$capability], driver name [$preferredDriver] and type [$types] in extended audio devices list (size ${extendedAudioDevices.size})"
             )
@@ -90,8 +140,15 @@ class AudioRouteUtils {
                 Log.e(
                     "[Audio Route Helper] Couldn't find audio device with capability [$capability] and type [$types]"
                 )
+                android.util.Log.i(
+                    "FIX_BUG",
+                    "[Audio Route Helper] Couldn't find audio device with capability [$capability] and type [$types]"
+                )
                 for (device in extendedAudioDevices) {
-                    // TODO: switch to debug?
+                    android.util.Log.i(
+                        "FIX_BUG",
+                        "[Audio Route Helper] Extended audio device: [${device.deviceName} (${device.driverName}) ${device.type} / ${device.capabilities}]"
+                    )
                     Log.i(
                         "[Audio Route Helper] Extended audio device: [${device.deviceName} (${device.driverName}) ${device.type} / ${device.capabilities}]"
                     )
@@ -102,6 +159,10 @@ class AudioRouteUtils {
                 Log.i(
                     "[Audio Route Helper] Found [${audioDevice.type}] ${if (output) "playback" else "recorder"} audio device [${audioDevice.deviceName} (${audioDevice.driverName})], routing conference audio to it"
                 )
+                android.util.Log.i(
+                    "FIX_BUG",
+                    "[Audio Route Helper] Found [${audioDevice.type}] ${if (output) "playback" else "recorder"} audio device [${audioDevice.deviceName} (${audioDevice.driverName})], routing conference audio to it"
+                )
                 if (output) {
                     currentCall.outputAudioDevice = audioDevice
                 } else {
@@ -109,6 +170,10 @@ class AudioRouteUtils {
                 }
             } else {
                 Log.i(
+                    "[Audio Route Helper] Found [${audioDevice.type}] [${if (output) "playback" else "recorder"}] audio device [${audioDevice.deviceName} (${audioDevice.driverName})], changing core default audio device"
+                )
+                android.util.Log.i(
+                    "FIX_BUG",
                     "[Audio Route Helper] Found [${audioDevice.type}] [${if (output) "playback" else "recorder"}] audio device [${audioDevice.deviceName} (${audioDevice.driverName})], changing core default audio device"
                 )
                 if (output) {
@@ -140,6 +205,16 @@ class AudioRouteUtils {
                             false
                         )
                     }
+                }
+
+                AudioDevice.Type.Speaker -> {
+                    android.util.Log.i(
+                        "FIX_BUG", "Switched to Speaker, keeping default input device"
+                    )
+                    Log.i(
+                        "[Audio Route Helper]",
+                        "Switched to Speaker, keeping default input device"
+                    )
                 }
 
                 else -> {
@@ -251,26 +326,7 @@ class AudioRouteUtils {
         }
 
         fun isSpeakerAudioRouteCurrentlyUsed(call: Call? = null): Boolean {
-            val currentCall = if (cansCenter().core.callsNb > 0) {
-                call ?: cansCenter().core.currentCall ?: cansCenter().core.calls[0]
-            } else {
-                Log.w("[Audio Route Helper] No call found, checking audio route on Core")
-                null
-            }
-
-            val audioDevice = if (call != null) {
-                call.outputAudioDevice
-            } else if (currentCall != null) {
-                currentCall.outputAudioDevice
-            } else {
-                cansCenter().core.outputAudioDevice
-            }
-
-            if (audioDevice == null) return false
-            Log.i(
-                "[Audio Route Helper] Playback audio device currently in use is [${audioDevice.deviceName} (${audioDevice.driverName}) ${audioDevice.type}]"
-            )
-            return audioDevice.type == AudioDevice.Type.Speaker
+            return isSpeakerRouteForCall(call)
         }
 
         fun isBluetoothAudioRouteCurrentlyUsed(call: Call? = null): Boolean {
@@ -359,6 +415,10 @@ class AudioRouteUtils {
 //            return audioDevice?.type == AudioDevice.Type.Speaker
 //        }
         fun isSpeakerRouteForCall(call: Call? = null): Boolean {
+            if (audioManager.isSpeakerphoneOn) {
+                return true
+            }
+
             if (cansCenter().core.callsNb == 0) return false
             val currentCall = call ?: cansCenter().core.currentCall ?: cansCenter().core.calls[0]
 
