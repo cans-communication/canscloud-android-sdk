@@ -206,4 +206,6 @@ interface Cans {
     )
 
     fun registerAccountBcrypt(username: String, password: String, domain: String, apiURL: String)
+
+    fun isConferenceInitialized(): Boolean
 }
