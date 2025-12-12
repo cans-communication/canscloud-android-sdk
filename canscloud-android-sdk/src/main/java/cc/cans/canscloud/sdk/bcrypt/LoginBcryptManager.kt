@@ -3,6 +3,8 @@ package cc.cans.canscloud.sdk.bcrypt
 import android.util.Log
 import cc.cans.canscloud.sdk.bcrypt.models.LoginCpanelRequest
 import cc.cans.canscloud.sdk.bcrypt.models.LoginSipCredentialsResponse
+import cc.cans.canscloud.sdk.bcrypt.models.LoginV3Request
+import cc.cans.canscloud.sdk.bcrypt.models.LoginV3Response
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Interceptor
@@ -66,7 +68,12 @@ class LoginBcryptManager(url: String) {
         domainUuid: String,
     ): LoginSipCredentialsResponse = withContext(Dispatchers.IO) {
 
-        val url = "${BASE_URL}${CPANEL_PREFIX}/api/v3/domains/$domainUuid/sip-credentials"
+        Log.d("FIX_BUG","getLoginAccount accessToken : $accessToken")
+        Log.d("FIX_BUG","getLoginAccount domainUuid : $domainUuid")
+
+//        val url = "${BASE_URL}${CPANEL_PREFIX}/api/v3/domains/$domainUuid/sip-credentials"
+        val url = "${BASE_URL}api/v3/$domainUuid/sip-credentials"
+        Log.d("FIX_BUG","getLoginAccount url : $url")
 
         val bearer = "Bearer $accessToken"
 
@@ -78,6 +85,51 @@ class LoginBcryptManager(url: String) {
 
         val body = resp.body() ?: throw IllegalStateException("Empty body for SIP credentials")
 
+        Log.d("FIX_BUG","getLoginAccount body : $body")
+
         body
+    }
+
+    suspend fun getLoginAccountV3(username: String, password: String): LoginV3Response {
+        val url = "${BASE_URL}api/v3/sign-in/cc"
+
+        Log.d("FIX_BUG","getLoginAccountV3 url : $url")
+        val request = LoginV3Request(username = username, password = password)
+
+        Log.d("FIX_BUG","getLoginAccountV3 username : $username")
+        Log.d("FIX_BUG","getLoginAccountV3 password : $password")
+
+        val resp = api.loginCANSCloudV3(url, request)
+        Log.d("FIX_BUG","getLoginAccountV3 resp : $resp")
+        Log.d("FIX_BUG","getLoginAccountV3 resp.isSuccessful : ${resp.isSuccessful}")
+
+        if (!resp.isSuccessful) throw IllegalStateException("getLoginAccountV3 login failed: ${resp.code()} ${resp.message()}")
+
+        Log.d("FIX_BUG","getLoginAccountV3 resp.body() : ${resp.body()}")
+
+        return resp.body() ?: throw IllegalStateException("empty body")
+    }
+
+    suspend fun forceSetPassword(
+        domainUuid: String,
+        userId: String,
+        token: String,
+        newPassword: String
+    ): Boolean {
+        val url = "${BASE_URL}api/v3/$domainUuid/user/$userId/password-set"
+        val bearer = "Bearer $token"
+        val body = mapOf("password" to newPassword)
+
+        Log.d("FIX_BUG","forceSetPassword url : $url")
+        Log.d("FIX_BUG","forceSetPassword bearer : $bearer")
+        Log.d("FIX_BUG","forceSetPassword body : $body")
+
+        val resp = api.forceSetPassword(url, bearer, body)
+        Log.d("FIX_BUG","forceSetPassword resp : ${resp.isSuccessful}")
+
+        if (!resp.isSuccessful) {
+            throw IllegalStateException("Set password failed: ${resp.code()} ${resp.message()}")
+        }
+        return true
     }
 }

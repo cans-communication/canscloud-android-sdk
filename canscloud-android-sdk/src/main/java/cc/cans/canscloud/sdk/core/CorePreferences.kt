@@ -685,6 +685,12 @@ class CorePreferences constructor(private val context: Context) {
     val staticPicturePath: String
         get() = context.filesDir.absolutePath + "/share/images/nowebcamcif.jpg"
 
+    var apiLoginURL: String?
+        get() = config.getString("app", "api_login_url", "")
+        set(value) {
+            config.setString("app", "api_login_url", value)
+        }
+
     fun copyAssetsFromPackage() {
         copy("linphonerc_default", configPath)
         copy("linphonerc_factory", factoryConfigPath, true)
