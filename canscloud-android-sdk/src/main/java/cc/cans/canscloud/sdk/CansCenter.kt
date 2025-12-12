@@ -1814,106 +1814,6 @@ class CansCenter() : Cans {
         coreContext.notificationsManager.startForeground()
     }
 
-//    override fun registerAccountBcrypt(
-//        username: String,
-//        password: String,
-//        domain: String,
-//        apiURL: String
-//    ) {
-//        if (username.isEmpty() || password.isEmpty() || domain.isEmpty()) {
-//            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-//            return
-//        }
-//
-//        sdkScope.launch {
-//            try {
-//                val pwdMD5 = SecureUtils.md5(password)
-//                val usernameWithDomain = "$username@$domain"
-//
-//                val loginManager = LoginBcryptManager(apiURL)
-//
-//                val accessToken = withContext(Dispatchers.IO) {
-//                    loginManager.getLoginAccessToken(usernameWithDomain, pwdMD5)
-//                }
-//
-//                val claims: AccessTokenClaims? =
-//                    JwtMapper.decodePayload(accessToken, AccessTokenClaims::class.java)
-//
-//                if (claims?.domainUuid?.isNullOrEmpty() == true) {
-//                    registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-//                    return@launch
-//                }
-//
-//                try {
-//                    val resp = loginManager.getLoginAccount(accessToken, claims?.domainUuid ?: "")
-//                    val credentials = resp.data
-//                    if (credentials == null) {
-//                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-//                        return@launch
-//                    }
-//
-//                    val loginPort = 8446
-//                    val loginTransport = TransportType.Tcp
-//
-//                    val domainFromApi = credentials.domainName ?: domain
-//                    val realm = domainFromApi.substringBefore(':')
-//                    val serverAddress = "${domainFromApi.substringBefore(':')}:$loginPort"
-//
-//                    val factory = Factory.instance()
-//                    val auth = factory.createAuthInfo(
-//                        /* username */ credentials.extension ?: username,
-//                        /* userid   */ null,
-//                        /* passwd   */ null,
-//                        /* ha1      */ credentials.sipCreds,
-//                        /* realm    */ realm,
-//                        /* domain   */ realm,
-//                        /* algo     */ null
-//                    )
-//                    core.addAuthInfo(auth)
-//
-//                    accountCreator = getAccountCreator()
-//
-//                    val resultUsername = accountCreator.setUsername(credentials.extension ?: username)
-//                    if (resultUsername != AccountCreator.UsernameStatus.Ok) {
-//                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-//                        return@launch
-//                    }
-//
-//                    val resultDomain = accountCreator.setDomain(serverAddress)
-//                    if (resultDomain != AccountCreator.DomainStatus.Ok) {
-//                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-//                        return@launch
-//                    }
-//
-//                    accountCreator.displayName = ""
-//                    accountCreator.transport = loginTransport
-//
-//                    val proxyConfig: ProxyConfig? = accountCreator.createProxyConfig()
-//                    proxyConfigToCheck = proxyConfig
-//
-//                    if (proxyConfig == null) {
-//                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-//                        return@launch
-//                    }
-//
-//                    if (!core.proxyConfigList.contains(proxyConfig)) {
-//                        core.addProxyConfig(proxyConfig)
-//                    }
-//
-//                    corePreferences.keepServiceAlive = true
-//                    coreContext.notificationsManager.startForeground()
-//
-//                } catch (e: Exception) {
-//                    registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-//                    return@launch
-//                }
-//            } catch (e: Exception) {
-//                registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-//                return@launch
-//            }
-//        }
-//    }
-
     override fun registerAccountBcrypt(
         username: String,
         password: String,
@@ -1937,15 +1837,11 @@ class CansCenter() : Cans {
                 }
 
                 val v3Data = v3Response.data
-                Log.d("FIX_BUG","registerAccountBcrypt v3Response : $v3Response")
-                Log.d("FIX_BUG","registerAccountBcrypt v3Data : $v3Data")
                 if (v3Data == null) {
                     registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                     return@launch
                 }
 
-                Log.d("FIX_BUG","registerAccountBcrypt v3Data.user : ${v3Data.user}")
-                Log.d("FIX_BUG","registerAccountBcrypt v3Data.user.passwordResetRequired : ${v3Data.user.passwordResetRequired}")
                 if (v3Data.user.passwordResetRequired) {
                     val jsonPayload = Gson().toJson(mapOf(
                         "action" to "PASSWORD_RESET_REQUIRED",
@@ -1960,13 +1856,10 @@ class CansCenter() : Cans {
 
                 val accessToken = v3Data.token
                 val domainUuid = v3Data.user.domainId
-                Log.d("FIX_BUG","registerAccountBcrypt accessToken : $accessToken")
-                Log.d("FIX_BUG","registerAccountBcrypt domainUuid : $domainUuid")
 
                 try {
                     val resp = loginManager.getLoginAccount(accessToken, domainUuid)
                     val credentials = resp.data
-                    Log.d("FIX_BUG","registerAccountBcrypt credentials : $credentials")
 
                     if (credentials == null) {
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
@@ -1979,10 +1872,6 @@ class CansCenter() : Cans {
                     val domainFromApi = credentials.domainName ?: domain
                     val realm = domainFromApi.substringBefore(':')
                     val serverAddress = "${domainFromApi.substringBefore(':')}:$loginPort"
-
-                    Log.d("FIX_BUG","registerAccountBcrypt domainFromApi : $domainFromApi")
-                    Log.d("FIX_BUG","registerAccountBcrypt realm : $realm")
-                    Log.d("FIX_BUG","registerAccountBcrypt serverAddress : $serverAddress")
 
                     val factory = Factory.instance()
                     val auth = factory.createAuthInfo(
@@ -1999,14 +1888,12 @@ class CansCenter() : Cans {
                     accountCreator = getAccountCreator()
 
                     val resultUsername = accountCreator.setUsername(credentials.extension ?: username)
-                    Log.d("FIX_BUG","registerAccountBcrypt resultUsername : $resultUsername")
                     if (resultUsername != AccountCreator.UsernameStatus.Ok) {
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
                     }
 
                     val resultDomain = accountCreator.setDomain(serverAddress)
-                    Log.d("FIX_BUG","registerAccountBcrypt resultDomain : $resultDomain")
                     if (resultDomain != AccountCreator.DomainStatus.Ok) {
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
@@ -2017,9 +1904,6 @@ class CansCenter() : Cans {
 
                     val proxyConfig: ProxyConfig? = accountCreator.createProxyConfig()
                     proxyConfigToCheck = proxyConfig
-
-                    Log.d("FIX_BUG","registerAccountBcrypt proxyConfig : $proxyConfig")
-
 
                     if (proxyConfig == null) {
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
@@ -2034,14 +1918,11 @@ class CansCenter() : Cans {
                     coreContext.notificationsManager.startForeground()
 
                 } catch (e: Exception) {
-                    Log.e("FIX_BUG", "SIP Registration Error", e)
                     registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                     return@launch
                 }
 
             } catch (e: Exception) {
-                Log.e("FIX_BUG", "Login V3 Error", e)
-                Log.e("FIX_BUG", "Login V3 Error message ${e.message}", )
                 registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                 return@launch
             }
@@ -2069,13 +1950,7 @@ class CansCenter() : Cans {
     ) {
         sdkScope.launch {
             try {
-                Log.d("FIX_BUG","forceSetPasswordBcrypt domainId : $domainId")
-                Log.d("FIX_BUG","forceSetPasswordBcrypt userId : $userId")
-                Log.d("FIX_BUG","forceSetPasswordBcrypt token : $token")
-                Log.d("FIX_BUG","forceSetPasswordBcrypt newPassword : $newPassword")
-
                 val cachedApiLoginUrl = corePreferences.apiLoginURL ?: ""
-                Log.d("FIX_BUG","forceSetPasswordBcrypt cachedApiLoginUrl : $cachedApiLoginUrl")
 
                 if (cachedApiLoginUrl.isEmpty()) {
                     callback(false, "API URL is missing. Please login again.")
@@ -2088,11 +1963,9 @@ class CansCenter() : Cans {
                     loginManager.forceSetPassword(domainId, userId, token, newPassword)
                 }
 
-                Log.d("FIX_BUG","forceSetPasswordBcrypt DONE")
 
                 callback(true, null)
             } catch (e: Exception) {
-                Log.d("FIX_BUG","forceSetPasswordBcrypt Error : ${e.message}")
                 callback(false, e.message)
             }
         }
