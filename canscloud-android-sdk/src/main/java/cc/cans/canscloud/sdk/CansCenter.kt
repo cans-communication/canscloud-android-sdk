@@ -110,6 +110,8 @@ class CansCenter() : Cans {
     private val sdkScope = CoroutineScope(
         SupervisorJob() + Dispatchers.Main.immediate
     )
+    private var EVENT_SIP_NOT_LINKED = "SIP_NOT_LINKED"
+    private var EVENT_PASSWORD_RESET = "PASSWORD_RESET_REQUIRED"
 
     @SuppressLint("StaticFieldLeak")
     override lateinit var corePreferences: CorePreferences
@@ -1844,7 +1846,7 @@ class CansCenter() : Cans {
 
                 if (v3Data.user.passwordResetRequired) {
                     val jsonPayload = Gson().toJson(mapOf(
-                        "action" to "PASSWORD_RESET_REQUIRED",
+                        "action" to EVENT_PASSWORD_RESET,
                         "token" to v3Data.token,
                         "userId" to v3Data.user.id,
                         "domainId" to v3Data.user.domainId
@@ -1859,7 +1861,27 @@ class CansCenter() : Cans {
 
                 try {
                     val resp = loginManager.getLoginAccount(accessToken, domainUuid)
-                    val credentials = resp.data
+                    val targetErrorCodes = listOf(404, 424)
+
+                    if (resp.code() in targetErrorCodes) {
+                        val jsonPayload = Gson().toJson(
+                            mapOf(
+                                "action" to EVENT_SIP_NOT_LINKED,
+                                "message" to "SIP Account not linked"
+                            )
+                        )
+                        registerListeners.forEach {
+                            it.onRegistration(RegisterState.NONE, jsonPayload)
+                        }
+                        return@launch
+                    }
+
+                    if (!resp.isSuccessful) {
+                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                        return@launch
+                    }
+
+                    val credentials = resp.body()?.data
 
                     if (credentials == null) {
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }

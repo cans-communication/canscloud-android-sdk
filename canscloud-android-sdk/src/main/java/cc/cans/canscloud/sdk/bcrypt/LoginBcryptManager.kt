@@ -66,20 +66,14 @@ class LoginBcryptManager(url: String) {
     suspend fun getLoginAccount(
         accessToken: String,
         domainUuid: String,
-    ): LoginSipCredentialsResponse = withContext(Dispatchers.IO) {
+    ): retrofit2.Response<LoginSipCredentialsResponse> = withContext(Dispatchers.IO) {
         val url = "${BASE_URL}api/v3/$domainUuid/sip-credentials"
 
         val bearer = "Bearer $accessToken"
 
         val resp = api.getSipCredentials(url, bearer)
 
-        if (!resp.isSuccessful) {
-            throw HttpException(resp)
-        }
-
-        val body = resp.body() ?: throw IllegalStateException("Empty body for SIP credentials")
-
-        body
+        resp
     }
 
     suspend fun getLoginAccountV3(username: String, password: String): LoginV3Response {
