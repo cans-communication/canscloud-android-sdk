@@ -218,4 +218,6 @@ interface Cans {
         newPassword: String,
         callback: (Boolean, String?) -> Unit
     )
+
+    fun registerAccountV3Bcrypt(username: String, password: String, domain: String, apiURL: String)
 }
