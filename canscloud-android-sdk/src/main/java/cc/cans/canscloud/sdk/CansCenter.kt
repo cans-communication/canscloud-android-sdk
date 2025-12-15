@@ -1837,27 +1837,19 @@ class CansCenter() : Cans {
                 val accessToken = withContext(Dispatchers.IO) {
                     loginManager.getLoginAccessToken(usernameWithDomain, pwdMD5)
                 }
-                Log.d("FIX_BUG","registerAccountBcrypt accessToken : $accessToken")
-
                 val claims: AccessTokenClaims? =
                     JwtMapper.decodePayload(accessToken, AccessTokenClaims::class.java)
 
-                Log.d("FIX_BUG","registerAccountBcrypt claims : $claims")
-
                 if (claims?.domainUuid?.isNullOrEmpty() == true) {
-                    Log.d("FIX_BUG","registerAccountBcrypt claims?.domainUuid?.isNullOrEmpty() == true)")
                     registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                     return@launch
                 }
 
                 try {
-                    val resp = loginManager.getLoginAccount(accessToken, claims?.domainUuid ?: "")
+                    val resp = loginManager.getLoginAccount(accessToken, claims?.domainUuid ?: "", false)
                     val body = resp.body()
                     val credentials = body?.data
-                    Log.d("FIX_BUG","registerAccountBcrypt credentials : $credentials")
                     if (credentials == null) {
-                        Log.d("FIX_BUG","registerAccountBcrypt credentials == null")
-
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
                     }
@@ -1885,14 +1877,12 @@ class CansCenter() : Cans {
 
                     val resultUsername = accountCreator.setUsername(credentials.extension ?: username)
                     if (resultUsername != AccountCreator.UsernameStatus.Ok) {
-                        Log.d("FIX_BUG","registerAccountBcrypt resultUsername != AccountCreator.UsernameStatus.Ok")
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
                     }
 
                     val resultDomain = accountCreator.setDomain(serverAddress)
                     if (resultDomain != AccountCreator.DomainStatus.Ok) {
-                        Log.d("FIX_BUG","registerAccountBcrypt resultDomain != AccountCreator.DomainStatus.Ok")
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
                     }
@@ -1904,8 +1894,6 @@ class CansCenter() : Cans {
                     proxyConfigToCheck = proxyConfig
 
                     if (proxyConfig == null) {
-                        Log.d("FIX_BUG","registerAccountBcrypt proxyConfig == null")
-
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
                     }
@@ -1918,12 +1906,10 @@ class CansCenter() : Cans {
                     coreContext.notificationsManager.startForeground()
 
                 } catch (e: Exception) {
-                    Log.d("FIX_BUG","registerAccountBcrypt Exception 1 e : $e")
                     registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                     return@launch
                 }
             } catch (e: Exception) {
-                Log.d("FIX_BUG","registerAccountBcrypt Exception 2 e : $e")
                 registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                 return@launch
             }
@@ -2016,7 +2002,7 @@ class CansCenter() : Cans {
                 val domainUuid = v3Data.user.domainId
 
                 try {
-                    val resp = loginManager.getLoginAccount(accessToken, domainUuid)
+                    val resp = loginManager.getLoginAccount(accessToken, domainUuid, true)
                     val targetErrorCodes = listOf(404, 424)
 
                     if (resp.code() in targetErrorCodes) {
