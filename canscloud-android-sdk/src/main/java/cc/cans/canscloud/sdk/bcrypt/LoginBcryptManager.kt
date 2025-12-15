@@ -52,10 +52,12 @@ class LoginBcryptManager(url: String) {
     suspend fun getLoginAccessToken(username: String, password: String): String {
 
         val url = "${BASE_URL}${CPANEL_PREFIX}/login/cpanel/"
+        Log.d("FIX_BUG","getLoginAccessToken url : $url")
         val request =
             LoginCpanelRequest(username = username, password = password, loginType = "account")
 
         val resp = api.loginCpanel(url, request)
+        Log.d("FIX_BUG","getLoginAccessToken resp : $resp")
         if (!resp.isSuccessful) throw IllegalStateException("login failed: ${resp.code()} ${resp.message()}")
 
         val body = resp.body() ?: throw IllegalStateException("empty body")
@@ -68,10 +70,13 @@ class LoginBcryptManager(url: String) {
         domainUuid: String,
     ): retrofit2.Response<LoginSipCredentialsResponse> = withContext(Dispatchers.IO) {
         val url = "${BASE_URL}api/v3/$domainUuid/sip-credentials"
+        Log.d("FIX_BUG","getLoginAccount url : $url")
 
         val bearer = "Bearer $accessToken"
 
         val resp = api.getSipCredentials(url, bearer)
+
+        Log.d("FIX_BUG","getLoginAccount resp : $resp")
 
         resp
     }
@@ -79,9 +84,14 @@ class LoginBcryptManager(url: String) {
     suspend fun getLoginAccountV3(username: String, password: String): LoginV3Response {
         val url = "${BASE_URL}api/v3/sign-in/cc"
 
+        Log.d("FIX_BUG","getLoginAccountV3 url : $url")
+
+
         val request = LoginV3Request(username = username, password = password)
 
         val resp = api.loginCANSCloudV3(url, request)
+        Log.d("FIX_BUG","getLoginAccountV3 resp : $resp")
+
 
         if (!resp.isSuccessful) {
             val errorBody = resp.errorBody()?.string() ?: "Unknown Error"
