@@ -1422,7 +1422,7 @@ class CansCenter() : Cans {
     }
 
     override fun mergeCallsIntoConference() {
-        Thread {
+        sdkScope.launch {
             try {
                 val callsCount = core.callsNb
                 val defaultAccount = CansUtils.getDefaultAccount()
@@ -1446,14 +1446,14 @@ class CansCenter() : Cans {
             } catch (e: Exception) {
                 Log.i(TAG, "Merging: $e")
             }
-        }.start()
+        }
     }
 
     override fun splitConference() {
-        Thread {
+        sdkScope.launch {
             try {
                 if (!::conferenceCore.isInitialized) {
-                    return@Thread
+                    return@launch
                 }
                 val conference = conferenceCore
 
@@ -1473,7 +1473,7 @@ class CansCenter() : Cans {
             } catch (e: Exception) {
                 Log.e(TAG, "Error splitting conference: ${e.message}", e)
             }
-        }.start()
+        }
     }
 
     override fun signOutOKTADomain(
