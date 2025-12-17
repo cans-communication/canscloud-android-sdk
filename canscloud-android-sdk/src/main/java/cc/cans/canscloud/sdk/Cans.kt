@@ -210,4 +210,14 @@ interface Cans {
     fun getDurationByAddress(address: String): Int
 
     fun isConferenceInitialized(): Boolean
+
+    fun forceSetPasswordBcrypt(
+        domainId: String,
+        userId: String,
+        token: String,
+        newPassword: String,
+        callback: (Boolean, String?) -> Unit
+    )
+
+    fun registerAccountV3Bcrypt(username: String, password: String, domain: String, apiURL: String)
 }

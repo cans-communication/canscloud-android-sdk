@@ -1,14 +1,14 @@
 package cc.cans.canscloud.sdk.bcrypt
 
-import android.util.Log
 import cc.cans.canscloud.sdk.bcrypt.models.LoginCpanelRequest
 import cc.cans.canscloud.sdk.bcrypt.models.LoginSipCredentialsResponse
+import cc.cans.canscloud.sdk.bcrypt.models.LoginV3Request
+import cc.cans.canscloud.sdk.bcrypt.models.LoginV3Response
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.HttpException
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
@@ -64,20 +64,52 @@ class LoginBcryptManager(url: String) {
     suspend fun getLoginAccount(
         accessToken: String,
         domainUuid: String,
-    ): LoginSipCredentialsResponse = withContext(Dispatchers.IO) {
+        isNewLoginVersion: Boolean
+    ): retrofit2.Response<LoginSipCredentialsResponse> = withContext(Dispatchers.IO) {
 
-        val url = "${BASE_URL}${CPANEL_PREFIX}/api/v3/domains/$domainUuid/sip-credentials"
+        val url = if (isNewLoginVersion) {
+            "${BASE_URL}api/v3/$domainUuid/sip-credentials"
+        } else {
+            "${BASE_URL}${CPANEL_PREFIX}/api/v3/domains/$domainUuid/sip-credentials"
+        }
 
         val bearer = "Bearer $accessToken"
 
         val resp = api.getSipCredentials(url, bearer)
 
+        resp
+    }
+
+    suspend fun getLoginAccountV3(username: String, password: String): LoginV3Response {
+        val url = "${BASE_URL}api/v3/sign-in/cc"
+
+        val request = LoginV3Request(username = username, password = password)
+
+        val resp = api.loginCANSCloudV3(url, request)
+
         if (!resp.isSuccessful) {
-            throw HttpException(resp)
+            val errorBody = resp.errorBody()?.string() ?: "Unknown Error"
+            throw IllegalStateException("getLoginAccountV3 login failed: ${resp.code()} | ServerMsg: $errorBody")
         }
 
-        val body = resp.body() ?: throw IllegalStateException("Empty body for SIP credentials")
+        return resp.body() ?: throw IllegalStateException("empty body")
+    }
 
-        body
+    suspend fun forceSetPassword(
+        domainUuid: String,
+        userId: String,
+        token: String,
+        newPassword: String
+    ): Boolean {
+        val url = "${BASE_URL}api/v3/$domainUuid/user/$userId/password-set"
+        val bearer = "Bearer $token"
+        val body = mapOf("password" to newPassword)
+
+        val resp = api.forceSetPassword(url, bearer, body)
+
+        if (!resp.isSuccessful) {
+            throw IllegalStateException("Set password failed: ${resp.code()} ${resp.message()}")
+        }
+        return true
     }
 }

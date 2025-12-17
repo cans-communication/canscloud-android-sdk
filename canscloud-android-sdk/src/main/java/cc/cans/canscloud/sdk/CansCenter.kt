@@ -110,6 +110,8 @@ class CansCenter() : Cans {
     private val sdkScope = CoroutineScope(
         SupervisorJob() + Dispatchers.Main.immediate
     )
+    private var EVENT_SIP_NOT_LINKED = "SIP_NOT_LINKED"
+    private var EVENT_PASSWORD_RESET = "PASSWORD_RESET_REQUIRED"
 
     @SuppressLint("StaticFieldLeak")
     override lateinit var corePreferences: CorePreferences
@@ -1835,7 +1837,6 @@ class CansCenter() : Cans {
                 val accessToken = withContext(Dispatchers.IO) {
                     loginManager.getLoginAccessToken(usernameWithDomain, pwdMD5)
                 }
-
                 val claims: AccessTokenClaims? =
                     JwtMapper.decodePayload(accessToken, AccessTokenClaims::class.java)
 
@@ -1845,8 +1846,9 @@ class CansCenter() : Cans {
                 }
 
                 try {
-                    val resp = loginManager.getLoginAccount(accessToken, claims?.domainUuid ?: "")
-                    val credentials = resp.data
+                    val resp = loginManager.getLoginAccount(accessToken, claims?.domainUuid ?: "", false)
+                    val body = resp.body()
+                    val credentials = body?.data
                     if (credentials == null) {
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
@@ -1925,4 +1927,169 @@ class CansCenter() : Cans {
     }
 
     override fun isConferenceInitialized(): Boolean = ::conferenceCore.isInitialized
+
+    override fun forceSetPasswordBcrypt(
+        domainId: String,
+        userId: String,
+        token: String,
+        newPassword: String,
+        callback: (Boolean, String?) -> Unit
+    ) {
+        sdkScope.launch {
+            try {
+                val cachedApiLoginUrl = corePreferences.apiLoginURL ?: ""
+
+                if (cachedApiLoginUrl.isEmpty()) {
+                    callback(false, "API URL is missing. Please login again.")
+                    return@launch
+                }
+
+                val loginManager = LoginBcryptManager(cachedApiLoginUrl)
+
+                withContext(Dispatchers.IO) {
+                    loginManager.forceSetPassword(domainId, userId, token, newPassword)
+                }
+
+
+                callback(true, null)
+            } catch (e: Exception) {
+                callback(false, e.message)
+            }
+        }
+    }
+
+    override fun registerAccountV3Bcrypt(
+        username: String,
+        password: String,
+        domain: String,
+        apiURL: String
+    ) {
+        corePreferences.apiLoginURL = apiURL
+        if (username.isEmpty() || password.isEmpty() || domain.isEmpty()) {
+            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+            return
+        }
+
+        sdkScope.launch {
+            try {
+                val pwdMD5 = SecureUtils.md5(password)
+                val loginManager = LoginBcryptManager(apiURL)
+
+                val v3Response = withContext(Dispatchers.IO) {
+                    val usernameV3 = "$username@$domain"
+                    loginManager.getLoginAccountV3(usernameV3, pwdMD5)
+                }
+
+                val v3Data = v3Response.data
+                if (v3Data == null) {
+                    registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                    return@launch
+                }
+
+                if (v3Data.user.passwordResetRequired) {
+                    val jsonPayload = Gson().toJson(mapOf(
+                        "action" to EVENT_PASSWORD_RESET,
+                        "token" to v3Data.token,
+                        "userId" to v3Data.user.id,
+                        "domainId" to v3Data.user.domainId
+                    ))
+
+                    registerListeners.forEach { it.onRegistration(RegisterState.NONE, jsonPayload) }
+                    return@launch
+                }
+
+                val accessToken = v3Data.token
+                val domainUuid = v3Data.user.domainId
+
+                try {
+                    val resp = loginManager.getLoginAccount(accessToken, domainUuid, true)
+                    val targetErrorCodes = listOf(404, 424)
+
+                    if (resp.code() in targetErrorCodes) {
+                        val jsonPayload = Gson().toJson(
+                            mapOf(
+                                "action" to EVENT_SIP_NOT_LINKED,
+                                "message" to "SIP Account not linked"
+                            )
+                        )
+                        registerListeners.forEach {
+                            it.onRegistration(RegisterState.NONE, jsonPayload)
+                        }
+                        return@launch
+                    }
+
+                    if (!resp.isSuccessful) {
+                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                        return@launch
+                    }
+
+                    val credentials = resp.body()?.data
+
+                    if (credentials == null) {
+                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                        return@launch
+                    }
+
+                    val loginPort = 8446
+                    val loginTransport = TransportType.Tcp
+
+                    val domainFromApi = credentials.domainName ?: domain
+                    val realm = domainFromApi.substringBefore(':')
+                    val serverAddress = "${domainFromApi.substringBefore(':')}:$loginPort"
+
+                    val factory = Factory.instance()
+                    val auth = factory.createAuthInfo(
+                        /* username */ credentials.extension ?: username,
+                        /* userid   */ null,
+                        /* passwd   */ null,
+                        /* ha1      */ credentials.sipCreds,
+                        /* realm    */ realm,
+                        /* domain   */ realm,
+                        /* algo     */ null
+                    )
+                    core.addAuthInfo(auth)
+
+                    accountCreator = getAccountCreator()
+
+                    val resultUsername = accountCreator.setUsername(credentials.extension ?: username)
+                    if (resultUsername != AccountCreator.UsernameStatus.Ok) {
+                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                        return@launch
+                    }
+
+                    val resultDomain = accountCreator.setDomain(serverAddress)
+                    if (resultDomain != AccountCreator.DomainStatus.Ok) {
+                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                        return@launch
+                    }
+
+                    accountCreator.displayName = ""
+                    accountCreator.transport = loginTransport
+
+                    val proxyConfig: ProxyConfig? = accountCreator.createProxyConfig()
+                    proxyConfigToCheck = proxyConfig
+
+                    if (proxyConfig == null) {
+                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                        return@launch
+                    }
+
+                    if (!core.proxyConfigList.contains(proxyConfig)) {
+                        core.addProxyConfig(proxyConfig)
+                    }
+
+                    corePreferences.keepServiceAlive = true
+                    coreContext.notificationsManager.startForeground()
+
+                } catch (e: Exception) {
+                    registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                    return@launch
+                }
+
+            } catch (e: Exception) {
+                registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
+                return@launch
+            }
+        }
+    }
 }
