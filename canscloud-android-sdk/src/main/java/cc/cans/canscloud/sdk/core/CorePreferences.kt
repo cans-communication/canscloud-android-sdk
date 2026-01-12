@@ -691,6 +691,18 @@ class CorePreferences constructor(private val context: Context) {
             config.setString("app", "api_login_url", value)
         }
 
+    var domainUUID: String?
+        get() = config.getString("app", "domain_uuid", "")
+        set(value) {
+            config.setString("app", "domain_uuid", value)
+        }
+
+    var accessToken: String?
+        get() = config.getString("app", "access_token", "")
+        set(value) {
+            config.setString("app", "access_token", value)
+        }
+
     fun copyAssetsFromPackage() {
         copy("linphonerc_default", configPath)
         copy("linphonerc_factory", factoryConfigPath, true)

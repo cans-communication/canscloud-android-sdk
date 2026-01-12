@@ -729,56 +729,74 @@ class CansCenter() : Cans {
     }
 
     override fun removeAccount(index: Int) {
+        if (index < 0 || index >= core.accountList.size) return
+
         val account = core.accountList[index]
         accountToDelete = account
 
-        val registered = account.state == RegistrationState.Ok
+        val authInfo = account.findAuthInfo()
+        if (authInfo != null) {
+            core.removeAuthInfo(authInfo)
+        }
 
-        if (core.defaultAccount == account) {
-            Log.i("[Account Settings]", "Account was default, let's look for a replacement")
-            for (accountIterator in core.accountList) {
-                if (account != accountIterator) {
-                    core.defaultAccount = accountIterator
-                    Log.i("[Account Settings]", "New default account is $accountIterator")
-                    break
-                }
-            }
+        val associatedProxy = core.proxyConfigList.find {
+            it.identityAddress?.asStringUriOnly() == account.params.identityAddress?.asStringUriOnly()
         }
 
         val params = account.params.clone()
         params.isRegisterEnabled = false
         account.params = params
 
-        if (!registered) {
-            Log.w(
-                "[Account Settings]",
-                " Account isn't registered, don't unregister before removing it"
-            )
-            deleteAccount(account)
+        core.removeAccount(account)
+
+        if (associatedProxy != null && core.proxyConfigList.contains(associatedProxy)) {
+            core.removeProxyConfig(associatedProxy)
         }
+
+        core.refreshRegisters()
     }
 
     override fun removeAccountAll() {
         val accounts = core.accountList.toList()
-
-        core.defaultAccount = null
-
         accounts.forEach { acc ->
             try {
                 acc.findAuthInfo()?.let { core.removeAuthInfo(it) }
 
-                val params = acc.params.clone().apply { isRegisterEnabled = false }
+                val params = acc.params.clone()
+                params.isRegisterEnabled = false
                 acc.params = params
 
                 core.removeAccount(acc)
-                Log.i("[Account Removal]", "Removed account: ${acc.params.identityAddress?.asString()}")
-            } catch (t: Throwable) {
-                Log.w("[Account Removal]", "Failed to remove: ${acc.params.identityAddress?.asString()}", t)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error removing account", e)
             }
         }
 
+        val proxies = core.proxyConfigList.toList()
+        proxies.forEach { proxy ->
+            try {
+                proxy.findAuthInfo()?.let { core.removeAuthInfo(it) }
+
+                core.removeProxyConfig(proxy)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error removing proxy", e)
+            }
+        }
+
+        val auths = core.authInfoList.toList()
+        auths.forEach { auth ->
+            try {
+                core.removeAuthInfo(auth)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error removing auth", e)
+            }
+        }
+
+        core.defaultAccount = null
         accountToDelete = null
         proxyConfigToCheck = null
+        corePreferences.accessToken = ""
+        corePreferences.domainUUID = ""
 
         core.refreshRegisters()
     }
@@ -1760,6 +1778,9 @@ class CansCenter() : Cans {
         port: String,
         transport: CansTransport
     ) {
+        // clear when start login SIP
+        corePreferences.domainUUID = ""
+
         if (username.isEmpty() || password.isEmpty() || domain.isEmpty() || port.isEmpty()) {
             registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
@@ -1823,6 +1844,7 @@ class CansCenter() : Cans {
         apiURL: String
     ) {
         if (username.isEmpty() || password.isEmpty() || domain.isEmpty()) {
+            corePreferences.domainUUID = ""
             registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
@@ -1839,17 +1861,24 @@ class CansCenter() : Cans {
                 }
                 val claims: AccessTokenClaims? =
                     JwtMapper.decodePayload(accessToken, AccessTokenClaims::class.java)
+                // store access token
+                Log.d("FIX_BUG","accessToken : $accessToken")
+                corePreferences.accessToken = accessToken
 
                 if (claims?.domainUuid?.isNullOrEmpty() == true) {
+                    corePreferences.domainUUID = ""
                     registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                     return@launch
                 }
+
+                Log.d("FIX_BUG","domainUUID claims?.domainUuid : ${claims?.domainUuid}")
 
                 try {
                     val resp = loginManager.getLoginAccount(accessToken, claims?.domainUuid ?: "", false)
                     val body = resp.body()
                     val credentials = body?.data
                     if (credentials == null) {
+                        corePreferences.domainUUID = ""
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
                     }
@@ -1877,12 +1906,14 @@ class CansCenter() : Cans {
 
                     val resultUsername = accountCreator.setUsername(credentials.extension ?: username)
                     if (resultUsername != AccountCreator.UsernameStatus.Ok) {
+                        corePreferences.domainUUID = ""
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
                     }
 
                     val resultDomain = accountCreator.setDomain(serverAddress)
                     if (resultDomain != AccountCreator.DomainStatus.Ok) {
+                        corePreferences.domainUUID = ""
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
                     }
@@ -1902,14 +1933,20 @@ class CansCenter() : Cans {
                         core.addProxyConfig(proxyConfig)
                     }
 
+                    // store for use in api
+                    Log.d("FIX_BUG","before set domainUUID claims?.domainUuid : ${claims?.domainUuid}")
+                    corePreferences.domainUUID = claims?.domainUuid ?: ""
+
                     corePreferences.keepServiceAlive = true
                     coreContext.notificationsManager.startForeground()
 
                 } catch (e: Exception) {
+                    corePreferences.domainUUID = ""
                     registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                     return@launch
                 }
             } catch (e: Exception) {
+                corePreferences.domainUUID = ""
                 registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                 return@launch
             }
@@ -1964,8 +2001,14 @@ class CansCenter() : Cans {
         domain: String,
         apiURL: String
     ) {
+        Log.d("FIX_BUG","registerAccountV3Bcrypt apiURL : $apiURL")
+        Log.d("FIX_BUG","registerAccountV3Bcrypt password : $password")
+        Log.d("FIX_BUG","registerAccountV3Bcrypt username : $username")
+        Log.d("FIX_BUG","registerAccountV3Bcrypt domain : $domain")
+
         corePreferences.apiLoginURL = apiURL
         if (username.isEmpty() || password.isEmpty() || domain.isEmpty()) {
+            Log.d("FIX_BUG","FAIL 1")
             registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
         }
@@ -1981,10 +2024,17 @@ class CansCenter() : Cans {
                 }
 
                 val v3Data = v3Response.data
+                Log.d("FIX_BUG","registerAccountV3Bcrypt v3Data : $v3Data")
                 if (v3Data == null) {
+                    Log.d("FIX_BUG","FAIL 2")
                     registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                     return@launch
                 }
+
+                Log.d("FIX_BUG","registerAccountV3Bcrypt before set accessToken v3Data.token : ${v3Data.token}")
+                Log.d("FIX_BUG","registerAccountV3Bcrypt before set domainUUID v3Data.user.domainId: ${v3Data.user.domainId}")
+                corePreferences.accessToken = v3Data.token ?: ""
+                corePreferences.domainUUID = v3Data.user.domainId ?: ""
 
                 if (v3Data.user.passwordResetRequired) {
                     val jsonPayload = Gson().toJson(mapOf(
@@ -2019,6 +2069,7 @@ class CansCenter() : Cans {
                     }
 
                     if (!resp.isSuccessful) {
+                        Log.d("FIX_BUG","FAIL 3")
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
                     }
@@ -2026,6 +2077,7 @@ class CansCenter() : Cans {
                     val credentials = resp.body()?.data
 
                     if (credentials == null) {
+                        Log.d("FIX_BUG","FAIL 4")
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
                     }
@@ -2053,12 +2105,14 @@ class CansCenter() : Cans {
 
                     val resultUsername = accountCreator.setUsername(credentials.extension ?: username)
                     if (resultUsername != AccountCreator.UsernameStatus.Ok) {
+                        Log.d("FIX_BUG","FAIL 5")
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
                     }
 
                     val resultDomain = accountCreator.setDomain(serverAddress)
                     if (resultDomain != AccountCreator.DomainStatus.Ok) {
+                        Log.d("FIX_BUG","FAIL 6")
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
                     }
@@ -2070,6 +2124,7 @@ class CansCenter() : Cans {
                     proxyConfigToCheck = proxyConfig
 
                     if (proxyConfig == null) {
+                        Log.d("FIX_BUG","FAIL 7")
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
                     }
@@ -2082,11 +2137,13 @@ class CansCenter() : Cans {
                     coreContext.notificationsManager.startForeground()
 
                 } catch (e: Exception) {
+                    Log.d("FIX_BUG","FAIL 8")
                     registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                     return@launch
                 }
 
             } catch (e: Exception) {
+                Log.d("FIX_BUG","FAIL 9")
                 registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                 return@launch
             }
