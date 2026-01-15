@@ -26,6 +26,7 @@ import cc.cans.canscloud.data.ProvisioningService
 import cc.cans.canscloud.sdk.bcrypt.AccessTokenClaims
 import cc.cans.canscloud.sdk.bcrypt.JwtMapper
 import cc.cans.canscloud.sdk.bcrypt.LoginBcryptManager
+import cc.cans.canscloud.sdk.callback.CansChatListenerStub
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.callback.CansRegisterAccountListenerStub
 import cc.cans.canscloud.sdk.callback.CansRegisterListenerStub
@@ -71,6 +72,9 @@ import org.linphone.core.Address
 import org.linphone.core.AudioDevice
 import org.linphone.core.Call
 import org.linphone.core.CallLog
+import org.linphone.core.ChatMessage
+import org.linphone.core.ChatMessageListenerStub
+import org.linphone.core.ChatRoom
 import org.linphone.core.Conference
 import org.linphone.core.ConferenceListenerStub
 import org.linphone.core.Core
@@ -101,7 +105,7 @@ class CansCenter() : Cans {
     override var appName: String = ""
     var audioRoutesEnabled: Boolean = false
     var destinationCall: String = ""
-    private var TAG = "CansCenter"
+    private var TAG = "FIX_BUG"
     private lateinit var accountDefault: Account
     private lateinit var accountCreator: AccountCreator
 
@@ -127,6 +131,8 @@ class CansCenter() : Cans {
     private var listeners = mutableListOf<CansListenerStub>()
     private var registerListeners = mutableListOf<CansRegisterListenerStub>()
     private var registerAccountListeners = mutableListOf<CansRegisterAccountListenerStub>()
+    private var chatListeners = mutableListOf<CansChatListenerStub>()
+
     override val missedCallLogs = ArrayList<GroupedCallLogData>()
 
     override lateinit var conferenceCore: Conference
@@ -458,6 +464,25 @@ class CansCenter() : Cans {
                 conference.removeListener(conferenceListener)
                 isInConference = false
                 listeners.forEach { it.onConferenceState(ConferenceState.Terminated) }
+            }
+        }
+
+        override fun onMessageReceived(core: Core, chatRoom: ChatRoom, message: ChatMessage) {
+            val sender = chatRoom.peerAddress
+            val local = core.defaultAccount?.params?.identityAddress
+
+            if (local != null && sender.username == local.username) {
+                return
+            }
+
+            Log.d(TAG, "Received text from ${sender.username}")
+
+            val senderUsername = sender.username ?: "Unknown"
+            val text = message.utf8Text ?: ""
+            val msgId = message.messageId ?: ""
+
+            chatListeners.forEach { listener ->
+                listener.onMessageReceived(senderUsername, text, msgId)
             }
         }
     }
@@ -1780,6 +1805,14 @@ class CansCenter() : Cans {
         registerAccountListeners.remove(listener)
     }
 
+    override fun addCansChatListener(listener: CansChatListenerStub) {
+        chatListeners.add(listener)
+    }
+
+    override fun removeCansChatListener(listener: CansChatListenerStub) {
+        chatListeners.remove(listener)
+    }
+
 
     override fun removeAllListener() {
         listeners.clear()
@@ -1865,13 +1898,21 @@ class CansCenter() : Cans {
                 val pwdMD5 = SecureUtils.md5(password)
                 val usernameWithDomain = "$username@$domain"
 
+                Log.d("FIX_BUG","START registerAccountBcrypt apiURL : $apiURL")
+                Log.d("FIX_BUG","START registerAccountBcrypt pwdMD5 : $pwdMD5")
+                Log.d("FIX_BUG","START registerAccountBcrypt usernameWithDomain : $usernameWithDomain")
+
                 val loginManager = LoginBcryptManager(apiURL)
 
                 val accessToken = withContext(Dispatchers.IO) {
                     loginManager.getLoginAccessToken(usernameWithDomain, pwdMD5)
                 }
+                Log.d("FIX_BUG","START registerAccountBcrypt accessToken : $accessToken")
+
                 val claims: AccessTokenClaims? =
                     JwtMapper.decodePayload(accessToken, AccessTokenClaims::class.java)
+
+                Log.d("FIX_BUG","START registerAccountBcrypt claims : $claims")
 
                 if (claims?.domainUuid?.isNullOrEmpty() == true) {
                     corePreferences.setDomainUUID(usernameWithDomain, "")
@@ -2142,5 +2183,80 @@ class CansCenter() : Cans {
                 return@launch
             }
         }
+    }
+
+    override fun configureChatSettings() {
+        Log.d("FIX_BUG","configureChatSettings")
+        val config = core.config
+        val context = coreContext.context
+
+        val currentUser = core.defaultAccount?.params?.identityAddress?.username ?: "default"
+        val dbPath = context.filesDir.absolutePath + "/${currentUser}-chats.db"
+
+        config.setString("storage", "backend", "sqlite")
+        config.setString("storage", "uri", dbPath)
+        config.setString("misc", "chat_database_path", dbPath)
+        config.setBool("misc", "load_chat_rooms_from_db", true)
+        config.setBool("misc", "store_chat_logs", true)
+
+        config.setString("misc", "file_transfer_protocol", "https")
+        core.fileTransferServer = "https://files.linphone.org/http-file-transfer-server/hft.php"
+
+        core.refreshRegisters()
+
+        Log.i("FIX_BUG", "Chat configured with DB: $dbPath")
+    }
+
+    override fun getOrCreateChatRoom(peerUri: String): ChatRoom? {
+        val defaultAccount = core.defaultAccount
+        val localAddress = defaultAccount?.params?.identityAddress
+        val remoteAddress = core.interpretUrl(peerUri)
+
+        if (remoteAddress == null || localAddress == null) {
+            Log.e("FIX_BUG", "Invalid addresses: Local=$localAddress, Remote=$remoteAddress")
+            return null
+        }
+
+        remoteAddress.clean()
+
+        if (remoteAddress.username == localAddress.username) {
+            Log.e("FIX_BUG", "Self-chat detected! Aborting.")
+            return null
+        }
+
+        var room = core.getChatRoom(localAddress, remoteAddress)
+
+        Log.e("FIX_BUG", "getOrCreateChatRoom room : $room")
+
+        if (room == null) {
+            val params = core.createDefaultChatRoomParams()
+            if (params != null) {
+                params.backend = ChatRoom.Backend.Basic
+                params.isGroupEnabled = false
+
+                room = core.createChatRoom(params, localAddress, arrayOf(remoteAddress))
+            }
+        }
+        return room
+    }
+
+    override fun sendTextMessage(peerUri: String, text: String) {
+        val room = getOrCreateChatRoom(peerUri)
+
+        if (room == null) {
+            Log.e("FIX_BUG", "Could not get/create room for $peerUri")
+            return
+        }
+
+        val message = room.createMessage(text)
+
+        val msgListener = object : ChatMessageListenerStub() {
+            override fun onMsgStateChanged(msg: ChatMessage, state: ChatMessage.State) {
+                Log.d("FIX_BUG", "Message ID: ${msg.messageId} State: $state")
+            }
+        }
+        message.addListener(msgListener)
+
+        message.send()
     }
 }

@@ -3,6 +3,7 @@ package cc.cans.canscloud.sdk
 import android.app.Activity
 import android.content.Context
 import android.os.Vibrator
+import cc.cans.canscloud.sdk.callback.CansChatListenerStub
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.callback.CansRegisterAccountListenerStub
 import cc.cans.canscloud.sdk.callback.CansRegisterListenerStub
@@ -16,6 +17,7 @@ import cc.cans.canscloud.sdk.models.CansTransport
 import cc.cans.canscloud.sdk.models.RegisterState
 import cc.cans.canscloud.sdk.okta.models.SignInOKTAResponseData
 import org.linphone.core.Call
+import org.linphone.core.ChatRoom
 import org.linphone.core.Conference
 import org.linphone.core.Core
 
@@ -220,4 +222,14 @@ interface Cans {
     )
 
     fun registerAccountV3Bcrypt(username: String, password: String, domain: String, apiURL: String)
+
+    fun configureChatSettings()
+
+    fun getOrCreateChatRoom(peerUri: String): ChatRoom?
+
+    fun sendTextMessage(peerUri: String, text: String)
+
+    fun addCansChatListener(listener: CansChatListenerStub)
+
+    fun removeCansChatListener(listener: CansChatListenerStub)
 }

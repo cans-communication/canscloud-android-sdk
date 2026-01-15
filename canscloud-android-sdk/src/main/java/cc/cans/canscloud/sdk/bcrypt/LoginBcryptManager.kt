@@ -1,5 +1,6 @@
 package cc.cans.canscloud.sdk.bcrypt
 
+import android.util.Log
 import cc.cans.canscloud.sdk.bcrypt.models.LoginCpanelRequest
 import cc.cans.canscloud.sdk.bcrypt.models.LoginSipCredentialsResponse
 import cc.cans.canscloud.sdk.bcrypt.models.LoginV3Request
@@ -50,6 +51,9 @@ class LoginBcryptManager(url: String) {
     suspend fun getLoginAccessToken(username: String, password: String): String {
 
         val url = "${BASE_URL}${CPANEL_PREFIX}/login/cpanel/"
+
+        Log.d("FIX_BUG","getLoginAccessToken url : $url")
+
         val request =
             LoginCpanelRequest(username = username, password = password, loginType = "account")
 
@@ -73,6 +77,8 @@ class LoginBcryptManager(url: String) {
             "${BASE_URL}${CPANEL_PREFIX}/api/v3/domains/$domainUuid/sip-credentials"
         }
 
+        Log.d("FIX_BUG","getLoginAccount url : $url")
+
         val bearer = "Bearer $accessToken"
 
         val resp = api.getSipCredentials(url, bearer)
@@ -82,6 +88,8 @@ class LoginBcryptManager(url: String) {
 
     suspend fun getLoginAccountV3(username: String, password: String): LoginV3Response {
         val url = "${BASE_URL}api/v3/sign-in/cc"
+
+        Log.d("FIX_BUG","getLoginAccountV3 url : $url")
 
         val request = LoginV3Request(username = username, password = password)
 
