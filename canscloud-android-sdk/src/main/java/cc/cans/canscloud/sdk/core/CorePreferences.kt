@@ -691,6 +691,30 @@ class CorePreferences constructor(private val context: Context) {
             config.setString("app", "api_login_url", value)
         }
 
+    private fun getTokenKey(sipAddress: String): String {
+        return "access_token_$sipAddress"
+    }
+
+    private fun getDomainUUIDKey(sipAddress: String): String {
+        return "domain_uuid_$sipAddress"
+    }
+
+    fun getAccessToken(sipAddress: String): String? {
+        return config.getString("app", "access_token_$sipAddress", "")
+    }
+
+    fun setAccessToken(sipAddress: String, token: String?) {
+        config.setString("app", "access_token_$sipAddress", token)
+    }
+
+    fun getDomainUUID(sipAddress: String): String? {
+        return config.getString("app", "domain_uuid_$sipAddress", "")
+    }
+
+    fun setDomainUUID(sipAddress: String, uuid: String?) {
+        config.setString("app", "domain_uuid_$sipAddress", uuid)
+    }
+
     fun copyAssetsFromPackage() {
         copy("linphonerc_default", configPath)
         copy("linphonerc_factory", factoryConfigPath, true)

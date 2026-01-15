@@ -498,7 +498,6 @@ class CansCenter() : Cans {
 
     }
 
-
     private fun mapStatusCall(state: Call.State): CallState {
         return when (state) {
             Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> CallState.IncomingCall
@@ -729,54 +728,88 @@ class CansCenter() : Cans {
     }
 
     override fun removeAccount(index: Int) {
+        if (index < 0 || index >= core.accountList.size) return
+
         val account = core.accountList[index]
         accountToDelete = account
 
-        val registered = account.state == RegistrationState.Ok
+        val username = account.params.identityAddress?.username ?: ""
+        val domain = account.params.identityAddress?.domain ?: ""
+        val sipAddress = "$username@$domain"
 
-        if (core.defaultAccount == account) {
-            Log.i("[Account Settings]", "Account was default, let's look for a replacement")
-            for (accountIterator in core.accountList) {
-                if (account != accountIterator) {
-                    core.defaultAccount = accountIterator
-                    Log.i("[Account Settings]", "New default account is $accountIterator")
-                    break
-                }
-            }
+        corePreferences.setAccessToken(sipAddress, null)
+        corePreferences.setDomainUUID(sipAddress, null)
+
+        val authInfo = account.findAuthInfo()
+        if (authInfo != null) {
+            core.removeAuthInfo(authInfo)
+        }
+
+        val associatedProxy = core.proxyConfigList.find {
+            it.identityAddress?.asStringUriOnly() == account.params.identityAddress?.asStringUriOnly()
         }
 
         val params = account.params.clone()
         params.isRegisterEnabled = false
         account.params = params
 
-        if (!registered) {
-            Log.w(
-                "[Account Settings]",
-                " Account isn't registered, don't unregister before removing it"
-            )
-            deleteAccount(account)
+        core.removeAccount(account)
+
+        if (associatedProxy != null && core.proxyConfigList.contains(associatedProxy)) {
+            core.removeProxyConfig(associatedProxy)
         }
+
+        if (core.defaultAccount == null && core.accountList.isNotEmpty()) {
+            core.defaultAccount = core.accountList[0]
+        }
+
+        core.refreshRegisters()
     }
 
     override fun removeAccountAll() {
         val accounts = core.accountList.toList()
-
-        core.defaultAccount = null
-
         accounts.forEach { acc ->
             try {
+                val username = acc.params.identityAddress?.username ?: ""
+                val domain = acc.params.identityAddress?.domain ?: ""
+                val sipAddress = "$username@$domain"
+
+                corePreferences.setAccessToken(sipAddress, null)
+                corePreferences.setDomainUUID(sipAddress, null)
+
                 acc.findAuthInfo()?.let { core.removeAuthInfo(it) }
 
-                val params = acc.params.clone().apply { isRegisterEnabled = false }
+                val params = acc.params.clone()
+                params.isRegisterEnabled = false
                 acc.params = params
 
                 core.removeAccount(acc)
-                Log.i("[Account Removal]", "Removed account: ${acc.params.identityAddress?.asString()}")
-            } catch (t: Throwable) {
-                Log.w("[Account Removal]", "Failed to remove: ${acc.params.identityAddress?.asString()}", t)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error removing account", e)
             }
         }
 
+        val proxies = core.proxyConfigList.toList()
+        proxies.forEach { proxy ->
+            try {
+                proxy.findAuthInfo()?.let { core.removeAuthInfo(it) }
+
+                core.removeProxyConfig(proxy)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error removing proxy", e)
+            }
+        }
+
+        val auths = core.authInfoList.toList()
+        auths.forEach { auth ->
+            try {
+                core.removeAuthInfo(auth)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error removing auth", e)
+            }
+        }
+
+        core.defaultAccount = null
         accountToDelete = null
         proxyConfigToCheck = null
 
@@ -1841,6 +1874,7 @@ class CansCenter() : Cans {
                     JwtMapper.decodePayload(accessToken, AccessTokenClaims::class.java)
 
                 if (claims?.domainUuid?.isNullOrEmpty() == true) {
+                    corePreferences.setDomainUUID(usernameWithDomain, "")
                     registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                     return@launch
                 }
@@ -1850,6 +1884,7 @@ class CansCenter() : Cans {
                     val body = resp.body()
                     val credentials = body?.data
                     if (credentials == null) {
+                        corePreferences.setDomainUUID(usernameWithDomain, "")
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
                     }
@@ -1860,6 +1895,10 @@ class CansCenter() : Cans {
                     val domainFromApi = credentials.domainName ?: domain
                     val realm = domainFromApi.substringBefore(':')
                     val serverAddress = "${domainFromApi.substringBefore(':')}:$loginPort"
+
+                    val extension = credentials.extension ?: ""
+                    val currentSipAddress = "$extension@$domain"
+                    corePreferences.setAccessToken(currentSipAddress, accessToken)
 
                     val factory = Factory.instance()
                     val auth = factory.createAuthInfo(
@@ -1877,12 +1916,14 @@ class CansCenter() : Cans {
 
                     val resultUsername = accountCreator.setUsername(credentials.extension ?: username)
                     if (resultUsername != AccountCreator.UsernameStatus.Ok) {
+                        corePreferences.setDomainUUID(usernameWithDomain, "")
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
                     }
 
                     val resultDomain = accountCreator.setDomain(serverAddress)
                     if (resultDomain != AccountCreator.DomainStatus.Ok) {
+                        corePreferences.setDomainUUID(usernameWithDomain, "")
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
                     }
@@ -1902,10 +1943,14 @@ class CansCenter() : Cans {
                         core.addProxyConfig(proxyConfig)
                     }
 
+                    // store for use in api
+                    corePreferences.setDomainUUID(currentSipAddress, claims?.domainUuid ?: "")
+
                     corePreferences.keepServiceAlive = true
                     coreContext.notificationsManager.startForeground()
 
                 } catch (e: Exception) {
+                    corePreferences.setDomainUUID(usernameWithDomain, "")
                     registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                     return@launch
                 }
@@ -2029,6 +2074,12 @@ class CansCenter() : Cans {
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
                     }
+
+                    val extension = credentials.extension ?: ""
+                    val currentSipAddress = "$extension@$domain"
+
+                    corePreferences.setAccessToken(currentSipAddress, accessToken)
+                    corePreferences.setDomainUUID(currentSipAddress, domainUuid)
 
                     val loginPort = 8446
                     val loginTransport = TransportType.Tcp
