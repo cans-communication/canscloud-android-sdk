@@ -223,7 +223,7 @@ interface Cans {
 
     fun registerAccountV3Bcrypt(username: String, password: String, domain: String, apiURL: String)
 
-    fun configureChatSettings()
+    fun configureChatSettings(username: String?)
 
     fun getOrCreateChatRoom(peerUri: String): ChatRoom?
 

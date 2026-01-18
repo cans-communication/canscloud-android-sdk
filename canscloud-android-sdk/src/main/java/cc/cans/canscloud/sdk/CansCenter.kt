@@ -586,12 +586,31 @@ class CansCenter() : Cans {
         corePreferences.config = config
 
         Factory.instance().setLoggerDomain(appName)
-        Factory.instance().enableLogcatLogs(corePreferences.logcatLogsOutput)
-        if (corePreferences.debugLogs) {
+//        Factory.instance().enableLogcatLogs(corePreferences.logcatLogsOutput)
+        Factory.instance().enableLogcatLogs(true)
+
+        if (corePreferences.debugLogs || true) {
             Factory.instance().loggingService.setLogLevel(LogLevel.Message)
         }
 
         core = Factory.instance().createCoreWithConfig(config, context)
+
+        val defaultAccount = core.defaultAccount
+        if (defaultAccount != null) {
+            val username = defaultAccount.params.identityAddress?.username
+            if (!username.isNullOrEmpty()) {
+                val dbPath = context.filesDir.absolutePath + "/${username}-chats.db"
+                Log.i("FIX_BUG", "Auto-configuring Chat DB at startup: $dbPath")
+
+                val coreConfig = core.config
+                coreConfig.setString("storage", "backend", "sqlite")
+                coreConfig.setString("storage", "uri", dbPath)
+                coreConfig.setString("misc", "chat_database_path", dbPath)
+                coreConfig.setInt("lime", "enabled", 0)
+                coreConfig.setBool("misc", "chat_rooms_enabled", true)
+                coreConfig.setBool("misc", "store_chat_logs", true)
+            }
+        }
 
         core.removeListener(coreListenerStub)
         core.addListener(coreListenerStub)
@@ -1100,7 +1119,8 @@ class CansCenter() : Cans {
             return false
         }
 
-        proxyConfig.isPushNotificationAllowed = true
+//        proxyConfig.isPushNotificationAllowed = true
+        proxyConfig.isPushNotificationAllowed = false
 
         Log.i("[Assistant]", " [Account Login] Proxy config created")
         return true
@@ -2185,58 +2205,126 @@ class CansCenter() : Cans {
         }
     }
 
-    override fun configureChatSettings() {
-        Log.d("FIX_BUG","configureChatSettings")
-        val config = core.config
+    override fun configureChatSettings(username: String?) {
+        if (core.callsNb > 0) return
+
+        val currentUser = username ?: "default"
         val context = coreContext.context
-
-        val currentUser = core.defaultAccount?.params?.identityAddress?.username ?: "default"
         val dbPath = context.filesDir.absolutePath + "/${currentUser}-chats.db"
+        val config = core.config
 
+        core.removeListener(coreListenerStub)
+
+        Log.w("FIX_BUG", "🛑 Stopping Core to apply DB...")
+        try {
+            core.stop()
+        } catch (e: Exception) { }
+
+        // ==========================================
+        // 🛠️ แก้ไข Config ตรงนี้ (สำคัญมาก)
+        // ==========================================
+
+        // 1. กำหนด Path DB ให้ชัดเจน
         config.setString("storage", "backend", "sqlite")
         config.setString("storage", "uri", dbPath)
         config.setString("misc", "chat_database_path", dbPath)
-        config.setBool("misc", "load_chat_rooms_from_db", true)
+
+        // 2. ⛔ ปิด LIME (Encryption) ชั่วคราว เพื่อให้รับข้อความ Text ธรรมดาได้แน่นอน
+        config.setInt("lime", "enabled", 0)
+
+        // 3. เปิดฟีเจอร์ Chat และจัดเก็บ Log
+        config.setBool("misc", "chat_rooms_enabled", true)
         config.setBool("misc", "store_chat_logs", true)
 
-        config.setString("misc", "file_transfer_protocol", "https")
-        core.fileTransferServer = "https://files.linphone.org/http-file-transfer-server/hft.php"
+        // 4. (Optional) ปิด Group Chat ถ้า Server ไม่รองรับ เพื่อลดความซับซ้อน
+        config.setBool("misc", "group_chat_supported", false)
 
+        Log.w("FIX_BUG", "▶️ Starting Core with new DB...")
+        try {
+            core.start()
+        } catch (e: Exception) { }
+
+        core.addListener(coreListenerStub)
+
+        // 5. กระตุ้น Network และ Register อีกครั้ง
+        core.isNetworkReachable = true
         core.refreshRegisters()
 
-        Log.i("FIX_BUG", "Chat configured with DB: $dbPath")
+        Log.i("FIX_BUG", "✅ Core Restarted Successfully at: $dbPath")
     }
 
     override fun getOrCreateChatRoom(peerUri: String): ChatRoom? {
         val defaultAccount = core.defaultAccount
         val localAddress = defaultAccount?.params?.identityAddress
-        val remoteAddress = core.interpretUrl(peerUri)
 
-        if (remoteAddress == null || localAddress == null) {
-            Log.e("FIX_BUG", "Invalid addresses: Local=$localAddress, Remote=$remoteAddress")
+        Log.w("FIX_BUG", "getOrCreateChatRoom called with: '$peerUri'")
+
+        if (localAddress == null) {
+            Log.e("FIX_BUG", "Error: No default account/local address found")
             return null
         }
 
-        remoteAddress.clean()
+        // ---------------------------------------------------------
+        // 1. แก้ไข: ใช้ core.interpretUrl แทนการต่อ String เอง
+        // ---------------------------------------------------------
+        // interpretUrl จะช่วยเติม Domain, Port, Transport ให้อัตโนมัติ
+        // ให้ตรงกับ Default Account ที่ Login อยู่
+        var remoteAddress = core.interpretUrl(peerUri)
 
+        // Fallback: ถ้า interpretUrl ไม่ได้ (เช่น peerUri ผิด format) ค่อยลองสร้างเอง
+        if (remoteAddress == null) {
+            Log.w("FIX_BUG", "interpretUrl returned null, trying manual construction...")
+            val finalUri = if (!peerUri.contains("@")) {
+                val myDomain = localAddress.domain
+                "sip:$peerUri@$myDomain"
+            } else {
+                if (peerUri.startsWith("sip:")) peerUri else "sip:$peerUri"
+            }
+            remoteAddress = Factory.instance().createAddress(finalUri)
+        }
+
+        if (remoteAddress == null) {
+            Log.e("FIX_BUG", "Error: Cannot resolve address for $peerUri")
+            return null
+        }
+
+        // ---------------------------------------------------------
+        // 2. ป้องกันการส่งหาตัวเอง
+        // ---------------------------------------------------------
         if (remoteAddress.username == localAddress.username) {
-            Log.e("FIX_BUG", "Self-chat detected! Aborting.")
+            Log.e("FIX_BUG", "Abort: Attempting to chat with self.")
             return null
         }
 
-        var room = core.getChatRoom(localAddress, remoteAddress)
-
-        Log.e("FIX_BUG", "getOrCreateChatRoom room : $room")
+        // ---------------------------------------------------------
+        // 3. ค้นหาห้องแชทที่มีอยู่แล้ว (Existing Room)
+        // ---------------------------------------------------------
+        // การใช้ core.getChatRoom บางครั้งอาจหาไม่เจอถ้า Parameter ไม่ตรงเป๊ะ
+        // เราจะลองวนลูปหาห้องที่มี Peer Address ตรงกันก่อน เพื่อความชัวร์
+        var room = core.chatRooms.find {
+            it.peerAddress.username == remoteAddress?.username
+        }
 
         if (room == null) {
+            // ถ้าหาแบบวนลูปไม่เจอ ให้ลองใช้คำสั่งมาตรฐาน
+            room = core.getChatRoom(localAddress, remoteAddress)
+        }
+
+        // ---------------------------------------------------------
+        // 4. ถ้าไม่มีจริงๆ ให้สร้างใหม่
+        // ---------------------------------------------------------
+        if (room == null) {
+            Log.i("FIX_BUG", "Creating NEW ChatRoom for ${remoteAddress.username}")
             val params = core.createDefaultChatRoomParams()
             if (params != null) {
                 params.backend = ChatRoom.Backend.Basic
                 params.isGroupEnabled = false
-
                 room = core.createChatRoom(params, localAddress, arrayOf(remoteAddress))
             }
+        } else {
+            Log.i("FIX_BUG", "Found EXISTING ChatRoom for ${remoteAddress.username}")
         }
+
         return room
     }
 
