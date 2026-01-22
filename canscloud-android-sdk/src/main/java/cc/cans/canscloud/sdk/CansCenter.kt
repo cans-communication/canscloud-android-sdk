@@ -568,7 +568,6 @@ class CansCenter() : Cans {
         context: Context,
         appName: String
     ) {
-
         this.context = context
         this.appName = appName
 
@@ -587,7 +586,6 @@ class CansCenter() : Cans {
         corePreferences.config = config
 
         Factory.instance().setLoggerDomain(appName)
-//        Factory.instance().enableLogcatLogs(corePreferences.logcatLogsOutput)
         Factory.instance().enableLogcatLogs(true)
 
         if (corePreferences.debugLogs || true) {
@@ -596,26 +594,30 @@ class CansCenter() : Cans {
 
         core = Factory.instance().createCoreWithConfig(config, context)
 
-        val defaultAccount = core.defaultAccount
-        if (defaultAccount != null) {
-            val username = defaultAccount.params.identityAddress?.username
-            if (!username.isNullOrEmpty()) {
-                val dbPath = context.filesDir.absolutePath + "/${username}-chats.db"
-                Log.i("FIX_BUG", "Auto-configuring Chat DB at startup: $dbPath")
+        val currentAcc = core.defaultAccount ?: core.accountList.firstOrNull()
+        val chatUsername = currentAcc?.params?.identityAddress?.username ?: "default"
+        val dbPath = context.filesDir.absolutePath + "/${chatUsername}-chats.db"
 
-                val coreConfig = core.config
-                coreConfig.setString("storage", "backend", "sqlite")
-                coreConfig.setString("storage", "uri", dbPath)
-                coreConfig.setString("misc", "chat_database_path", dbPath)
-                coreConfig.setInt("lime", "enabled", 0)
-                coreConfig.setBool("misc", "chat_rooms_enabled", true)
-                coreConfig.setBool("misc", "store_chat_logs", true)
-            }
+        Log.i("FIX_BUG", "Pre-configuring Chat Storage for: $chatUsername at $dbPath")
+
+        core.config.apply {
+            setString("storage", "backend", "sqlite")
+            setString("storage", "uri", dbPath)
+            setString("misc", "chat_database_path", dbPath)
+
+            setBool("misc", "load_chat_rooms_from_db", true)
+            setBool("misc", "chat_rooms_enabled", true)
+            setBool("misc", "store_chat_logs", true)
+            setBool("misc", "cpim_messages_enabled", true)
+
+            setInt("lime", "enabled", 0)
         }
 
         core.removeListener(coreListenerStub)
         core.addListener(coreListenerStub)
+
         core.start()
+
         createNotificationChannels(context, notificationManager)
 
         core.ring = null
@@ -2213,6 +2215,13 @@ class CansCenter() : Cans {
         val context = coreContext.context
         val dbPath = context.filesDir.absolutePath + "/${currentUser}-chats.db"
         val config = core.config
+
+        val currentDb = core.config.getString("storage", "uri", "")
+
+        if (currentDb == dbPath && core.globalState == org.linphone.core.GlobalState.On) {
+            Log.i("FIX_BUG", "Chat DB already configured for $currentUser, skipping restart.")
+            return
+        }
 
         core.removeListener(coreListenerStub)
 
