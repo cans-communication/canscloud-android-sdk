@@ -232,4 +232,6 @@ interface Cans {
     fun addCansChatListener(listener: CansChatListenerStub)
 
     fun removeCansChatListener(listener: CansChatListenerStub)
+
+    fun sendImageMessage(peerUri: String, filePath: String)
 }

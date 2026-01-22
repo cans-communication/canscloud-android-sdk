@@ -90,6 +90,7 @@ import org.linphone.core.TransportType
 import org.linphone.core.tools.compatibility.DeviceUtils
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.io.File
 import java.util.Locale
 
 data class Notifiable(val notificationId: Int) {
@@ -2215,29 +2216,25 @@ class CansCenter() : Cans {
 
         core.removeListener(coreListenerStub)
 
-        Log.w("FIX_BUG", "🛑 Stopping Core to apply DB...")
         try {
             core.stop()
         } catch (e: Exception) { }
 
-        // ==========================================
-        // 🛠️ แก้ไข Config ตรงนี้ (สำคัญมาก)
-        // ==========================================
-
-        // 1. กำหนด Path DB ให้ชัดเจน
         config.setString("storage", "backend", "sqlite")
         config.setString("storage", "uri", dbPath)
         config.setString("misc", "chat_database_path", dbPath)
 
-        // 2. ⛔ ปิด LIME (Encryption) ชั่วคราว เพื่อให้รับข้อความ Text ธรรมดาได้แน่นอน
         config.setInt("lime", "enabled", 0)
 
-        // 3. เปิดฟีเจอร์ Chat และจัดเก็บ Log
         config.setBool("misc", "chat_rooms_enabled", true)
         config.setBool("misc", "store_chat_logs", true)
-
-        // 4. (Optional) ปิด Group Chat ถ้า Server ไม่รองรับ เพื่อลดความซับซ้อน
+        config.setBool("misc", "load_chat_rooms_from_db", true)
+        config.setBool("misc", "cpim_messages_enabled", true)
         config.setBool("misc", "group_chat_supported", false)
+        config.setString("misc", "file_transfer_protocol", "https")
+        core.fileTransferServer = "https://files.linphone.org/http-file-transfer-server/hft.php"
+        core.maxSizeForAutoDownloadIncomingFiles = -1
+        core.imdnToEverybodyThreshold = 1
 
         Log.w("FIX_BUG", "▶️ Starting Core with new DB...")
         try {
@@ -2246,7 +2243,6 @@ class CansCenter() : Cans {
 
         core.addListener(coreListenerStub)
 
-        // 5. กระตุ้น Network และ Register อีกครั้ง
         core.isNetworkReachable = true
         core.refreshRegisters()
 
@@ -2257,72 +2253,69 @@ class CansCenter() : Cans {
         val defaultAccount = core.defaultAccount
         val localAddress = defaultAccount?.params?.identityAddress
 
-        Log.w("FIX_BUG", "getOrCreateChatRoom called with: '$peerUri'")
-
         if (localAddress == null) {
-            Log.e("FIX_BUG", "Error: No default account/local address found")
+            Log.e("FIX_BUG", "[CansCenter] Error: No default account/local address found")
             return null
         }
 
-        // ---------------------------------------------------------
-        // 1. แก้ไข: ใช้ core.interpretUrl แทนการต่อ String เอง
-        // ---------------------------------------------------------
-        // interpretUrl จะช่วยเติม Domain, Port, Transport ให้อัตโนมัติ
-        // ให้ตรงกับ Default Account ที่ Login อยู่
+        // 1. Resolve Remote Address (พยายามแปลงเบอร์เป็น SIP Address)
         var remoteAddress = core.interpretUrl(peerUri)
 
-        // Fallback: ถ้า interpretUrl ไม่ได้ (เช่น peerUri ผิด format) ค่อยลองสร้างเอง
         if (remoteAddress == null) {
-            Log.w("FIX_BUG", "interpretUrl returned null, trying manual construction...")
-            val finalUri = if (!peerUri.contains("@")) {
-                val myDomain = localAddress.domain
-                "sip:$peerUri@$myDomain"
-            } else {
-                if (peerUri.startsWith("sip:")) peerUri else "sip:$peerUri"
+            // Fallback: ถ้าแปลงไม่ได้ ลองสร้างเองแบบ Manual
+            try {
+                val domain = localAddress.domain
+                val finalUri = if (!peerUri.contains("@")) {
+                    "sip:$peerUri@$domain"
+                } else {
+                    if (peerUri.startsWith("sip:")) peerUri else "sip:$peerUri"
+                }
+                remoteAddress = Factory.instance().createAddress(finalUri)
+            } catch (e: Exception) {
+                Log.e("FIX_BUG", "[CansCenter] Address creation failed: ${e.message}")
             }
-            remoteAddress = Factory.instance().createAddress(finalUri)
         }
 
         if (remoteAddress == null) {
-            Log.e("FIX_BUG", "Error: Cannot resolve address for $peerUri")
+            Log.e("FIX_BUG", "[CansCenter] Error: Cannot resolve address for $peerUri")
             return null
         }
 
-        // ---------------------------------------------------------
-        // 2. ป้องกันการส่งหาตัวเอง
-        // ---------------------------------------------------------
+        // 2. [Logic จาก Demo] Clean Address และตรวจสอบ Self-Chat
+        remoteAddress.clean() // ลบพวก tags/params ออกเพื่อให้ clean ที่สุด
+
         if (remoteAddress.username == localAddress.username) {
-            Log.e("FIX_BUG", "Abort: Attempting to chat with self.")
+            Log.e("FIX_BUG", "[CansCenter] Error: Self-chat detected. Aborting.")
             return null
         }
 
-        // ---------------------------------------------------------
-        // 3. ค้นหาห้องแชทที่มีอยู่แล้ว (Existing Room)
-        // ---------------------------------------------------------
-        // การใช้ core.getChatRoom บางครั้งอาจหาไม่เจอถ้า Parameter ไม่ตรงเป๊ะ
-        // เราจะลองวนลูปหาห้องที่มี Peer Address ตรงกันก่อน เพื่อความชัวร์
-        var room = core.chatRooms.find {
-            it.peerAddress.username == remoteAddress?.username
-        }
+        // 3. [Logic จาก Demo] ค้นหาห้องเดิมก่อน
+        // ใช้ getChatRoom(peer, local) ตามแบบ Demo
+        var room = core.getChatRoom(remoteAddress, localAddress)
 
+        // 4. [Logic จาก Demo] ถ้าหาไม่เจอ ให้สร้างใหม่โดยระบุ Spec ชัดเจน (Basic Room)
         if (room == null) {
-            // ถ้าหาแบบวนลูปไม่เจอ ให้ลองใช้คำสั่งมาตรฐาน
-            room = core.getChatRoom(localAddress, remoteAddress)
-        }
+            Log.d("FIX_BUG", "[CansCenter] Room not found. Creating new BASIC room for ${remoteAddress.username}")
 
-        // ---------------------------------------------------------
-        // 4. ถ้าไม่มีจริงๆ ให้สร้างใหม่
-        // ---------------------------------------------------------
-        if (room == null) {
-            Log.i("FIX_BUG", "Creating NEW ChatRoom for ${remoteAddress.username}")
             val params = core.createDefaultChatRoomParams()
             if (params != null) {
-                params.backend = ChatRoom.Backend.Basic
-                params.isGroupEnabled = false
+                params.backend = ChatRoom.Backend.Basic // บังคับเป็น Basic Chat (1-on-1)
+                params.isGroupEnabled = false           // ปิด Group Mode
+
+                // สร้างห้องใหม่
                 room = core.createChatRoom(params, localAddress, arrayOf(remoteAddress))
             }
+        }
+
+        // 5. Final Safety Check (กันเหนียวอีกรอบ)
+        if (room != null) {
+            if (room.peerAddress.username == localAddress.username) {
+                Log.e("FIX_BUG", "[CansCenter] CRITICAL: Created room is SELF-CHAT (Loopback). Aborting.")
+                return null
+            }
+            Log.i("FIX_BUG", "[CansCenter] Chat Room Ready with ${room.peerAddress.username}")
         } else {
-            Log.i("FIX_BUG", "Found EXISTING ChatRoom for ${remoteAddress.username}")
+            Log.e("FIX_BUG", "[CansCenter] Failed to create chat room.")
         }
 
         return room
@@ -2346,5 +2339,34 @@ class CansCenter() : Cans {
         message.addListener(msgListener)
 
         message.send()
+    }
+
+    override fun sendImageMessage(peerUri: String, filePath: String) {
+        val room = getOrCreateChatRoom(peerUri)
+        if (room == null) {
+            Log.e("FIX_BUG", "Could not get/create room for $peerUri")
+            return
+        }
+
+        val actualFile = File(filePath)
+        if (!actualFile.exists()) {
+            Log.e("FIX_BUG", "File not found at: $filePath")
+            return
+        }
+
+        val message = room.createEmptyMessage()
+        val content = Factory.instance().createContent()
+        content.type = "image"
+        content.subtype = filePath.substringAfterLast(".", "jpeg")
+        content.name = actualFile.name
+        content.filePath = filePath
+
+        message.addFileContent(content)
+        message.addCustomHeader("X-Local-Filename", actualFile.name)
+
+        // สำคัญ: เราไม่ต้องเพิ่ม Listener ที่นี่แบบถาวร
+        // เพราะ NativeModuleAndroid จะเป็นคนจัดการต่อเพื่อให้ส่ง Event ไป RN ได้
+        message.send()
+        Log.i("FIX_BUG", "[Sender] Image Message Initiated: ${message.messageId}")
     }
 }
