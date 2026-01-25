@@ -2209,123 +2209,124 @@ class CansCenter() : Cans {
     }
 
     override fun configureChatSettings(username: String?) {
-        if (core.callsNb > 0) return
-
-        val currentUser = username ?: "default"
+        // ถ้า username เป็น null หรือค่าว่าง ให้กลับไปใช้ default
+        val currentUser = if (username.isNullOrEmpty()) "default" else username
         val context = coreContext.context
-        val dbPath = context.filesDir.absolutePath + "/${currentUser}-chats.db"
+
+        // 1. กำหนด Path ของ Database ให้ชัดเจน (เหมือน Pure Native)
+        val dbName = "${currentUser}-chats.db"
+        val dbPath = File(context.filesDir, dbName).absolutePath
         val config = core.config
 
-        val currentDb = core.config.getString("storage", "uri", "")
-
+        // เช็คว่าปัจจุบัน Core ใช้ DB ตัวนี้อยู่แล้วหรือยัง? ถ้าใช่ ไม่ต้อง Stop/Start ใหม่
+        val currentDb = config.getString("storage", "uri", "")
         if (currentDb == dbPath && core.globalState == org.linphone.core.GlobalState.On) {
-            Log.i("FIX_BUG", "Chat DB already configured for $currentUser, skipping restart.")
+            Log.i(TAG, "✅ Chat DB already configured for $currentUser, skipping restart.")
             return
         }
 
+        Log.w(TAG, "⚠️ Configuring Chat DB for user: $currentUser at $dbPath")
+
+        // 2. หยุด Core ก่อนแก้ไข Config สำคัญ
         core.removeListener(coreListenerStub)
+        if (core.globalState != org.linphone.core.GlobalState.Off) {
+            try {
+                core.stop()
+                Log.i(TAG, "⏹ Core stopped for reconfiguration.")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error stopping core: ${e.message}")
+            }
+        }
 
-        try {
-            core.stop()
-        } catch (e: Exception) { }
-
+        // 3. ตั้งค่า Config ให้เหมือน Pure Native แบบ 100%
+        // Storage Settings
         config.setString("storage", "backend", "sqlite")
         config.setString("storage", "uri", dbPath)
+
+        // Linphone 5.x+ แยก chat_database_path
         config.setString("misc", "chat_database_path", dbPath)
+        // แนะนำให้แยก call log ด้วยเพื่อความปลอดภัยของข้อมูล (Optional แต่แนะนำ)
+        config.setString("call_logs", "database_path", dbPath)
 
-        config.setInt("lime", "enabled", 0)
-
-        config.setBool("misc", "chat_rooms_enabled", true)
-        config.setBool("misc", "store_chat_logs", true)
+        // Feature Flags
         config.setBool("misc", "load_chat_rooms_from_db", true)
+        config.setBool("misc", "store_chat_logs", true)
+        config.setBool("misc", "chat_rooms_enabled", true)
         config.setBool("misc", "cpim_messages_enabled", true)
+
+        // Group Chat & File Transfer Settings
         config.setBool("misc", "group_chat_supported", false)
         config.setString("misc", "file_transfer_protocol", "https")
         core.fileTransferServer = "https://files.linphone.org/http-file-transfer-server/hft.php"
         core.maxSizeForAutoDownloadIncomingFiles = -1
         core.imdnToEverybodyThreshold = 1
 
-        Log.w("FIX_BUG", "▶️ Starting Core with new DB...")
+        // 4. Start Core ใหม่
+        Log.w(TAG, "▶️ Restarting Core with new DB...")
         try {
             core.start()
-        } catch (e: Exception) { }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to restart core: ${e.message}")
+        }
 
+        // 5. ใส่ Listener กลับคืนและ Refresh
         core.addListener(coreListenerStub)
-
         core.isNetworkReachable = true
         core.refreshRegisters()
 
-        Log.i("FIX_BUG", "✅ Core Restarted Successfully at: $dbPath")
+        // 6. บังคับโหลด Chat Rooms จาก DB ทันที (Trigger)
+        // การเรียก core.chatRooms จะทำให้ SDK ไปอ่าน DB ขึ้นมา
+        val roomCount = core.chatRooms.size
+        Log.i(TAG, "✅ Core Restarted. Loaded $roomCount rooms from DB.")
     }
 
     override fun getOrCreateChatRoom(peerUri: String): ChatRoom? {
+        // Logic นี้เหมือน Pure Native เป๊ะๆ เพื่อป้องกันการสร้างห้องผิด
         val defaultAccount = core.defaultAccount
         val localAddress = defaultAccount?.params?.identityAddress
 
         if (localAddress == null) {
-            Log.e("FIX_BUG", "[CansCenter] Error: No default account/local address found")
+            Log.e(TAG, "Error: No default account/local address found")
             return null
         }
 
-        // 1. Resolve Remote Address (พยายามแปลงเบอร์เป็น SIP Address)
+        // Resolve Remote Address
         var remoteAddress = core.interpretUrl(peerUri)
-
         if (remoteAddress == null) {
-            // Fallback: ถ้าแปลงไม่ได้ ลองสร้างเองแบบ Manual
             try {
                 val domain = localAddress.domain
-                val finalUri = if (!peerUri.contains("@")) {
-                    "sip:$peerUri@$domain"
-                } else {
-                    if (peerUri.startsWith("sip:")) peerUri else "sip:$peerUri"
-                }
+                val finalUri = if (!peerUri.contains("@")) "sip:$peerUri@$domain" else peerUri
                 remoteAddress = Factory.instance().createAddress(finalUri)
             } catch (e: Exception) {
-                Log.e("FIX_BUG", "[CansCenter] Address creation failed: ${e.message}")
+                Log.e(TAG, "Address creation failed: ${e.message}")
             }
         }
 
-        if (remoteAddress == null) {
-            Log.e("FIX_BUG", "[CansCenter] Error: Cannot resolve address for $peerUri")
-            return null
-        }
+        if (remoteAddress == null) return null
 
-        // 2. [Logic จาก Demo] Clean Address และตรวจสอบ Self-Chat
-        remoteAddress.clean() // ลบพวก tags/params ออกเพื่อให้ clean ที่สุด
-
+        // Clean & Validate
+        remoteAddress.clean()
         if (remoteAddress.username == localAddress.username) {
-            Log.e("FIX_BUG", "[CansCenter] Error: Self-chat detected. Aborting.")
+            Log.e(TAG, "Error: Self-chat detected. Aborting.")
             return null
         }
 
-        // 3. [Logic จาก Demo] ค้นหาห้องเดิมก่อน
-        // ใช้ getChatRoom(peer, local) ตามแบบ Demo
+        // *สำคัญ* ลองหาห้องที่มีอยู่แล้วก่อน (Native SDK จะหาจาก DB ให้เอง)
         var room = core.getChatRoom(remoteAddress, localAddress)
 
-        // 4. [Logic จาก Demo] ถ้าหาไม่เจอ ให้สร้างใหม่โดยระบุ Spec ชัดเจน (Basic Room)
+        // ถ้าไม่เจอ ค่อยสร้างใหม่
         if (room == null) {
-            Log.d("FIX_BUG", "[CansCenter] Room not found. Creating new BASIC room for ${remoteAddress.username}")
-
+            Log.d(TAG, "Creating new BASIC chat room for ${remoteAddress.username}")
             val params = core.createDefaultChatRoomParams()
             if (params != null) {
-                params.backend = ChatRoom.Backend.Basic // บังคับเป็น Basic Chat (1-on-1)
-                params.isGroupEnabled = false           // ปิด Group Mode
-
-                // สร้างห้องใหม่
+                params.backend = ChatRoom.Backend.Basic
+                params.isGroupEnabled = false
                 room = core.createChatRoom(params, localAddress, arrayOf(remoteAddress))
             }
         }
 
-        // 5. Final Safety Check (กันเหนียวอีกรอบ)
-        if (room != null) {
-            if (room.peerAddress.username == localAddress.username) {
-                Log.e("FIX_BUG", "[CansCenter] CRITICAL: Created room is SELF-CHAT (Loopback). Aborting.")
-                return null
-            }
-            Log.i("FIX_BUG", "[CansCenter] Chat Room Ready with ${room.peerAddress.username}")
-        } else {
-            Log.e("FIX_BUG", "[CansCenter] Failed to create chat room.")
-        }
+        // Force mark as read/update เพื่อให้มัน active
+        room?.markAsRead()
 
         return room
     }
