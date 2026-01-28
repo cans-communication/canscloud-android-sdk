@@ -3,7 +3,6 @@ package cc.cans.canscloud.sdk
 import android.app.Activity
 import android.content.Context
 import android.os.Vibrator
-import cc.cans.canscloud.sdk.callback.CansChatListenerStub
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.callback.CansRegisterAccountListenerStub
 import cc.cans.canscloud.sdk.callback.CansRegisterListenerStub
@@ -228,10 +227,6 @@ interface Cans {
     fun getOrCreateChatRoom(peerUri: String): ChatRoom?
 
     fun sendTextMessage(peerUri: String, text: String)
-
-    fun addCansChatListener(listener: CansChatListenerStub)
-
-    fun removeCansChatListener(listener: CansChatListenerStub)
 
     fun sendImageMessage(peerUri: String, filePath: String)
 }

@@ -26,7 +26,6 @@ import cc.cans.canscloud.data.ProvisioningService
 import cc.cans.canscloud.sdk.bcrypt.AccessTokenClaims
 import cc.cans.canscloud.sdk.bcrypt.JwtMapper
 import cc.cans.canscloud.sdk.bcrypt.LoginBcryptManager
-import cc.cans.canscloud.sdk.callback.CansChatListenerStub
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.callback.CansRegisterAccountListenerStub
 import cc.cans.canscloud.sdk.callback.CansRegisterListenerStub
@@ -132,7 +131,6 @@ class CansCenter() : Cans {
     private var listeners = mutableListOf<CansListenerStub>()
     private var registerListeners = mutableListOf<CansRegisterListenerStub>()
     private var registerAccountListeners = mutableListOf<CansRegisterAccountListenerStub>()
-    private var chatListeners = mutableListOf<CansChatListenerStub>()
 
     override val missedCallLogs = ArrayList<GroupedCallLogData>()
 
@@ -477,14 +475,6 @@ class CansCenter() : Cans {
             }
 
             Log.d(TAG, "Received text from ${sender.username}")
-
-            val senderUsername = sender.username ?: "Unknown"
-            val text = message.utf8Text ?: ""
-            val msgId = message.messageId ?: ""
-
-            chatListeners.forEach { listener ->
-                listener.onMessageReceived(senderUsername, text, msgId)
-            }
         }
     }
 
@@ -1122,8 +1112,8 @@ class CansCenter() : Cans {
             return false
         }
 
-//        proxyConfig.isPushNotificationAllowed = true
-        proxyConfig.isPushNotificationAllowed = false
+        proxyConfig.isPushNotificationAllowed = true
+//        proxyConfig.isPushNotificationAllowed = false
 
         Log.i("[Assistant]", " [Account Login] Proxy config created")
         return true
@@ -1828,15 +1818,6 @@ class CansCenter() : Cans {
         registerAccountListeners.remove(listener)
     }
 
-    override fun addCansChatListener(listener: CansChatListenerStub) {
-        chatListeners.add(listener)
-    }
-
-    override fun removeCansChatListener(listener: CansChatListenerStub) {
-        chatListeners.remove(listener)
-    }
-
-
     override fun removeAllListener() {
         listeners.clear()
         registerListeners.clear()
@@ -2208,76 +2189,172 @@ class CansCenter() : Cans {
         }
     }
 
+//    override fun configureChatSettings(username: String?) {
+//        // ถ้า username เป็น null หรือค่าว่าง ให้กลับไปใช้ default
+//        val currentUser = if (username.isNullOrEmpty()) "default" else username
+//        val context = coreContext.context
+//
+//        // 1. กำหนด Path ของ Database ให้ชัดเจน (เหมือน Pure Native)
+//        val dbName = "${currentUser}-chats.db"
+//        val dbPath = File(context.filesDir, dbName).absolutePath
+//        val config = core.config
+//
+//        // เช็คว่าปัจจุบัน Core ใช้ DB ตัวนี้อยู่แล้วหรือยัง? ถ้าใช่ ไม่ต้อง Stop/Start ใหม่
+//        val currentDb = config.getString("storage", "uri", "")
+//        if (currentDb == dbPath && core.globalState == org.linphone.core.GlobalState.On) {
+//            Log.i(TAG, "✅ Chat DB already configured for $currentUser, skipping restart.")
+//            return
+//        }
+//
+//        Log.w(TAG, "⚠️ Configuring Chat DB for user: $currentUser at $dbPath")
+//
+//        // 2. หยุด Core ก่อนแก้ไข Config สำคัญ
+//        core.removeListener(coreListenerStub)
+//        if (core.globalState != org.linphone.core.GlobalState.Off) {
+//            try {
+//                core.stop()
+//                Log.i(TAG, "⏹ Core stopped for reconfiguration.")
+//            } catch (e: Exception) {
+//                Log.e(TAG, "Error stopping core: ${e.message}")
+//            }
+//        }
+//
+//        // 3. ตั้งค่า Config ให้เหมือน Pure Native แบบ 100%
+//        // Storage Settings
+//        config.setString("storage", "backend", "sqlite")
+//        config.setString("storage", "uri", dbPath)
+//
+//        // Linphone 5.x+ แยก chat_database_path
+//        config.setString("misc", "chat_database_path", dbPath)
+//        // แนะนำให้แยก call log ด้วยเพื่อความปลอดภัยของข้อมูล (Optional แต่แนะนำ)
+//        config.setString("call_logs", "database_path", dbPath)
+//
+//        // Feature Flags
+//        config.setBool("misc", "load_chat_rooms_from_db", true)
+//        config.setBool("misc", "store_chat_logs", true)
+//        config.setBool("misc", "chat_rooms_enabled", true)
+//        config.setBool("misc", "cpim_messages_enabled", true)
+//
+//        // Group Chat & File Transfer Settings
+//        config.setBool("misc", "group_chat_supported", false)
+//        config.setString("misc", "file_transfer_protocol", "https")
+//        core.fileTransferServer = "https://files.linphone.org/http-file-transfer-server/hft.php"
+//        core.maxSizeForAutoDownloadIncomingFiles = -1
+//        core.imdnToEverybodyThreshold = 1
+//
+//        // 4. Start Core ใหม่
+//        Log.w(TAG, "▶️ Restarting Core with new DB...")
+//        try {
+//            core.start()
+//        } catch (e: Exception) {
+//            Log.e(TAG, "Failed to restart core: ${e.message}")
+//        }
+//
+//        // 5. ใส่ Listener กลับคืนและ Refresh
+//        core.addListener(coreListenerStub)
+//        core.isNetworkReachable = true
+//        core.refreshRegisters()
+//
+//        // 6. บังคับโหลด Chat Rooms จาก DB ทันที (Trigger)
+//        // การเรียก core.chatRooms จะทำให้ SDK ไปอ่าน DB ขึ้นมา
+//        val roomCount = core.chatRooms.size
+//        Log.i(TAG, "✅ Core Restarted. Loaded $roomCount rooms from DB.")
+//    }
+
     override fun configureChatSettings(username: String?) {
-        // ถ้า username เป็น null หรือค่าว่าง ให้กลับไปใช้ default
         val currentUser = if (username.isNullOrEmpty()) "default" else username
         val context = coreContext.context
 
-        // 1. กำหนด Path ของ Database ให้ชัดเจน (เหมือน Pure Native)
         val dbName = "${currentUser}-chats.db"
-        val dbPath = File(context.filesDir, dbName).absolutePath
+        val dbFile = File(context.filesDir, dbName)
+        val dbPath = dbFile.absolutePath
         val config = core.config
 
-        // เช็คว่าปัจจุบัน Core ใช้ DB ตัวนี้อยู่แล้วหรือยัง? ถ้าใช่ ไม่ต้อง Stop/Start ใหม่
-        val currentDb = config.getString("storage", "uri", "")
-        if (currentDb == dbPath && core.globalState == org.linphone.core.GlobalState.On) {
-            Log.i(TAG, "✅ Chat DB already configured for $currentUser, skipping restart.")
+        if (core.globalState == org.linphone.core.GlobalState.On &&
+            core.config.getString("storage", "uri", "") == dbPath) {
+            Log.i(TAG, "✅ Chat DB already active for $currentUser, skipping restart.")
             return
         }
 
-        Log.w(TAG, "⚠️ Configuring Chat DB for user: $currentUser at $dbPath")
+        Log.w(TAG, "⚡️ Re-Configuring Chat DB for: $currentUser")
 
-        // 2. หยุด Core ก่อนแก้ไข Config สำคัญ
+        // 1. จำ Account และ Auth เก่าเอาไว้ก่อน Reset
+        val previousDefaultAccount = core.defaultAccount
+        val previousProxyList = core.proxyConfigList.toList()
+        val previousAuthList = core.authInfoList.toList()
+
+        // 2. หยุด Core (แบบไม่ Block Thread)
         core.removeListener(coreListenerStub)
         if (core.globalState != org.linphone.core.GlobalState.Off) {
             try {
                 core.stop()
-                Log.i(TAG, "⏹ Core stopped for reconfiguration.")
+                repeat(5) { core.iterate() }
+                Log.i(TAG, "⏹ Core stop command sent.")
             } catch (e: Exception) {
                 Log.e(TAG, "Error stopping core: ${e.message}")
             }
         }
 
-        // 3. ตั้งค่า Config ให้เหมือน Pure Native แบบ 100%
-        // Storage Settings
+        // 3. ตั้งค่า Config (เพิ่ม hide_chat_rooms_from_removed_proxies)
         config.setString("storage", "backend", "sqlite")
         config.setString("storage", "uri", dbPath)
-
-        // Linphone 5.x+ แยก chat_database_path
         config.setString("misc", "chat_database_path", dbPath)
-        // แนะนำให้แยก call log ด้วยเพื่อความปลอดภัยของข้อมูล (Optional แต่แนะนำ)
         config.setString("call_logs", "database_path", dbPath)
 
-        // Feature Flags
         config.setBool("misc", "load_chat_rooms_from_db", true)
         config.setBool("misc", "store_chat_logs", true)
         config.setBool("misc", "chat_rooms_enabled", true)
-        config.setBool("misc", "cpim_messages_enabled", true)
 
-        // Group Chat & File Transfer Settings
-        config.setBool("misc", "group_chat_supported", false)
-        config.setString("misc", "file_transfer_protocol", "https")
-        core.fileTransferServer = "https://files.linphone.org/http-file-transfer-server/hft.php"
-        core.maxSizeForAutoDownloadIncomingFiles = -1
-        core.imdnToEverybodyThreshold = 1
+        // [สำคัญมาก] บอกให้โหลดห้องแชทมาเลย ไม่ต้องสนใจว่ามี Account หรือไม่ (เพราะเดี๋ยวเรา Restore ตามไป)
+        config.setBool("misc", "hide_chat_rooms_from_removed_proxies", false)
+        config.setBool("misc", "hide_empty_chat_rooms", false)
 
         // 4. Start Core ใหม่
-        Log.w(TAG, "▶️ Restarting Core with new DB...")
+        Log.w(TAG, "▶️ Restarting Core...")
         try {
             core.start()
+            // Iterate เพื่อกระตุ้นให้ Core เริ่มทำงานทันที
+            repeat(10) { core.iterate() }
+            Log.i(TAG, "✅ Core start command sent.")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to restart core: ${e.message}")
         }
 
-        // 5. ใส่ Listener กลับคืนและ Refresh
+        // 5. ยัด Account กลับคืนชีพ
+        if (core.accountList.isEmpty() && previousProxyList.isNotEmpty()) {
+            Log.w(TAG, "⚠️ Restoring accounts manually...")
+            previousAuthList.forEach {
+                try { core.addAuthInfo(it) } catch (e: Exception) {}
+            }
+            previousProxyList.forEach {
+                try { core.addProxyConfig(it) } catch (e: Exception) {}
+            }
+        }
+
+        // 6. บังคับ Set Default Account
+        val targetAccount = core.accountList.find {
+            it.params.identityAddress?.username?.equals(currentUser, ignoreCase = true) == true
+        }
+
+        if (targetAccount != null) {
+            core.defaultAccount = targetAccount
+            Log.i(TAG, "👤 Forced Default Account to: ${targetAccount.params.identityAddress?.username}")
+        }
+
+        // 7. คืนค่า Listener & Refresh
         core.addListener(coreListenerStub)
         core.isNetworkReachable = true
         core.refreshRegisters()
 
-        // 6. บังคับโหลด Chat Rooms จาก DB ทันที (Trigger)
-        // การเรียก core.chatRooms จะทำให้ SDK ไปอ่าน DB ขึ้นมา
+        // 8. Sync Config & Trigger Load
+        core.config.sync()
+
+        // บังคับ Iterate อีกรอบเพื่อให้ Core จับคู่ห้องแชทกับ Account ที่เพิ่งใส่เข้าไป
+        repeat(5) { core.iterate() }
+
+        // 9. เช็คผลลัพธ์
         val roomCount = core.chatRooms.size
-        Log.i(TAG, "✅ Core Restarted. Loaded $roomCount rooms from DB.")
+        Log.i(TAG, "✅ Loaded $roomCount rooms from DB. (File: $dbPath)")
     }
 
     override fun getOrCreateChatRoom(peerUri: String): ChatRoom? {
