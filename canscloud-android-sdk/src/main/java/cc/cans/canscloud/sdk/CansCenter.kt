@@ -2207,6 +2207,7 @@ class CansCenter() : Cans {
             }
         }
 
+        config.setInt("sip", "max_header_size", 2048)
         config.setString("storage", "backend", "sqlite")
         config.setString("storage", "uri", dbPath)
         config.setString("misc", "chat_database_path", dbPath)
