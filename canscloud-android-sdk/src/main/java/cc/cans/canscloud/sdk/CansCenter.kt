@@ -2309,6 +2309,13 @@ class CansCenter() : Cans {
         config.setBool("misc", "hide_chat_rooms_from_removed_proxies", false)
         config.setBool("misc", "hide_empty_chat_rooms", false)
 
+        // Group Chat & File Transfer Settings
+        config.setBool("misc", "group_chat_supported", false)
+        config.setString("misc", "file_transfer_protocol", "https")
+        core.fileTransferServer = "https://files.linphone.org/http-file-transfer-server/hft.php"
+        core.maxSizeForAutoDownloadIncomingFiles = -1
+        core.imdnToEverybodyThreshold = 1
+
         // 4. Start Core ใหม่
         Log.w(TAG, "▶️ Restarting Core...")
         try {
