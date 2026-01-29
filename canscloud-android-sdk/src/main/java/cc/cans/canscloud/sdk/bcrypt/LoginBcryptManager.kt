@@ -1,5 +1,6 @@
 package cc.cans.canscloud.sdk.bcrypt
 
+import android.util.Log
 import cc.cans.canscloud.sdk.bcrypt.models.LoginCpanelRequest
 import cc.cans.canscloud.sdk.bcrypt.models.LoginSipCredentialsResponse
 import cc.cans.canscloud.sdk.bcrypt.models.LoginV3Request
@@ -50,6 +51,7 @@ class LoginBcryptManager(url: String) {
     suspend fun getLoginAccessToken(username: String, password: String): String {
 
         val url = "${BASE_URL}${CPANEL_PREFIX}/login/cpanel/"
+
         val request =
             LoginCpanelRequest(username = username, password = password, loginType = "account")
 

@@ -71,6 +71,9 @@ import org.linphone.core.Address
 import org.linphone.core.AudioDevice
 import org.linphone.core.Call
 import org.linphone.core.CallLog
+import org.linphone.core.ChatMessage
+import org.linphone.core.ChatMessageListenerStub
+import org.linphone.core.ChatRoom
 import org.linphone.core.Conference
 import org.linphone.core.ConferenceListenerStub
 import org.linphone.core.Core
@@ -86,6 +89,7 @@ import org.linphone.core.TransportType
 import org.linphone.core.tools.compatibility.DeviceUtils
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.io.File
 import java.util.Locale
 
 data class Notifiable(val notificationId: Int) {
@@ -127,6 +131,7 @@ class CansCenter() : Cans {
     private var listeners = mutableListOf<CansListenerStub>()
     private var registerListeners = mutableListOf<CansRegisterListenerStub>()
     private var registerAccountListeners = mutableListOf<CansRegisterAccountListenerStub>()
+
     override val missedCallLogs = ArrayList<GroupedCallLogData>()
 
     override lateinit var conferenceCore: Conference
@@ -460,6 +465,17 @@ class CansCenter() : Cans {
                 listeners.forEach { it.onConferenceState(ConferenceState.Terminated) }
             }
         }
+
+        override fun onMessageReceived(core: Core, chatRoom: ChatRoom, message: ChatMessage) {
+            val sender = chatRoom.peerAddress
+            val local = core.defaultAccount?.params?.identityAddress
+
+            if (local != null && sender.username == local.username) {
+                return
+            }
+
+            Log.d(TAG, "Received text from ${sender.username}")
+        }
     }
 
     private val conferenceListener = object : ConferenceListenerStub() {
@@ -542,7 +558,6 @@ class CansCenter() : Cans {
         context: Context,
         appName: String
     ) {
-
         this.context = context
         this.appName = appName
 
@@ -561,16 +576,36 @@ class CansCenter() : Cans {
         corePreferences.config = config
 
         Factory.instance().setLoggerDomain(appName)
-        Factory.instance().enableLogcatLogs(corePreferences.logcatLogsOutput)
-        if (corePreferences.debugLogs) {
+        Factory.instance().enableLogcatLogs(true)
+
+        if (corePreferences.debugLogs || true) {
             Factory.instance().loggingService.setLogLevel(LogLevel.Message)
         }
 
         core = Factory.instance().createCoreWithConfig(config, context)
 
+        val currentAcc = core.defaultAccount ?: core.accountList.firstOrNull()
+        val chatUsername = currentAcc?.params?.identityAddress?.username ?: "default"
+        val dbPath = context.filesDir.absolutePath + "/${chatUsername}-chats.db"
+        
+        core.config.apply {
+            setString("storage", "backend", "sqlite")
+            setString("storage", "uri", dbPath)
+            setString("misc", "chat_database_path", dbPath)
+
+            setBool("misc", "load_chat_rooms_from_db", true)
+            setBool("misc", "chat_rooms_enabled", true)
+            setBool("misc", "store_chat_logs", true)
+            setBool("misc", "cpim_messages_enabled", true)
+
+            setInt("lime", "enabled", 0)
+        }
+
         core.removeListener(coreListenerStub)
         core.addListener(coreListenerStub)
+
         core.start()
+
         createNotificationChannels(context, notificationManager)
 
         core.ring = null
@@ -1780,7 +1815,6 @@ class CansCenter() : Cans {
         registerAccountListeners.remove(listener)
     }
 
-
     override fun removeAllListener() {
         listeners.clear()
         registerListeners.clear()
@@ -1870,8 +1904,10 @@ class CansCenter() : Cans {
                 val accessToken = withContext(Dispatchers.IO) {
                     loginManager.getLoginAccessToken(usernameWithDomain, pwdMD5)
                 }
+
                 val claims: AccessTokenClaims? =
                     JwtMapper.decodePayload(accessToken, AccessTokenClaims::class.java)
+
 
                 if (claims?.domainUuid?.isNullOrEmpty() == true) {
                     corePreferences.setDomainUUID(usernameWithDomain, "")
@@ -2142,5 +2178,150 @@ class CansCenter() : Cans {
                 return@launch
             }
         }
+    }
+
+    override fun configureChatSettings(username: String?) {
+        val currentUser = if (username.isNullOrEmpty()) "default" else username
+        val context = coreContext.context
+
+        val dbName = "${currentUser}-chats.db"
+        val dbFile = File(context.filesDir, dbName)
+        val dbPath = dbFile.absolutePath
+        val config = core.config
+
+        if (core.globalState == org.linphone.core.GlobalState.On &&
+            core.config.getString("storage", "uri", "") == dbPath) {
+            return
+        }
+
+        val previousProxyList = core.proxyConfigList.toList()
+        val previousAuthList = core.authInfoList.toList()
+
+        core.removeListener(coreListenerStub)
+        if (core.globalState != org.linphone.core.GlobalState.Off) {
+            try {
+                core.stop()
+                repeat(5) { core.iterate() }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error stopping core: ${e.message}")
+            }
+        }
+
+        config.setString("storage", "backend", "sqlite")
+        config.setString("storage", "uri", dbPath)
+        config.setString("misc", "chat_database_path", dbPath)
+        config.setString("call_logs", "database_path", dbPath)
+        config.setBool("misc", "load_chat_rooms_from_db", true)
+        config.setBool("misc", "store_chat_logs", true)
+        config.setBool("misc", "chat_rooms_enabled", true)
+        config.setBool("misc", "hide_chat_rooms_from_removed_proxies", false)
+        config.setBool("misc", "hide_empty_chat_rooms", false)
+        config.setBool("misc", "group_chat_supported", false)
+        config.setString("misc", "file_transfer_protocol", "https")
+        core.fileTransferServer = "https://files.linphone.org/http-file-transfer-server/hft.php"
+        core.maxSizeForAutoDownloadIncomingFiles = -1
+        core.imdnToEverybodyThreshold = 1
+
+        try {
+            core.start()
+            repeat(10) { core.iterate() }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to restart core: ${e.message}")
+        }
+
+        if (core.accountList.isEmpty() && previousProxyList.isNotEmpty()) {
+            previousAuthList.forEach {
+                try { core.addAuthInfo(it) } catch (e: Exception) {}
+            }
+            previousProxyList.forEach {
+                try { core.addProxyConfig(it) } catch (e: Exception) {}
+            }
+        }
+
+        val targetAccount = core.accountList.find {
+            it.params.identityAddress?.username?.equals(currentUser, ignoreCase = true) == true
+        }
+
+        if (targetAccount != null) {
+            core.defaultAccount = targetAccount
+        }
+
+        core.addListener(coreListenerStub)
+        core.isNetworkReachable = true
+        core.refreshRegisters()
+
+        core.config.sync()
+
+        repeat(5) { core.iterate() }
+    }
+
+    override fun getOrCreateChatRoom(peerUri: String): ChatRoom? {
+        val defaultAccount = core.defaultAccount
+        val localAddress = defaultAccount?.params?.identityAddress ?: return null
+
+        var remoteAddress = core.interpretUrl(peerUri)
+        if (remoteAddress == null) {
+            try {
+                val domain = localAddress.domain
+                val finalUri = if (!peerUri.contains("@")) "sip:$peerUri@$domain" else peerUri
+                remoteAddress = Factory.instance().createAddress(finalUri)
+            } catch (e: Exception) {
+                Log.e(TAG, "Address creation failed: ${e.message}")
+            }
+        }
+
+        if (remoteAddress == null) return null
+
+        remoteAddress.clean()
+        if (remoteAddress.username == localAddress.username) {
+            Log.e(TAG, "Error: Self-chat detected. Aborting.")
+            return null
+        }
+
+        var room = core.getChatRoom(remoteAddress, localAddress)
+
+        if (room == null) {
+            val params = core.createDefaultChatRoomParams()
+            if (params != null) {
+                params.backend = ChatRoom.Backend.Basic
+                params.isGroupEnabled = false
+                room = core.createChatRoom(params, localAddress, arrayOf(remoteAddress))
+            }
+        }
+
+        room?.markAsRead()
+
+        return room
+    }
+
+    override fun sendTextMessage(peerUri: String, text: String) {
+        val room = getOrCreateChatRoom(peerUri)
+
+        if (room == null) {
+            return
+        }
+
+        val message = room.createMessage(text)
+        message.send()
+    }
+
+    override fun sendImageMessage(peerUri: String, filePath: String) {
+        val room = getOrCreateChatRoom(peerUri) ?: return
+
+        val actualFile = File(filePath)
+        if (!actualFile.exists()) {
+            return
+        }
+
+        val message = room.createEmptyMessage()
+        val content = Factory.instance().createContent()
+        content.type = "image"
+        content.subtype = filePath.substringAfterLast(".", "jpeg")
+        content.name = actualFile.name
+        content.filePath = filePath
+
+        message.addFileContent(content)
+        message.addCustomHeader("X-Local-Filename", actualFile.name)
+        message.send()
     }
 }

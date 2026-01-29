@@ -16,6 +16,7 @@ import cc.cans.canscloud.sdk.models.CansTransport
 import cc.cans.canscloud.sdk.models.RegisterState
 import cc.cans.canscloud.sdk.okta.models.SignInOKTAResponseData
 import org.linphone.core.Call
+import org.linphone.core.ChatRoom
 import org.linphone.core.Conference
 import org.linphone.core.Core
 
@@ -220,4 +221,12 @@ interface Cans {
     )
 
     fun registerAccountV3Bcrypt(username: String, password: String, domain: String, apiURL: String)
+
+    fun configureChatSettings(username: String?)
+
+    fun getOrCreateChatRoom(peerUri: String): ChatRoom?
+
+    fun sendTextMessage(peerUri: String, text: String)
+
+    fun sendImageMessage(peerUri: String, filePath: String)
 }
