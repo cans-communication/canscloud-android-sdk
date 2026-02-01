@@ -324,6 +324,10 @@ class CansCenter() : Cans {
             message: String
         ) {
             Log.i("[$TAG: onAccount]", "Registration state is $state: $message")
+            if (state == RegistrationState.Ok || state == RegistrationState.Cleared) {
+                updateCurrentLoginTypeFromAccount()
+            }
+
             if (account == core.defaultAccount) {
                 registerListeners.forEach {
                     it.onUpdateAccountRegistration(
@@ -1879,6 +1883,7 @@ class CansCenter() : Cans {
             return
         }
 
+        proxyConfig.contactUriParameters = "app-login-type=sip"
         corePreferences.keepServiceAlive = true
         coreContext.notificationsManager.startForeground()
     }
@@ -1982,6 +1987,7 @@ class CansCenter() : Cans {
                     // store for use in api
                     corePreferences.setDomainUUID(currentSipAddress, claims?.domainUuid ?: "")
 
+                    proxyConfig.contactUriParameters = "app-login-type=cans"
                     corePreferences.keepServiceAlive = true
                     coreContext.notificationsManager.startForeground()
 
@@ -2165,6 +2171,7 @@ class CansCenter() : Cans {
                         core.addProxyConfig(proxyConfig)
                     }
 
+                    proxyConfig.contactUriParameters = "app-login-type=cans"
                     corePreferences.keepServiceAlive = true
                     coreContext.notificationsManager.startForeground()
 
@@ -2323,5 +2330,30 @@ class CansCenter() : Cans {
         message.addFileContent(content)
         message.addCustomHeader("X-Local-Filename", actualFile.name)
         message.send()
+    }
+
+    override fun updateCurrentLoginTypeFromAccount() {
+        val defaultAccount = core.defaultAccount
+        if (defaultAccount != null) {
+            val contactParams = defaultAccount.params.contactUriParameters
+            val typeParam = contactParams?.split(";")
+                ?.find { it.trim().startsWith("app-login-type=") }
+                ?.substringAfter("=")
+            val type = when (typeParam) {
+                "sip" -> LogInType.SIP.value
+                "okta" -> LogInType.OKTA.value
+                "cans" -> LogInType.ACCOUNT.value
+                else -> ""
+            }
+
+            val loginInfo = cansCenter().corePreferences.loginInfo
+            val newLoginInfo = loginInfo.copy(logInType = type)
+
+            cansCenter().corePreferences.loginInfo = newLoginInfo
+        } else {
+            val loginInfo = cansCenter().corePreferences.loginInfo
+            val newLoginInfo = loginInfo.copy(logInType = "")
+            cansCenter().corePreferences.loginInfo = newLoginInfo
+        }
     }
 }
