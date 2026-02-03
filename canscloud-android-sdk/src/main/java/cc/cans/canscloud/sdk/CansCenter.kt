@@ -591,7 +591,7 @@ class CansCenter() : Cans {
         val currentAcc = core.defaultAccount ?: core.accountList.firstOrNull()
         val chatUsername = currentAcc?.params?.identityAddress?.username ?: "default"
         val dbPath = context.filesDir.absolutePath + "/${chatUsername}-chats.db"
-        
+
         core.config.apply {
             setString("storage", "backend", "sqlite")
             setString("storage", "uri", dbPath)
@@ -2208,7 +2208,6 @@ class CansCenter() : Cans {
         if (core.globalState != org.linphone.core.GlobalState.Off) {
             try {
                 core.stop()
-                repeat(5) { core.iterate() }
             } catch (e: Exception) {
                 Log.e(TAG, "Error stopping core: ${e.message}")
             }
@@ -2302,13 +2301,27 @@ class CansCenter() : Cans {
     }
 
     override fun sendTextMessage(peerUri: String, text: String) {
-        val room = getOrCreateChatRoom(peerUri)
-
-        if (room == null) {
-            return
-        }
-
+        val room = getOrCreateChatRoom(peerUri) ?: return
         val message = room.createMessage(text)
+
+        message.addListener(object : ChatMessageListenerStub() {
+            override fun onMsgStateChanged(msg: ChatMessage, state: ChatMessage.State) {
+
+                if (state == ChatMessage.State.NotDelivered || state == ChatMessage.State.FileTransferError) {
+                    Log.e("FIX_BUG", "Message delivery failed: ${msg.messageId}")
+                }
+
+                if (state == ChatMessage.State.Delivered ||
+                    state == ChatMessage.State.NotDelivered ||
+                    state == ChatMessage.State.FileTransferError ||
+                    state == ChatMessage.State.DeliveredToUser ||
+                    state == ChatMessage.State.Displayed) {
+
+                    msg.removeListener(this)
+                }
+            }
+        })
+
         message.send()
     }
 
