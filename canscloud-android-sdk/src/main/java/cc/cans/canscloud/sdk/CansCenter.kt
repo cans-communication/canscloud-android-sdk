@@ -2369,4 +2369,61 @@ class CansCenter() : Cans {
             cansCenter().corePreferences.loginInfo = newLoginInfo
         }
     }
+
+    override fun checkSessionCansLogin(callback: (Boolean) -> Unit) {
+        val loginType = corePreferences.loginInfo?.logInType
+
+        // 1. ตรวจสอบประเภทการ Login ถ้าไม่ใช่ Cans Account (เช่นเป็น SIP หรือ OKTA) ไม่ต้องเช็ค
+        if (loginType != LogInType.ACCOUNT.value) {
+            callback(false) // ถือว่าไม่ Expired
+            return
+        }
+
+        // 2. ดึงข้อมูล Token และ URL จาก Preferences
+        val defaultAccount = core.defaultAccount
+        val username = defaultAccount?.params?.identityAddress?.username
+        val domain = defaultAccount?.params?.identityAddress?.domain
+
+        if (username.isNullOrEmpty() || domain.isNullOrEmpty()) {
+            // ถ้าไม่มี Account ถือว่า Expire หรือไม่ Valid
+            callback(true)
+            return
+        }
+
+        val currentSipAddress = "$username@$domain"
+        val accessToken = corePreferences.getAccessToken(currentSipAddress)
+        val domainUuid = corePreferences.getDomainUUID(currentSipAddress)
+        val apiURL = corePreferences.apiLoginURL
+
+        if (accessToken.isNullOrEmpty() || domainUuid.isNullOrEmpty() || apiURL.isNullOrEmpty()) {
+            Log.w(TAG, "checkSessionCansLogin: Missing credentials")
+            callback(true)
+            return
+        }
+
+        // 3. ยิง API ตรวจสอบกับ Server
+        sdkScope.launch {
+            try {
+                val loginManager = LoginBcryptManager(apiURL)
+
+                // ใช้ getLoginAccount เพื่อทดสอบ Token (isNewLoginVersion = true ตาม V3)
+                val response = withContext(Dispatchers.IO) {
+                    loginManager.getLoginAccount(accessToken, domainUuid, true)
+                }
+
+                // ถ้า Server ตอบกลับ 401 หรือ 403 แสดงว่า Token หมดอายุ
+                if (response.code() == 401 || response.code() == 403) {
+                    Log.e(TAG, "checkSessionCansLogin: Token Expired (${response.code()})")
+                    callback(true) // Expired
+                } else {
+                    // 200 OK หรือ Error อื่นๆ ถือว่า Session ยังไม่ขาด
+                    callback(false)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "checkSessionCansLogin Error: ${e.message}")
+                // กรณี Network Error หรือ Server Down ให้ถือว่ายังไม่ Expire (Fail Open) เพื่อกัน User เด้งออก
+                callback(false)
+            }
+        }
+    }
 }

@@ -1,6 +1,5 @@
 package cc.cans.canscloud.sdk.bcrypt
 
-import android.util.Log
 import cc.cans.canscloud.sdk.bcrypt.models.LoginCpanelRequest
 import cc.cans.canscloud.sdk.bcrypt.models.LoginSipCredentialsResponse
 import cc.cans.canscloud.sdk.bcrypt.models.LoginV3Request
