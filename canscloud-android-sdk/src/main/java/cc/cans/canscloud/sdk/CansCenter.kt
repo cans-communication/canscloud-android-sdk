@@ -324,6 +324,10 @@ class CansCenter() : Cans {
             message: String
         ) {
             Log.i("[$TAG: onAccount]", "Registration state is $state: $message")
+            if (state == RegistrationState.Ok || state == RegistrationState.Cleared) {
+                updateCurrentLoginTypeFromAccount()
+            }
+
             if (account == core.defaultAccount) {
                 registerListeners.forEach {
                     it.onUpdateAccountRegistration(
@@ -587,7 +591,7 @@ class CansCenter() : Cans {
         val currentAcc = core.defaultAccount ?: core.accountList.firstOrNull()
         val chatUsername = currentAcc?.params?.identityAddress?.username ?: "default"
         val dbPath = context.filesDir.absolutePath + "/${chatUsername}-chats.db"
-        
+
         core.config.apply {
             setString("storage", "backend", "sqlite")
             setString("storage", "uri", dbPath)
@@ -1879,6 +1883,7 @@ class CansCenter() : Cans {
             return
         }
 
+        proxyConfig.contactUriParameters = "app-login-type=sip"
         corePreferences.keepServiceAlive = true
         coreContext.notificationsManager.startForeground()
     }
@@ -1982,6 +1987,7 @@ class CansCenter() : Cans {
                     // store for use in api
                     corePreferences.setDomainUUID(currentSipAddress, claims?.domainUuid ?: "")
 
+                    proxyConfig.contactUriParameters = "app-login-type=cans"
                     corePreferences.keepServiceAlive = true
                     coreContext.notificationsManager.startForeground()
 
@@ -2165,6 +2171,7 @@ class CansCenter() : Cans {
                         core.addProxyConfig(proxyConfig)
                     }
 
+                    proxyConfig.contactUriParameters = "app-login-type=cans"
                     corePreferences.keepServiceAlive = true
                     coreContext.notificationsManager.startForeground()
 
@@ -2201,7 +2208,6 @@ class CansCenter() : Cans {
         if (core.globalState != org.linphone.core.GlobalState.Off) {
             try {
                 core.stop()
-                repeat(5) { core.iterate() }
             } catch (e: Exception) {
                 Log.e(TAG, "Error stopping core: ${e.message}")
             }
@@ -2295,13 +2301,22 @@ class CansCenter() : Cans {
     }
 
     override fun sendTextMessage(peerUri: String, text: String) {
-        val room = getOrCreateChatRoom(peerUri)
-
-        if (room == null) {
-            return
-        }
-
+        val room = getOrCreateChatRoom(peerUri) ?: return
         val message = room.createMessage(text)
+
+        message.addListener(object : ChatMessageListenerStub() {
+            override fun onMsgStateChanged(msg: ChatMessage, state: ChatMessage.State) {
+                if (state == ChatMessage.State.Delivered ||
+                    state == ChatMessage.State.NotDelivered ||
+                    state == ChatMessage.State.FileTransferError ||
+                    state == ChatMessage.State.DeliveredToUser ||
+                    state == ChatMessage.State.Displayed) {
+
+                    msg.removeListener(this)
+                }
+            }
+        })
+
         message.send()
     }
 
@@ -2323,5 +2338,76 @@ class CansCenter() : Cans {
         message.addFileContent(content)
         message.addCustomHeader("X-Local-Filename", actualFile.name)
         message.send()
+    }
+
+    override fun updateCurrentLoginTypeFromAccount() {
+        val defaultAccount = core.defaultAccount
+        if (defaultAccount != null) {
+            val contactParams = defaultAccount.params.contactUriParameters
+            val typeParam = contactParams?.split(";")
+                ?.find { it.trim().startsWith("app-login-type=") }
+                ?.substringAfter("=")
+            val type = when (typeParam) {
+                "sip" -> LogInType.SIP.value
+                "okta" -> LogInType.OKTA.value
+                "cans" -> LogInType.ACCOUNT.value
+                else -> ""
+            }
+
+            val loginInfo = cansCenter().corePreferences.loginInfo
+            val newLoginInfo = loginInfo.copy(logInType = type)
+
+            cansCenter().corePreferences.loginInfo = newLoginInfo
+        } else {
+            val loginInfo = cansCenter().corePreferences.loginInfo
+            val newLoginInfo = loginInfo.copy(logInType = "")
+            cansCenter().corePreferences.loginInfo = newLoginInfo
+        }
+    }
+
+    override fun checkSessionCansLogin(callback: (Boolean) -> Unit) {
+        val loginType = corePreferences.loginInfo?.logInType
+
+        if (loginType != LogInType.ACCOUNT.value) {
+            callback(false)
+            return
+        }
+
+        val defaultAccount = core.defaultAccount
+        val username = defaultAccount?.params?.identityAddress?.username
+        val domain = defaultAccount?.params?.identityAddress?.domain
+
+        if (username.isNullOrEmpty() || domain.isNullOrEmpty()) {
+            callback(true)
+            return
+        }
+
+        val currentSipAddress = "$username@$domain"
+        val accessToken = corePreferences.getAccessToken(currentSipAddress)
+        val domainUuid = corePreferences.getDomainUUID(currentSipAddress)
+        val apiURL = corePreferences.apiLoginURL
+
+        if (accessToken.isNullOrEmpty() || domainUuid.isNullOrEmpty() || apiURL.isNullOrEmpty()) {
+            callback(true)
+            return
+        }
+
+        sdkScope.launch {
+            try {
+                val loginManager = LoginBcryptManager(apiURL)
+
+                val response = withContext(Dispatchers.IO) {
+                    loginManager.getLoginAccount(accessToken, domainUuid, true)
+                }
+
+                if (response.code() == 401 || response.code() == 403) {
+                    callback(true)
+                } else {
+                    callback(false)
+                }
+            } catch (e: Exception) {
+                callback(false)
+            }
+        }
     }
 }

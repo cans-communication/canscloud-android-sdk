@@ -229,4 +229,8 @@ interface Cans {
     fun sendTextMessage(peerUri: String, text: String)
 
     fun sendImageMessage(peerUri: String, filePath: String)
+
+    fun updateCurrentLoginTypeFromAccount()
+
+    fun checkSessionCansLogin(callback: (Boolean) -> Unit)
 }
