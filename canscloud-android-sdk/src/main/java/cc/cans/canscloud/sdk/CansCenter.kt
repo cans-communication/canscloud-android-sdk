@@ -1894,6 +1894,8 @@ class CansCenter() : Cans {
         domain: String,
         apiURL: String
     ) {
+        corePreferences.apiLoginURL = apiURL
+
         if (username.isEmpty() || password.isEmpty() || domain.isEmpty()) {
             registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
@@ -2374,20 +2376,30 @@ class CansCenter() : Cans {
         }
 
         val defaultAccount = core.defaultAccount
-        val username = defaultAccount?.params?.identityAddress?.username
-        val domain = defaultAccount?.params?.identityAddress?.domain
+        val identity = defaultAccount?.params?.identityAddress
+        val username = identity?.username
+        val domain = identity?.domain
 
         if (username.isNullOrEmpty() || domain.isNullOrEmpty()) {
             callback(true)
             return
         }
 
-        val currentSipAddress = "$username@$domain"
-        val accessToken = corePreferences.getAccessToken(currentSipAddress)
-        val domainUuid = corePreferences.getDomainUUID(currentSipAddress)
-        val apiURL = corePreferences.apiLoginURL
+        var accessToken = corePreferences.getAccessToken("$username@$domain")
+        var domainUuid = corePreferences.getDomainUUID("$username@$domain")
 
-        if (accessToken.isNullOrEmpty() || domainUuid.isNullOrEmpty() || apiURL.isNullOrEmpty()) {
+        if (accessToken.isNullOrEmpty()) {
+            val server = defaultAccount?.params?.serverAddress
+            if (server != null) {
+                val keyAddress = "$username@${server.domain}"
+                accessToken = corePreferences.getAccessToken(keyAddress)
+                domainUuid = corePreferences.getDomainUUID(keyAddress)
+            }
+        }
+
+        val apiURL = corePreferences.apiLoginURL ?: ""
+
+        if (accessToken.isNullOrEmpty() || domainUuid.isNullOrEmpty()) {
             callback(true)
             return
         }
