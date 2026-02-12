@@ -114,6 +114,7 @@ class CansCenter() : Cans {
     private val sdkScope = CoroutineScope(
         SupervisorJob() + Dispatchers.Main.immediate
     )
+    private val sdkBackgroundScope = CoroutineScope(Dispatchers.IO)
     private var EVENT_SIP_NOT_LINKED = "SIP_NOT_LINKED"
     private var EVENT_PASSWORD_RESET = "PASSWORD_RESET_REQUIRED"
 
@@ -2404,7 +2405,7 @@ class CansCenter() : Cans {
             return
         }
 
-        sdkScope.launch {
+        sdkBackgroundScope.launch {
             try {
                 val loginManager = LoginBcryptManager(apiURL)
 
@@ -2412,10 +2413,12 @@ class CansCenter() : Cans {
                     loginManager.getLoginAccount(accessToken, domainUuid, true)
                 }
 
-                if (response.code() == 401 || response.code() == 403) {
-                    callback(true)
-                } else {
-                    callback(false)
+                withContext(Dispatchers.Main) {
+                    if (response.code() == 401 || response.code() == 403) {
+                        callback(true)
+                    } else {
+                        callback(false)
+                    }
                 }
             } catch (e: Exception) {
                 callback(false)
