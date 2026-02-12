@@ -233,4 +233,6 @@ interface Cans {
     fun updateCurrentLoginTypeFromAccount()
 
     fun checkSessionCansLogin(callback: (Boolean) -> Unit)
+
+    fun deleteMessage(peerUri: String, msgId: String)
 }

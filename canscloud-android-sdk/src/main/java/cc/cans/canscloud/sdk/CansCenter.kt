@@ -2422,4 +2422,19 @@ class CansCenter() : Cans {
             }
         }
     }
+
+    override fun deleteMessage(peerUri: String, msgId: String) {
+        val room = getOrCreateChatRoom(peerUri)
+        if (room != null) {
+            val history = room.getHistory(0)
+            val messageToDelete = history.find {
+                it.messageId == msgId || it.getCustomHeader("X-Request-ID") == msgId
+            }
+
+            if (messageToDelete != null) {
+                room.deleteMessage(messageToDelete)
+                Log.d(TAG, "Deleted message from Linphone DB: $msgId")
+            }
+        }
+    }
 }
