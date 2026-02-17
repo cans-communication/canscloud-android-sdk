@@ -376,7 +376,10 @@ class CansCenter() : Cans {
 
             when (state) {
                 Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> {
-                    vibrator()
+                    val loginType = corePreferences.loginInfo.logInType
+                    if (!loginType.isNullOrEmpty()) {
+                        vibrator()
+                    }
                 }
 
                 Call.State.StreamsRunning -> {
