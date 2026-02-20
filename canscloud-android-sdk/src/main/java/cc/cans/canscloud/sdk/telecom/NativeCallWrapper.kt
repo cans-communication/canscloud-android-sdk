@@ -174,9 +174,20 @@ class NativeCallWrapper(var callId: String) : Connection() {
 
                 setAudioAttributes(attributes)
                 isLooping = true
-                setOnPreparedListener {
-                    Log.d("[Connection]", "Ringtone player prepared, starting playback")
-                    it.start()
+                setOnPreparedListener { mp ->
+                    if (isBluetoothConnected) {
+                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                            try {
+                                if (ringtonePlayer != null && !mp.isPlaying) {
+                                    mp.start()
+                                }
+                            } catch (e: Exception) {
+                                Log.e("[Connection]", "Error starting delayed ringtone: ${e.message}")
+                            }
+                        }, 2000)
+                    } else {
+                        mp.start()
+                    }
                 }
                 prepareAsync()
             }
