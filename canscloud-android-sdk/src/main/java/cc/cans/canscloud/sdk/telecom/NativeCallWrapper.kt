@@ -19,8 +19,14 @@
  */
 package cc.cans.canscloud.sdk.telecom
 
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
+import android.content.Context
 import android.graphics.drawable.Icon
+import android.media.AudioAttributes
+import android.media.AudioManager
+import android.media.MediaPlayer
+import android.media.RingtoneManager
 import android.os.Bundle
 import android.telecom.CallAudioState
 import android.telecom.Connection
@@ -34,6 +40,7 @@ import org.linphone.core.tools.Log
 
 @TargetApi(29)
 class NativeCallWrapper(var callId: String) : Connection() {
+    private var ringtonePlayer: MediaPlayer? = null
     init {
         val capabilities = connectionCapabilities or CAPABILITY_MUTE or CAPABILITY_SUPPORT_HOLD or CAPABILITY_HOLD
         connectionCapabilities = capabilities
@@ -48,10 +55,20 @@ class NativeCallWrapper(var callId: String) : Connection() {
     override fun onStateChanged(state: Int) {
         Log.i("[Connection] Telecom state changed [$state] for call with id: $callId")
         super.onStateChanged(state)
+
+        // Start ringing when state changes to RINGING
+        if (state == STATE_RINGING) {
+            playRingtone()
+        }
+        // Stop ringing if we move past the ringing phase
+        else if (state != STATE_INITIALIZING) {
+            stopRingtone()
+        }
     }
 
     override fun onAnswer(videoState: Int) {
         Log.i("[Connection] Answering telecom call with id: $callId")
+        stopRingtone()
         getCall()?.accept() ?: selfDestroy()
     }
 
@@ -91,22 +108,104 @@ class NativeCallWrapper(var callId: String) : Connection() {
 
     override fun onDisconnect() {
         Log.i("[Connection] Terminating telecom call with id: $callId")
+        stopRingtone()
         getCall()?.terminate() ?: selfDestroy()
     }
 
     override fun onAbort() {
         Log.i("[Connection] Aborting telecom call with id: $callId")
+        stopRingtone()
         getCall()?.terminate() ?: selfDestroy()
     }
 
     override fun onReject() {
         Log.i("[Connection] Rejecting telecom call with id: $callId")
+        stopRingtone()
         getCall()?.terminate() ?: selfDestroy()
     }
 
     override fun onSilence() {
         Log.i("[Connection] Call with id: $callId asked to be silenced")
+        stopRingtone()
         cansCenter().core.stopRinging()
+    }
+
+    @SuppressLint("ServiceCast")
+    private fun playRingtone() {
+        if (ringtonePlayer != null) return
+        cansCenter().core.stopRinging()
+
+        try {
+            val context = cansCenter().context
+            val ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+            val isBluetoothConnected = audioManager.isBluetoothA2dpOn ||
+                    audioManager.isBluetoothScoOn ||
+                    (this.callAudioState?.supportedRouteMask?.and(android.telecom.CallAudioState.ROUTE_BLUETOOTH) != 0) ||
+                    AudioRouteUtils.isBluetoothAudioRouteAvailable()
+
+            Log.i("[Connection]", "isBluetoothConnected : $isBluetoothConnected")
+
+            if (isBluetoothConnected) {
+                try {
+                    audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
+                    audioManager.startBluetoothSco()
+                    audioManager.isBluetoothScoOn = true
+                } catch (e: Exception) {
+                    Log.e("[Connection]", "Failed to force SCO for ringtone: ${e.message}")
+                }
+            }
+
+            ringtonePlayer = MediaPlayer().apply {
+                setDataSource(context, ringtoneUri)
+
+                val attributes = AudioAttributes.Builder().apply {
+                    if (isBluetoothConnected) {
+                        Log.i("[Connection]", "Bluetooth active: Routing ringtone to SCO Voice Channel")
+                        setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                        setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                    } else {
+                        Log.i("[Connection]", "No Bluetooth: Routing ringtone to Loud Speaker")
+                        setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                        setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    }
+                }.build()
+
+                setAudioAttributes(attributes)
+                isLooping = true
+                setOnPreparedListener { mp ->
+                    if (isBluetoothConnected) {
+                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                            try {
+                                if (ringtonePlayer != null && !mp.isPlaying) {
+                                    mp.start()
+                                }
+                            } catch (e: Exception) {
+                                Log.e("[Connection]", "Error starting delayed ringtone: ${e.message}")
+                            }
+                        }, 2000)
+                    } else {
+                        mp.start()
+                    }
+                }
+                prepareAsync()
+            }
+        } catch (e: Exception) {
+            Log.e("[Connection]", "Error playing ringtone: ${e.message}")
+        }
+    }
+
+    private fun stopRingtone() {
+        try {
+            if (ringtonePlayer?.isPlaying == true) {
+                ringtonePlayer?.stop()
+            }
+            ringtonePlayer?.release()
+            ringtonePlayer = null
+        } catch (e: Exception) {
+            Log.e("[Connection] Error stopping ringtone: ${e.message}")
+        }
     }
 
     private fun getCall(): Call? {
