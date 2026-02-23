@@ -372,36 +372,51 @@ class CansCenter() : Cans {
             callCans = call
             destinationCall = call.remoteAddress.username ?: ""
 
-            Log.w("CansSDK: onCallStateChanged: ", "$state : $message")
+            Log.w(TAG, "onCallStateChanged $state : $message")
 
             when (state) {
                 Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> {
-                    vibrator()
+                    Log.w(TAG, "Call.State.IncomingEarlyMedia, Call.State.IncomingReceived")
+                    val loginType = corePreferences.loginInfo.logInType
+                    if (!loginType.isNullOrEmpty()) {
+                        vibrator()
+                    }
                 }
 
                 Call.State.StreamsRunning -> {
                     mVibrator.cancel()
 
-                    when (currentAudioRoute) {
-                        AudioRoute.SPEAKER -> {
-                            AudioRouteUtils.routeAudioToSpeaker(call)
+                    if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
+                        Log.i(TAG, "[Auto-Route] StreamsRunning: Enforcing Bluetooth")
+
+                        AudioRouteUtils.routeAudioToBluetooth(call)
+                        currentAudioRoute = AudioRoute.BLUETOOTH
+
+                        try {
+                            audioManager?.mode = AudioManager.MODE_IN_COMMUNICATION
+                            if (!audioManager!!.isBluetoothScoOn) {
+                                audioManager?.startBluetoothSco()
+                                audioManager?.isBluetoothScoOn = true
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error enforcing SCO: ${e.message}")
                         }
-                        AudioRoute.BLUETOOTH -> {
-                            if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
-                                AudioRouteUtils.routeAudioToBluetooth(call)
-                            } else {
+
+                    } else {
+                        when (currentAudioRoute) {
+                            AudioRoute.SPEAKER -> {
+                                AudioRouteUtils.routeAudioToSpeaker(call)
+                            }
+                            AudioRoute.EARPIECE_OR_HEADSET -> {
                                 if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
                                     AudioRouteUtils.routeAudioToHeadset(call)
                                 } else {
                                     AudioRouteUtils.routeAudioToEarpiece(call)
                                 }
                             }
-                        }
-                        AudioRoute.EARPIECE_OR_HEADSET -> {
-                            if (AudioRouteUtils.isHeadsetAudioRouteAvailable()) {
-                                AudioRouteUtils.routeAudioToHeadset(call)
-                            } else {
+                            AudioRoute.BLUETOOTH -> {
                                 AudioRouteUtils.routeAudioToEarpiece(call)
+                                currentAudioRoute = AudioRoute.EARPIECE_OR_HEADSET
                             }
                         }
                     }
@@ -409,6 +424,11 @@ class CansCenter() : Cans {
 
                 Call.State.Error -> {
                     updateMissedCallLogs()
+                    if (audioManager?.isBluetoothScoOn == true) {
+                        audioManager?.stopBluetoothSco()
+                        audioManager?.isBluetoothScoOn = false
+                        audioManager?.mode = AudioManager.MODE_NORMAL
+                    }
                     mVibrator.cancel()
 
                     setListenerCall(CallState.Error)
@@ -416,6 +436,11 @@ class CansCenter() : Cans {
 
                 Call.State.End -> {
                     updateMissedCallLogs()
+                    if (audioManager?.isBluetoothScoOn == true) {
+                        audioManager?.stopBluetoothSco()
+                        audioManager?.isBluetoothScoOn = false
+                        audioManager?.mode = AudioManager.MODE_NORMAL
+                    }
                     mVibrator.cancel()
                 }
 
@@ -616,6 +641,11 @@ class CansCenter() : Cans {
         core.ring = null
         core.isVibrationOnIncomingCallEnabled = true
         core.isNativeRingingEnabled = true
+        core.config.setBool("audio", "android_disable_audio_focus_requests", true)
+        if (Compatibility.hasTelecomManagerPermissions(context)) {
+            TelecomHelper.singletonHolder().create(context)
+            corePreferences.useTelecomManager = true
+        }
         mVibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
