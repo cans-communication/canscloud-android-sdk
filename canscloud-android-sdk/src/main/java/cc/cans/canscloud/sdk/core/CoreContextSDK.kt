@@ -84,6 +84,11 @@ class CoreContextSDK(
                         cans.callCans.decline(Reason.Busy)
                         return
                     }
+
+                    if (!cans.corePreferences.callWaiting && cans.core.callsNb > 1) {
+                        cans.callCans.decline(Reason.Busy)
+                        return
+                    }
                 }
                 CallState.StartCall -> {}
                 CallState.CallOutgoing -> {
@@ -253,6 +258,12 @@ class CoreContextSDK(
                 account.params = newParams
                 Log.i("[Context]", " CPIM allowed in basic chat rooms for account ${newParams.identityAddress?.asStringUriOnly()}")
             }
+        }
+
+        if (cans.corePreferences.callWaiting) {
+            cans.core.setTone(org.linphone.core.ToneID.Undefined, "")
+        } else {
+            cans.core.setTone(org.linphone.core.ToneID.CallWaiting, "")
         }
 
         Log.i("[Context]", "Core configured")
