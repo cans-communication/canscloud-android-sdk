@@ -33,6 +33,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.linphone.core.Address
+import org.linphone.core.Core
 import org.linphone.core.Factory
 import org.linphone.core.LogLevel
 import org.linphone.core.LoggingService
@@ -266,6 +268,22 @@ class CoreContextSDK(
             cans.core.setTone(org.linphone.core.ToneID.CallWaiting, "")
         }
 
+        // ----- START : add for Video Call
+        cans.core.isVideoCaptureEnabled = true
+        cans.core.isVideoDisplayEnabled = true
+
+        // Force VGA (640x480) for stability as you did in the POC
+        val videoDef = Factory.instance().createVideoDefinition(640, 480)
+        cans.core.preferredVideoDefinition = videoDef
+
+        val policy = Factory.instance().createVideoActivationPolicy()
+        policy.automaticallyInitiate = false
+        policy.automaticallyAccept = false
+        cans.core.videoActivationPolicy = policy
+
+        setupVideoCodecs(cans.core)
+        // ----- END
+
         Log.i("[Context]", "Core configured")
     }
 
@@ -463,4 +481,70 @@ class CoreContextSDK(
             }
         }
     }
+
+    // ----- START : add for Video Call
+    fun startVideoCall(address: Address, forceZRTP: Boolean = false, localAddress: Address? = null) {
+        if (!cans.core.isNetworkReachable) {
+            Log.e("[Context]", "startVideoCall - Network unreachable")
+            return
+        }
+
+        val params = cans.core.createCallParams(null) ?: return
+        params.isVideoEnabled = true
+        params.isAudioEnabled = true
+        params.videoDirection = org.linphone.core.MediaDirection.SendRecv
+        params.audioDirection = org.linphone.core.MediaDirection.SendRecv
+
+        if (forceZRTP) {
+            params.mediaEncryption = org.linphone.core.MediaEncryption.ZRTP
+        }
+
+        params.proxyConfig = if (localAddress != null) {
+            cans.core.proxyConfigList.find { it.identityAddress?.weakEqual(localAddress) == true }
+        } else {
+            cans.core.defaultProxyConfig
+        }
+
+        val call = cans.core.inviteAddressWithParams(address, params)
+        Log.i("[Context]", "Started video call $call to ${address.asStringUriOnly()}")
+    }
+
+    fun switchCamera() {
+        val currentDevice = cans.core.videoDevice
+        for (camera in cans.core.videoDevicesList) {
+            if (camera != currentDevice && camera != "StaticImage: Static picture") {
+                cans.core.videoDevice = camera
+                break
+            }
+        }
+        cans.core.currentCall?.update(null)
+    }
+//    fun switchCamera() {
+//        val devices = cans.core.videoDevicesList.filter { it != "StaticImage: Static picture" }
+//        if (devices.size <= 1) return // มีกล้องตัวเดียว สลับไม่ได้
+//
+//        val currentIndex = devices.indexOf(cans.core.videoDevice)
+//        // ขยับไป index ถัดไป ถ้ายาวเกินก็วนกลับมา 0
+//        val nextIndex = if (currentIndex + 1 < devices.size) currentIndex + 1 else 0
+//
+//        cans.core.videoDevice = devices[nextIndex]
+//
+//        // ลองคอมเมนต์บรรทัดด้านล่างนี้ดู ถ้าระบบภาพสลับได้เลย ก็ไม่จำเป็นต้องใช้ครับ
+//        // cans.core.currentCall?.update(null)
+//    }
+
+    private fun setupVideoCodecs(core: Core) {
+        val videoCodecs = core.videoPayloadTypes
+        for (codec in videoCodecs) {
+            when (codec.mimeType) {
+                "VP8" -> {
+                    try { codec.enable(true) } catch (e: Exception) { }
+                }
+                "H264" -> {
+                    try { codec.enable(true) } catch (e: Exception) { } // Disabled for MediaTek issue
+                }
+            }
+        }
+    }
+    // ----- END
 }
