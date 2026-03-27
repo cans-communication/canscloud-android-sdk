@@ -38,7 +38,6 @@ import cc.cans.canscloud.sdk.data.GroupedCallLogData
 import cc.cans.canscloud.sdk.models.AudioRoute
 import cc.cans.canscloud.sdk.models.CallModel
 import cc.cans.canscloud.sdk.models.CallState
-import cc.cans.canscloud.sdk.models.CansAddress
 import cc.cans.canscloud.sdk.models.CansTransport
 import cc.cans.canscloud.sdk.models.ConferenceState
 import cc.cans.canscloud.sdk.models.HistoryModel
@@ -96,7 +95,7 @@ data class Notifiable(val notificationId: Int) {
     var remoteAddress: String? = null
 }
 
-class CansCenter() : Cans {
+class CansCenter : Cans {
     override lateinit var core: Core
     override lateinit var callCans: Call
     override lateinit var mVibrator: Vibrator
@@ -283,9 +282,6 @@ class CansCenter() : Cans {
     private var accountToDelete: Account? = null
 
     private var currentAudioRoute: AudioRoute = AudioRoute.EARPIECE_OR_HEADSET
-
-    val isConference: Conference?
-        get() = if (::conferenceCore.isInitialized) conferenceCore else null
 
     private val accountListener: AccountListenerStub = object : AccountListenerStub() {
         override fun onRegistrationStateChanged(
@@ -609,7 +605,7 @@ class CansCenter() : Cans {
         Factory.instance().enableLogcatLogs(true)
 
         if (corePreferences.debugLogs || true) {
-            Factory.instance().loggingService.setLogLevel(LogLevel.Message)
+            Factory.instance().loggingService.setLogLevel(LogLevel.Debug)
         }
 
         core = Factory.instance().createCoreWithConfig(config, context)
@@ -776,7 +772,7 @@ class CansCenter() : Cans {
 
     private fun computeUserAgent() {
         val deviceName: String = corePreferences.deviceName
-        val appNameS: String = "${appName}: Android"
+        val appNameS = "${appName}: Android"
         val userAgent = "$appNameS/ ($deviceName) LinphoneSDK"
         val sdkVersion = context.getString(org.linphone.core.R.string.linphone_sdk_version)
         val sdkBranch = context.getString(org.linphone.core.R.string.linphone_sdk_branch)
@@ -898,6 +894,7 @@ class CansCenter() : Cans {
 
         // We can now configure it
         // Here we ask for no encryption but we could ask for ZRTP/SRTP/DTLS
+        params.isVideoEnabled = false
         params.mediaEncryption = MediaEncryption.None
         // If we wanted to start the call with video directly
         //params.enableVideo(true)
@@ -923,7 +920,7 @@ class CansCenter() : Cans {
         if (core.callsNb == 0) return
 
         // If the call state isn't paused, we can get it using core.currentCall
-        val call = if (core.currentCall != null) core.currentCall else core.calls[0]
+        val call = core.currentCall ?: core.calls[0]
         call ?: return
 
         // Terminating a call is quite simple
@@ -985,13 +982,15 @@ class CansCenter() : Cans {
     private fun answerCall(call: Call) {
         Log.i("[CansSDK]", "Answering call $call")
         val params = core.createCallParams(call)
+
+        params?.isVideoEnabled = false
+
         if (CansUtils.checkIfNetworkHasLowBandwidth(context)) {
             Log.w("[CansSDK]", "Enabling low bandwidth mode!")
             params?.isLowBandwidthEnabled = true
         }
         call.acceptWithParams(params)
     }
-
     override fun isPauseState(): Boolean {
         return core.currentCall?.state == Call.State.Paused || core.currentCall?.state == Call.State.Pausing || core.currentCall?.state == Call.State.PausedByRemote
     }
@@ -1024,7 +1023,7 @@ class CansCenter() : Cans {
         if (result != AccountCreator.UsernameStatus.Ok) {
             Log.e(
                 "[Assistant]",
-                " [Account Login] Error [${result.name}] setting the username: ${username}"
+                " [Account Login] Error [${result.name}] setting the username: $username"
             )
             registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
@@ -1069,7 +1068,7 @@ class CansCenter() : Cans {
             .addFormDataPart("password", password)
             .build()
 
-        val url = "https://" + domain + "/Cpanel/provision/mobile/"
+        val url = "https://$domain/Cpanel/provision/mobile/"
 
         val callProvisioningData: retrofit2.Call<ProvisioningData?>? =
             provisioningService.getProvisioningData(url, requestBody)
@@ -1470,23 +1469,6 @@ class CansCenter() : Cans {
         }
     }
 
-    private fun transport(transport: TransportType): CansTransport {
-        return when (transport) {
-            TransportType.Tcp -> CansTransport.TCP
-            TransportType.Udp -> CansTransport.UDP
-            TransportType.Tls -> CansTransport.TLS
-            TransportType.Dtls -> CansTransport.TCP
-        }
-    }
-
-    private fun addressEqual(address1: CansAddress, address2: CansAddress): Boolean {
-        return address1.domain == address2.domain &&
-                address1.password == address2.password &&
-                address1.displayName == address2.displayName &&
-                address1.transport == address2.transport &&
-                address1.username == address2.username
-    }
-
     override fun transferNow(phoneNumber: String): Boolean {
         val currentCall = core.currentCall ?: core.calls.firstOrNull()
         if (currentCall == null) {
@@ -1605,7 +1587,6 @@ class CansCenter() : Cans {
         var usernameOKTA: String
         var passwordOKTA: String
         var domainNameOKTA: String
-        var transportOKTA: TransportType?
 
         var isWaitingWebView = false
 
@@ -1640,10 +1621,10 @@ class CansCenter() : Cans {
                         override fun onTokenRefreshed(
                             isAuthenticated: Boolean
                         ) {
-                            val token =
-                                cansCenter().corePreferences.loginInfo.tokenOkta
-                                    ?: ""
-                            val domainOKTA = data.domainName
+//                            val token =
+//                                cansCenter().corePreferences.loginInfo.tokenOkta
+//                                    ?: ""
+//                            val domainOKTA = data.domainName
 
                             if (isAuthenticated) {
                                 fetchSignInOKTA(
@@ -1656,7 +1637,6 @@ class CansCenter() : Cans {
                                                     usernameOKTA = signInData.sip_username ?: ""
                                                     passwordOKTA = decodedPassword
                                                     domainNameOKTA = signInResponse.data.domain_name
-                                                    transportOKTA = TransportType.Tcp
 
                                                     Log.d("SDK","onTokenRefreshed -> removeAccountAll")
                                                     removeAccountAll()
@@ -1794,7 +1774,7 @@ class CansCenter() : Cans {
 
     override fun checkSessionOKTAExpire(activity: Activity, callback: (Boolean) -> Unit) {
         if (core.callsNb == 0) {
-            if (corePreferences.loginInfo?.logInType == LogInType.OKTA.value) {
+            if (corePreferences.loginInfo.logInType == LogInType.OKTA.value) {
                 if (OktaWebAuth.isWebAuthInitialized()) {
                     // webAuth is ready to use
                     OktaWebAuth.checkSession(activity) { isSessionValid ->
@@ -2399,7 +2379,7 @@ class CansCenter() : Cans {
     }
 
     override fun checkSessionCansLogin(callback: (Boolean) -> Unit) {
-        val loginType = corePreferences.loginInfo?.logInType
+        val loginType = corePreferences.loginInfo.logInType
 
         if (loginType != LogInType.ACCOUNT.value) {
             callback(false)
@@ -2420,7 +2400,7 @@ class CansCenter() : Cans {
         var domainUuid = corePreferences.getDomainUUID("$username@$domain")
 
         if (accessToken.isNullOrEmpty()) {
-            val server = defaultAccount?.params?.serverAddress
+            val server = defaultAccount.params.serverAddress
             if (server != null) {
                 val keyAddress = "$username@${server.domain}"
                 accessToken = corePreferences.getAccessToken(keyAddress)
@@ -2470,4 +2450,56 @@ class CansCenter() : Cans {
             }
         }
     }
+
+    // ----- START : add for Video Call
+    override fun makeVideoCall(number: String) {
+        Log.d(TAG, "makeVideoCall number : $number")
+        val address = core.interpretUrl(number)
+        if (address != null) {
+            coreContext.startVideoCall(address)
+        } else {
+            Log.e(TAG, "Invalid address for video call: $number")
+        }
+    }
+
+    override fun acceptVideoCall() {
+        try {
+            val call = core.currentCall ?: core.calls.firstOrNull()
+            if (call != null) {
+                val params = core.createCallParams(call)
+                params?.isVideoEnabled = true
+                params?.videoDirection = org.linphone.core.MediaDirection.SendRecv
+                call.acceptWithParams(params)
+                Log.d(TAG, "Accepted call with Video")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error accepting video call", e)
+        }
+    }
+
+    override fun switchCamera() {
+        try {
+            coreContext.switchCamera()
+            Log.d(TAG, "Camera switched successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error switching camera: ${e.message}")
+        }
+    }
+
+    override fun upgradeCallToVideo() {
+        val currentCall = core.currentCall ?: core.calls.firstOrNull()
+        if (currentCall != null && currentCall.state == Call.State.StreamsRunning) {
+            val params = core.createCallParams(currentCall)
+            params?.isVideoEnabled = true
+            params?.videoDirection = org.linphone.core.MediaDirection.SendRecv
+            currentCall.update(params)
+        }
+    }
+
+    override fun updateVideoWindows(remoteView: Any?, localPreview: Any?) {
+        core.nativeVideoWindowId = remoteView
+        core.nativePreviewWindowId = localPreview
+        Log.d(TAG, "Video windows updated to SDK Core")
+    }
+    // ----- END
 }
