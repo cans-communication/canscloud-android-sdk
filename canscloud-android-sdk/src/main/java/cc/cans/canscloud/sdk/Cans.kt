@@ -235,4 +235,33 @@ interface Cans {
     fun checkSessionCansLogin(callback: (Boolean) -> Unit)
 
     fun deleteMessage(peerUri: String, msgId: String)
+
+    // ----- START : add for Video Call
+    /**
+     * Start an outgoing video call
+     */
+    fun makeVideoCall(number: String)
+
+    /**
+     * Accept an incoming call with video enabled
+     */
+    fun acceptVideoCall()
+
+    /**
+     * Switch between front and back camera
+     */
+    fun switchCamera()
+
+    /**
+     * Upgrade an ongoing audio call to a video call
+     */
+    fun upgradeCallToVideo()
+
+    /**
+     * Attach the native Android views (TextureView/SurfaceView) from React Native to Linphone Core
+     * @param remoteView The view rendering the other person's camera
+     * @param localPreview The view rendering the local camera
+     */
+    fun updateVideoWindows(remoteView: Any?, localPreview: Any?)
+    // ----- END
 }
