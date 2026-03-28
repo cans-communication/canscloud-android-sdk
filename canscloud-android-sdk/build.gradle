@@ -154,7 +154,7 @@ dependencies {
     implementation 'androidx.compose.material3:material3'
     testImplementation 'junit:junit:4.13.2'
 
-    implementation  'org.linphone:linphone-sdk-android:5.5.+'
+    implementation  'org.linphone:linphone-sdk-android:5.5.0-beta.39+8def37737b'
     implementation "androidx.security:security-crypto-ktx:1.1.0-alpha06"
     implementation 'com.google.code.gson:gson:2.9.0'
     implementation 'androidx.media:media:1.6.0'
@@ -191,7 +191,7 @@ publishing {
         release(MavenPublication) {
             groupId = 'com.github.cans-communication'
             artifactId = 'canscloud-android-sdk'
-            version = '1.1.92'
+            version = '1.1.93'
 
             afterEvaluate {
                 from components.release
