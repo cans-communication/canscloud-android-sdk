@@ -43,6 +43,7 @@ import cc.cans.canscloud.sdk.models.CansTransport
 import cc.cans.canscloud.sdk.models.ConferenceState
 import cc.cans.canscloud.sdk.models.HistoryModel
 import cc.cans.canscloud.sdk.models.RegisterState
+import cc.cans.canscloud.sdk.models.SessionStatus
 import cc.cans.canscloud.sdk.okta.models.LogInType
 import cc.cans.canscloud.sdk.okta.models.SignIn
 import cc.cans.canscloud.sdk.okta.models.SignInOKTAResponseData
@@ -803,12 +804,7 @@ class CansCenter() : Cans {
         val account = core.accountList[index]
         accountToDelete = account
 
-        val username = account.params.identityAddress?.username ?: ""
-        val domain = account.params.identityAddress?.domain ?: ""
-        val sipAddress = "$username@$domain"
-
-        corePreferences.setAccessToken(sipAddress, null)
-        corePreferences.setDomainUUID(sipAddress, null)
+        clearAccountTokens(account)
 
         val authInfo = account.findAuthInfo()
         if (authInfo != null) {
@@ -840,12 +836,7 @@ class CansCenter() : Cans {
         val accounts = core.accountList.toList()
         accounts.forEach { acc ->
             try {
-                val username = acc.params.identityAddress?.username ?: ""
-                val domain = acc.params.identityAddress?.domain ?: ""
-                val sipAddress = "$username@$domain"
-
-                corePreferences.setAccessToken(sipAddress, null)
-                corePreferences.setDomainUUID(sipAddress, null)
+                clearAccountTokens(acc)
 
                 acc.findAuthInfo()?.let { core.removeAuthInfo(it) }
 
@@ -2398,21 +2389,21 @@ class CansCenter() : Cans {
         }
     }
 
-    override fun checkSessionCansLogin(callback: (Boolean) -> Unit) {
-        val loginType = corePreferences.loginInfo?.logInType
+    override fun checkSessionCansLogin(callback: (SessionStatus) -> Unit) {
+        val loginType = corePreferences.loginInfo.logInType
 
-        if (loginType != LogInType.ACCOUNT.value) {
-            callback(false)
+        if (core.accountList.isEmpty() || loginType != LogInType.ACCOUNT.value) {
+            callback(SessionStatus.NO_SESSION)
             return
         }
 
-        val defaultAccount = core.defaultAccount
-        val identity = defaultAccount?.params?.identityAddress
+        val accountToUse = core.defaultAccount ?: core.accountList.firstOrNull()
+        val identity = accountToUse?.params?.identityAddress
         val username = identity?.username
         val domain = identity?.domain
 
         if (username.isNullOrEmpty() || domain.isNullOrEmpty()) {
-            callback(true)
+            callback(SessionStatus.NO_SESSION)
             return
         }
 
@@ -2420,7 +2411,7 @@ class CansCenter() : Cans {
         var domainUuid = corePreferences.getDomainUUID("$username@$domain")
 
         if (accessToken.isNullOrEmpty()) {
-            val server = defaultAccount?.params?.serverAddress
+            val server = accountToUse.params?.serverAddress
             if (server != null) {
                 val keyAddress = "$username@${server.domain}"
                 accessToken = corePreferences.getAccessToken(keyAddress)
@@ -2431,7 +2422,7 @@ class CansCenter() : Cans {
         val apiURL = corePreferences.apiLoginURL ?: ""
 
         if (accessToken.isNullOrEmpty() || domainUuid.isNullOrEmpty()) {
-            callback(true)
+            callback(SessionStatus.EXPIRED)
             return
         }
 
@@ -2445,13 +2436,13 @@ class CansCenter() : Cans {
 
                 withContext(Dispatchers.Main) {
                     if (response.code() == 401 || response.code() == 403) {
-                        callback(true)
+                        callback(SessionStatus.EXPIRED)
                     } else {
-                        callback(false)
+                        callback(SessionStatus.VALID)
                     }
                 }
             } catch (e: Exception) {
-                callback(false)
+                callback(SessionStatus.VALID)
             }
         }
     }
@@ -2468,6 +2459,22 @@ class CansCenter() : Cans {
                 room.deleteMessage(messageToDelete)
                 Log.d(TAG, "Deleted message from Linphone DB: $msgId")
             }
+        }
+    }
+
+    private fun clearAccountTokens(acc: Account) {
+        val username = acc.params.identityAddress?.username ?: ""
+        val domain = acc.params.identityAddress?.domain ?: ""
+        val serverDomain = acc.params.serverAddress?.domain ?: ""
+
+        val sipAddress = "$username@$domain"
+        corePreferences.setAccessToken(sipAddress, null)
+        corePreferences.setDomainUUID(sipAddress, null)
+
+        if (serverDomain.isNotEmpty() && serverDomain != domain) {
+            val serverSipAddress = "$username@$serverDomain"
+            corePreferences.setAccessToken(serverSipAddress, null)
+            corePreferences.setDomainUUID(serverSipAddress, null)
         }
     }
 }
