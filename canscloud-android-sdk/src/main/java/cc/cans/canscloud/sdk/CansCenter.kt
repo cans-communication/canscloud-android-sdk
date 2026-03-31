@@ -842,10 +842,17 @@ class CansCenter() : Cans {
             try {
                 val username = acc.params.identityAddress?.username ?: ""
                 val domain = acc.params.identityAddress?.domain ?: ""
+                val serverDomain = acc.params.serverAddress?.domain ?: ""
+                
                 val sipAddress = "$username@$domain"
-
                 corePreferences.setAccessToken(sipAddress, null)
                 corePreferences.setDomainUUID(sipAddress, null)
+
+                if (serverDomain.isNotEmpty() && serverDomain != domain) {
+                    val serverSipAddress = "$username@$serverDomain"
+                    corePreferences.setAccessToken(serverSipAddress, null)
+                    corePreferences.setDomainUUID(serverSipAddress, null)
+                }
 
                 acc.findAuthInfo()?.let { core.removeAuthInfo(it) }
 
@@ -2401,7 +2408,7 @@ class CansCenter() : Cans {
     override fun checkSessionCansLogin(callback: (Boolean) -> Unit) {
         val loginType = corePreferences.loginInfo?.logInType
 
-        if (loginType != LogInType.ACCOUNT.value) {
+        if (core.accountList.isEmpty() || loginType != LogInType.ACCOUNT.value) {
             callback(false)
             return
         }
@@ -2412,7 +2419,7 @@ class CansCenter() : Cans {
         val domain = identity?.domain
 
         if (username.isNullOrEmpty() || domain.isNullOrEmpty()) {
-            callback(true)
+            callback(false) 
             return
         }
 
@@ -2431,7 +2438,7 @@ class CansCenter() : Cans {
         val apiURL = corePreferences.apiLoginURL ?: ""
 
         if (accessToken.isNullOrEmpty() || domainUuid.isNullOrEmpty()) {
-            callback(true)
+            callback(false)
             return
         }
 
