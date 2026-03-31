@@ -14,6 +14,7 @@ import cc.cans.canscloud.sdk.models.CallModel
 import cc.cans.canscloud.sdk.models.CallState
 import cc.cans.canscloud.sdk.models.CansTransport
 import cc.cans.canscloud.sdk.models.RegisterState
+import cc.cans.canscloud.sdk.models.SessionStatus
 import cc.cans.canscloud.sdk.okta.models.SignInOKTAResponseData
 import org.linphone.core.Call
 import org.linphone.core.ChatRoom
@@ -232,7 +233,7 @@ interface Cans {
 
     fun updateCurrentLoginTypeFromAccount()
 
-    fun checkSessionCansLogin(callback: (Boolean) -> Unit)
+    fun checkSessionCansLogin(callback: (SessionStatus) -> Unit)
 
     fun deleteMessage(peerUri: String, msgId: String)
 }
