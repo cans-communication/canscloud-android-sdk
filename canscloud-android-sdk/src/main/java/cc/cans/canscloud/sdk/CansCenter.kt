@@ -23,8 +23,7 @@ import cc.cans.canscloud.data.ProvisioningData
 import cc.cans.canscloud.data.ProvisioningInterceptor
 import cc.cans.canscloud.data.ProvisioningResult
 import cc.cans.canscloud.data.ProvisioningService
-import cc.cans.canscloud.sdk.bcrypt.AccessTokenClaims
-import cc.cans.canscloud.sdk.bcrypt.JwtMapper
+
 import cc.cans.canscloud.sdk.bcrypt.LoginBcryptManager
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.callback.CansRegisterAccountListenerStub
@@ -284,9 +283,6 @@ class CansCenter() : Cans {
     private var accountToDelete: Account? = null
 
     private var currentAudioRoute: AudioRoute = AudioRoute.EARPIECE_OR_HEADSET
-
-    val isConference: Conference?
-        get() = if (::conferenceCore.isInitialized) conferenceCore else null
 
     private val accountListener: AccountListenerStub = object : AccountListenerStub() {
         override fun onRegistrationStateChanged(
@@ -1461,23 +1457,6 @@ class CansCenter() : Cans {
         }
     }
 
-    private fun transport(transport: TransportType): CansTransport {
-        return when (transport) {
-            TransportType.Tcp -> CansTransport.TCP
-            TransportType.Udp -> CansTransport.UDP
-            TransportType.Tls -> CansTransport.TLS
-            TransportType.Dtls -> CansTransport.TCP
-        }
-    }
-
-    private fun addressEqual(address1: CansAddress, address2: CansAddress): Boolean {
-        return address1.domain == address2.domain &&
-                address1.password == address2.password &&
-                address1.displayName == address2.displayName &&
-                address1.transport == address2.transport &&
-                address1.username == address2.username
-    }
-
     override fun transferNow(phoneNumber: String): Boolean {
         val currentCall = core.currentCall ?: core.calls.firstOrNull()
         if (currentCall == null) {
@@ -1596,7 +1575,6 @@ class CansCenter() : Cans {
         var usernameOKTA: String
         var passwordOKTA: String
         var domainNameOKTA: String
-        var transportOKTA: TransportType?
 
         var isWaitingWebView = false
 
@@ -1631,11 +1609,6 @@ class CansCenter() : Cans {
                         override fun onTokenRefreshed(
                             isAuthenticated: Boolean
                         ) {
-                            val token =
-                                cansCenter().corePreferences.loginInfo.tokenOkta
-                                    ?: ""
-                            val domainOKTA = data.domainName
-
                             if (isAuthenticated) {
                                 fetchSignInOKTA(
                                     apiURL,
@@ -1647,7 +1620,6 @@ class CansCenter() : Cans {
                                                     usernameOKTA = signInData.sip_username ?: ""
                                                     passwordOKTA = decodedPassword
                                                     domainNameOKTA = signInResponse.data.domain_name
-                                                    transportOKTA = TransportType.Tcp
 
                                                     Log.d("SDK","onTokenRefreshed -> removeAccountAll")
                                                     removeAccountAll()
@@ -1858,12 +1830,12 @@ class CansCenter() : Cans {
             return
         }
 
-        val serverAddress = "$domain:$port"
-        val transportType = if (transport.name.lowercase() == "tcp") {
-            TransportType.Tcp
-        } else {
-            TransportType.Udp
+        val transportType = when (transport) {
+            CansTransport.TCP -> TransportType.Tcp
+            CansTransport.TLS -> TransportType.Tls
+            else -> TransportType.Udp
         }
+        val transportParam = transport.name.lowercase()
 
         val realm = domain.substringBefore(':')
         val ha1Hex = SecureUtils.md5("$username:$realm:$password") // MD5(username:realm:password)
@@ -1888,7 +1860,7 @@ class CansCenter() : Cans {
             return
         }
 
-        val resultDomain = accountCreator.setDomain(serverAddress)
+        val resultDomain = accountCreator.setDomain(realm)
         if (resultDomain != AccountCreator.DomainStatus.Ok) {
             registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
@@ -1905,126 +1877,11 @@ class CansCenter() : Cans {
             return
         }
 
+        proxyConfig.serverAddr = "sip:$realm:$port;transport=$transportParam"
+
         proxyConfig.contactUriParameters = "app-login-type=sip"
         corePreferences.keepServiceAlive = true
         coreContext.notificationsManager.startForeground()
-    }
-
-    override fun registerAccountBcrypt(
-        username: String,
-        password: String,
-        domain: String,
-        apiURL: String
-    ) {
-        corePreferences.apiLoginURL = apiURL
-
-        if (username.isEmpty() || password.isEmpty() || domain.isEmpty()) {
-            registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-            return
-        }
-
-        sdkScope.launch {
-            try {
-                val pwdMD5 = SecureUtils.md5(password)
-                val usernameWithDomain = "$username@$domain"
-
-                val loginManager = LoginBcryptManager(apiURL)
-
-                val accessToken = withContext(Dispatchers.IO) {
-                    loginManager.getLoginAccessToken(usernameWithDomain, pwdMD5)
-                }
-
-                val claims: AccessTokenClaims? =
-                    JwtMapper.decodePayload(accessToken, AccessTokenClaims::class.java)
-
-
-                if (claims?.domainUuid?.isNullOrEmpty() == true) {
-                    corePreferences.setDomainUUID(usernameWithDomain, "")
-                    registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-                    return@launch
-                }
-
-                try {
-                    val resp = loginManager.getLoginAccount(accessToken, claims?.domainUuid ?: "", false)
-                    val body = resp.body()
-                    val credentials = body?.data
-                    if (credentials == null) {
-                        corePreferences.setDomainUUID(usernameWithDomain, "")
-                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-                        return@launch
-                    }
-
-                    val loginPort = 8446
-                    val loginTransport = TransportType.Tcp
-
-                    val domainFromApi = credentials.domainName ?: domain
-                    val realm = domainFromApi.substringBefore(':')
-                    val serverAddress = "${domainFromApi.substringBefore(':')}:$loginPort"
-
-                    val extension = credentials.extension ?: ""
-                    val currentSipAddress = "$extension@$domain"
-                    corePreferences.setAccessToken(currentSipAddress, accessToken)
-
-                    val factory = Factory.instance()
-                    val auth = factory.createAuthInfo(
-                        /* username */ credentials.extension ?: username,
-                        /* userid   */ null,
-                        /* passwd   */ null,
-                        /* ha1      */ credentials.sipCreds,
-                        /* realm    */ realm,
-                        /* domain   */ realm,
-                        /* algo     */ null
-                    )
-                    core.addAuthInfo(auth)
-
-                    accountCreator = getAccountCreator()
-
-                    val resultUsername = accountCreator.setUsername(credentials.extension ?: username)
-                    if (resultUsername != AccountCreator.UsernameStatus.Ok) {
-                        corePreferences.setDomainUUID(usernameWithDomain, "")
-                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-                        return@launch
-                    }
-
-                    val resultDomain = accountCreator.setDomain(serverAddress)
-                    if (resultDomain != AccountCreator.DomainStatus.Ok) {
-                        corePreferences.setDomainUUID(usernameWithDomain, "")
-                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-                        return@launch
-                    }
-
-                    accountCreator.displayName = ""
-                    accountCreator.transport = loginTransport
-
-                    val proxyConfig: ProxyConfig? = accountCreator.createProxyConfig()
-                    proxyConfigToCheck = proxyConfig
-
-                    if (proxyConfig == null) {
-                        registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-                        return@launch
-                    }
-
-                    if (!core.proxyConfigList.contains(proxyConfig)) {
-                        core.addProxyConfig(proxyConfig)
-                    }
-
-                    // store for use in api
-                    corePreferences.setDomainUUID(currentSipAddress, claims?.domainUuid ?: "")
-
-                    proxyConfig.contactUriParameters = "app-login-type=cans"
-                    corePreferences.keepServiceAlive = true
-                    coreContext.notificationsManager.startForeground()
-
-                } catch (e: Exception) {
-                    corePreferences.setDomainUUID(usernameWithDomain, "")
-                    registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-                    return@launch
-                }
-            } catch (e: Exception) {
-                registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
-                return@launch
-            }
-        }
     }
 
     override fun getDurationByAddress(address: String): Int {
@@ -2152,7 +2009,6 @@ class CansCenter() : Cans {
 
                     val domainFromApi = credentials.domainName ?: domain
                     val realm = domainFromApi.substringBefore(':')
-                    val serverAddress = "${domainFromApi.substringBefore(':')}:$loginPort"
 
                     val factory = Factory.instance()
                     val auth = factory.createAuthInfo(
@@ -2174,7 +2030,7 @@ class CansCenter() : Cans {
                         return@launch
                     }
 
-                    val resultDomain = accountCreator.setDomain(serverAddress)
+                    val resultDomain = accountCreator.setDomain(realm)
                     if (resultDomain != AccountCreator.DomainStatus.Ok) {
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
@@ -2190,6 +2046,9 @@ class CansCenter() : Cans {
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
                     }
+
+                    val transportParam = loginTransport.name.lowercase()
+                    proxyConfig.serverAddr = "sip:$realm:$loginPort;transport=$transportParam"
 
                     if (!core.proxyConfigList.contains(proxyConfig)) {
                         core.addProxyConfig(proxyConfig)
@@ -2312,11 +2171,9 @@ class CansCenter() : Cans {
 
         if (room == null) {
             val params = core.createDefaultChatRoomParams()
-            if (params != null) {
-                params.backend = ChatRoom.Backend.Basic
-                params.isGroupEnabled = false
-                room = core.createChatRoom(params, localAddress, arrayOf(remoteAddress))
-            }
+            params.backend = ChatRoom.Backend.FlexisipChat
+            params.isGroupEnabled = false
+            room = core.createChatRoom(params, localAddress, arrayOf(remoteAddress))
         }
 
         room?.markAsRead()
