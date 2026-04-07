@@ -1830,13 +1830,12 @@ class CansCenter() : Cans {
             return
         }
 
-        val transportParam = transport.name.lowercase()
-        val transportType = when (transportParam) {
-            "tcp" -> TransportType.Tcp
-            "tls" -> TransportType.Tls
-            "dtls" -> TransportType.Dtls
-            else -> TransportType.Udp // Default
+        val transportType = when (transport) {
+            CansTransport.TCP -> TransportType.Tcp
+            CansTransport.TLS -> TransportType.Tls
+            else -> TransportType.Udp
         }
+        val transportParam = transport.name.lowercase()
 
         val realm = domain.substringBefore(':')
         val ha1Hex = SecureUtils.md5("$username:$realm:$password") // MD5(username:realm:password)
