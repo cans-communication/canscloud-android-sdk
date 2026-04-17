@@ -2338,13 +2338,24 @@ class CansCenter : Cans {
     }
 
     // ----- START : add for Video Call
+//    override fun makeVideoCall(number: String) {
+//        Log.d(TAG, "makeVideoCall number : $number")
+//        val address = core.interpretUrl(number)
+//        if (address != null) {
+//            coreContext.startVideoCall(address)
+//        } else {
+//            Log.e(TAG, "Invalid address for video call: $number")
+//        }
+//    }
     override fun makeVideoCall(number: String) {
-        Log.d(TAG, "makeVideoCall number : $number")
-        val address = core.interpretUrl(number)
-        if (address != null) {
-            coreContext.startVideoCall(address)
-        } else {
-            Log.e(TAG, "Invalid address for video call: $number")
+        val address = core.interpretUrl(number) ?: return
+        val params = core.createCallParams(null)
+        params?.isVideoEnabled = true
+        params?.isAudioMulticastEnabled = false
+        params?.videoDirection = org.linphone.core.MediaDirection.SendRecv
+
+        if (params != null) {
+            core.inviteAddressWithParams(address, params)
         }
     }
 
@@ -2386,6 +2397,14 @@ class CansCenter : Cans {
         core.nativeVideoWindowId = remoteView
         core.nativePreviewWindowId = localPreview
         Log.d(TAG, "Video windows updated to SDK Core")
+    }
+
+    override fun enableVideoSettings(enabled: Boolean) {
+        core.videoActivationPolicy.automaticallyAccept = enabled
+        core.videoActivationPolicy.automaticallyInitiate = enabled
+
+        core.preferredVideoDefinition = Factory.instance().createVideoDefinition(1280, 720)
+        core.isAudioMulticastEnabled = true
     }
     // ----- END
 }

@@ -262,5 +262,7 @@ interface Cans {
      * @param localPreview The view rendering the local camera
      */
     fun updateVideoWindows(remoteView: Any?, localPreview: Any?)
+
+    fun enableVideoSettings(enabled: Boolean)
     // ----- END
 }
