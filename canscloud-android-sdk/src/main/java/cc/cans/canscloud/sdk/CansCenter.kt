@@ -631,6 +631,8 @@ class CansCenter : Cans {
         core.addListener(coreListenerStub)
 
         core.start()
+        core.isVideoCaptureEnabled = true
+        core.isVideoDisplayEnabled = true
 
         createNotificationChannels(context, notificationManager)
 
@@ -2402,6 +2404,8 @@ class CansCenter : Cans {
     override fun enableVideoSettings(enabled: Boolean) {
         core.videoActivationPolicy.automaticallyAccept = enabled
         core.videoActivationPolicy.automaticallyInitiate = enabled
+        core.isVideoCaptureEnabled = enabled
+        core.isVideoDisplayEnabled = enabled
 
         core.preferredVideoDefinition = Factory.instance().createVideoDefinition(1280, 720)
         core.isAudioMulticastEnabled = true
