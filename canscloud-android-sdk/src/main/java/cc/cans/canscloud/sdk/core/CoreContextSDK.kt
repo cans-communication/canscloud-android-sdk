@@ -519,19 +519,6 @@ class CoreContextSDK(
         }
         cans.core.currentCall?.update(null)
     }
-//    fun switchCamera() {
-//        val devices = cans.core.videoDevicesList.filter { it != "StaticImage: Static picture" }
-//        if (devices.size <= 1) return // มีกล้องตัวเดียว สลับไม่ได้
-//
-//        val currentIndex = devices.indexOf(cans.core.videoDevice)
-//        // ขยับไป index ถัดไป ถ้ายาวเกินก็วนกลับมา 0
-//        val nextIndex = if (currentIndex + 1 < devices.size) currentIndex + 1 else 0
-//
-//        cans.core.videoDevice = devices[nextIndex]
-//
-//        // ลองคอมเมนต์บรรทัดด้านล่างนี้ดู ถ้าระบบภาพสลับได้เลย ก็ไม่จำเป็นต้องใช้ครับ
-//        // cans.core.currentCall?.update(null)
-//    }
 
     private fun setupVideoCodecs(core: Core) {
         val videoCodecs = core.videoPayloadTypes
@@ -541,7 +528,7 @@ class CoreContextSDK(
                     try { codec.enable(true) } catch (e: Exception) { }
                 }
                 "H264" -> {
-                    try { codec.enable(true) } catch (e: Exception) { } // Disabled for MediaTek issue
+                    try { codec.enable(true) } catch (e: Exception) { }
                 }
             }
         }
