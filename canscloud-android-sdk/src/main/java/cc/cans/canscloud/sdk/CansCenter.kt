@@ -2340,15 +2340,6 @@ class CansCenter : Cans {
     }
 
     // ----- START : add for Video Call
-//    override fun makeVideoCall(number: String) {
-//        Log.d(TAG, "makeVideoCall number : $number")
-//        val address = core.interpretUrl(number)
-//        if (address != null) {
-//            coreContext.startVideoCall(address)
-//        } else {
-//            Log.e(TAG, "Invalid address for video call: $number")
-//        }
-//    }
     override fun makeVideoCall(number: String) {
         val address = core.interpretUrl(number) ?: return
         val params = core.createCallParams(null)
@@ -2357,6 +2348,7 @@ class CansCenter : Cans {
         params?.videoDirection = org.linphone.core.MediaDirection.SendRecv
 
         if (params != null) {
+            core.isVideoPreviewEnabled = true
             core.inviteAddressWithParams(address, params)
         }
     }
@@ -2369,7 +2361,6 @@ class CansCenter : Cans {
                 params?.isVideoEnabled = true
                 params?.videoDirection = org.linphone.core.MediaDirection.SendRecv
                 call.acceptWithParams(params)
-                Log.d(TAG, "Accepted call with Video")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error accepting video call", e)
@@ -2379,7 +2370,6 @@ class CansCenter : Cans {
     override fun switchCamera() {
         try {
             coreContext.switchCamera()
-            Log.d(TAG, "Camera switched successfully")
         } catch (e: Exception) {
             Log.e(TAG, "Error switching camera: ${e.message}")
         }
@@ -2398,7 +2388,6 @@ class CansCenter : Cans {
     override fun updateVideoWindows(remoteView: Any?, localPreview: Any?) {
         core.nativeVideoWindowId = remoteView
         core.nativePreviewWindowId = localPreview
-        Log.d(TAG, "Video windows updated to SDK Core")
     }
 
     override fun enableVideoSettings(enabled: Boolean) {
@@ -2406,6 +2395,7 @@ class CansCenter : Cans {
         core.videoActivationPolicy.automaticallyInitiate = enabled
         core.isVideoCaptureEnabled = enabled
         core.isVideoDisplayEnabled = enabled
+        core.isVideoPreviewEnabled = enabled
 
         core.preferredVideoDefinition = Factory.instance().createVideoDefinition(1280, 720)
         core.isAudioMulticastEnabled = true
