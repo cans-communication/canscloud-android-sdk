@@ -271,8 +271,6 @@ class CoreContextSDK(
         // ----- START : add for Video Call
         cans.core.isVideoCaptureEnabled = true
         cans.core.isVideoDisplayEnabled = true
-
-        // Force VGA (640x480) for stability as you did in the POC
         val videoDef = Factory.instance().createVideoDefinition(640, 480)
         cans.core.preferredVideoDefinition = videoDef
 

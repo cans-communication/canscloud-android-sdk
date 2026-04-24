@@ -2375,16 +2375,6 @@ class CansCenter : Cans {
         }
     }
 
-    override fun upgradeCallToVideo() {
-        val currentCall = core.currentCall ?: core.calls.firstOrNull()
-        if (currentCall != null && currentCall.state == Call.State.StreamsRunning) {
-            val params = core.createCallParams(currentCall)
-            params?.isVideoEnabled = true
-            params?.videoDirection = org.linphone.core.MediaDirection.SendRecv
-            currentCall.update(params)
-        }
-    }
-
     override fun updateVideoWindows(remoteView: Any?, localPreview: Any?) {
         core.nativeVideoWindowId = remoteView
         core.nativePreviewWindowId = localPreview
