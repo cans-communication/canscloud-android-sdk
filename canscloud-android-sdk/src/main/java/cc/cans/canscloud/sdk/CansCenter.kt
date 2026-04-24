@@ -2371,7 +2371,7 @@ class CansCenter : Cans {
         try {
             coreContext.switchCamera()
         } catch (e: Exception) {
-            Log.e(TAG, "Error switching camera: ${e.message}")
+            Log.e(TAG, "Error switching camera", e)
         }
     }
 
@@ -2381,8 +2381,16 @@ class CansCenter : Cans {
     }
 
     override fun enableVideoSettings(enabled: Boolean) {
-        core.videoActivationPolicy.automaticallyAccept = enabled
-        core.videoActivationPolicy.automaticallyInitiate = enabled
+        // Get a copy of the current policy
+        val policy = core.videoActivationPolicy
+
+        // Modify the properties on our copy
+        policy.automaticallyAccept = enabled
+        policy.automaticallyInitiate = enabled
+
+        // Set it back to the core so Linphone actually applies it
+        core.videoActivationPolicy = policy
+
         core.isVideoCaptureEnabled = enabled
         core.isVideoDisplayEnabled = enabled
         core.isVideoPreviewEnabled = enabled

@@ -523,10 +523,18 @@ class CoreContextSDK(
         for (codec in videoCodecs) {
             when (codec.mimeType) {
                 "VP8" -> {
-                    try { codec.enable(true) } catch (e: Exception) { }
+                    try {
+                        codec.enable(true)
+                    } catch (e: Exception) {
+                        Log.e("[Context]", "Failed to enable video codec ${codec.mimeType}", e)
+                    }
                 }
                 "H264" -> {
-                    try { codec.enable(true) } catch (e: Exception) { }
+                    try {
+                        codec.enable(true)
+                    } catch (e: Exception) {
+                        Log.e("[Context]", "Failed to enable video codec ${codec.mimeType}", e)
+                    }
                 }
             }
         }
