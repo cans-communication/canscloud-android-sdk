@@ -33,6 +33,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.linphone.core.Address
+import org.linphone.core.Core
 import org.linphone.core.Factory
 import org.linphone.core.LogLevel
 import org.linphone.core.LoggingService
@@ -266,6 +268,20 @@ class CoreContextSDK(
             cans.core.setTone(org.linphone.core.ToneID.CallWaiting, "")
         }
 
+        // ----- START : add for Video Call
+        cans.core.isVideoCaptureEnabled = true
+        cans.core.isVideoDisplayEnabled = true
+        val videoDef = Factory.instance().createVideoDefinition(640, 480)
+        cans.core.preferredVideoDefinition = videoDef
+
+        val policy = Factory.instance().createVideoActivationPolicy()
+        policy.automaticallyInitiate = false
+        policy.automaticallyAccept = false
+        cans.core.videoActivationPolicy = policy
+
+        setupVideoCodecs(cans.core)
+        // ----- END
+
         Log.i("[Context]", "Core configured")
     }
 
@@ -463,4 +479,65 @@ class CoreContextSDK(
             }
         }
     }
+
+    // ----- START : add for Video Call
+    fun startVideoCall(address: Address, forceZRTP: Boolean = false, localAddress: Address? = null) {
+        if (!cans.core.isNetworkReachable) {
+            Log.e("[Context]", "startVideoCall - Network unreachable")
+            return
+        }
+
+        val params = cans.core.createCallParams(null) ?: return
+        params.isVideoEnabled = true
+        params.isAudioEnabled = true
+        params.videoDirection = org.linphone.core.MediaDirection.SendRecv
+        params.audioDirection = org.linphone.core.MediaDirection.SendRecv
+
+        if (forceZRTP) {
+            params.mediaEncryption = org.linphone.core.MediaEncryption.ZRTP
+        }
+
+        params.proxyConfig = if (localAddress != null) {
+            cans.core.proxyConfigList.find { it.identityAddress?.weakEqual(localAddress) == true }
+        } else {
+            cans.core.defaultProxyConfig
+        }
+
+        val call = cans.core.inviteAddressWithParams(address, params)
+        Log.i("[Context]", "Started video call $call to ${address.asStringUriOnly()}")
+    }
+
+    fun switchCamera() {
+        val currentDevice = cans.core.videoDevice
+        for (camera in cans.core.videoDevicesList) {
+            if (camera != currentDevice && camera != "StaticImage: Static picture") {
+                cans.core.videoDevice = camera
+                break
+            }
+        }
+        cans.core.currentCall?.update(null)
+    }
+
+    private fun setupVideoCodecs(core: Core) {
+        val videoCodecs = core.videoPayloadTypes
+        for (codec in videoCodecs) {
+            when (codec.mimeType) {
+                "VP8" -> {
+                    try {
+                        codec.enable(true)
+                    } catch (e: Exception) {
+                        Log.e("[Context]", "Failed to enable video codec ${codec.mimeType}", e)
+                    }
+                }
+                "H264" -> {
+                    try {
+                        codec.enable(true)
+                    } catch (e: Exception) {
+                        Log.e("[Context]", "Failed to enable video codec ${codec.mimeType}", e)
+                    }
+                }
+            }
+        }
+    }
+    // ----- END
 }

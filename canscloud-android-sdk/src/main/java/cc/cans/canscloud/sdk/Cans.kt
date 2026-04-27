@@ -234,4 +234,26 @@ interface Cans {
     fun checkSessionCansLogin(callback: (SessionStatus) -> Unit)
 
     fun deleteMessage(peerUri: String, msgId: String)
+
+    // ----- START : add for Video Call
+    fun makeVideoCall(number: String) {
+        throw UnsupportedOperationException("Video calling is not supported by this Cans implementation.")
+    }
+
+    fun acceptVideoCall() {
+        throw UnsupportedOperationException("Video calling is not supported by this Cans implementation.")
+    }
+
+    fun switchCamera() {
+        throw UnsupportedOperationException("Video calling is not supported by this Cans implementation.")
+    }
+
+    fun updateVideoWindows(remoteView: Any?, localPreview: Any?) {
+        throw UnsupportedOperationException("Video calling is not supported by this Cans implementation.")
+    }
+
+    fun enableVideoSettings(enabled: Boolean) {
+        throw UnsupportedOperationException("Video calling is not supported by this Cans implementation.")
+    }
+    // ----- END
 }

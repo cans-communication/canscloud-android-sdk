@@ -37,7 +37,6 @@ import cc.cans.canscloud.sdk.data.GroupedCallLogData
 import cc.cans.canscloud.sdk.models.AudioRoute
 import cc.cans.canscloud.sdk.models.CallModel
 import cc.cans.canscloud.sdk.models.CallState
-import cc.cans.canscloud.sdk.models.CansAddress
 import cc.cans.canscloud.sdk.models.CansTransport
 import cc.cans.canscloud.sdk.models.ConferenceState
 import cc.cans.canscloud.sdk.models.HistoryModel
@@ -96,7 +95,7 @@ data class Notifiable(val notificationId: Int) {
     var remoteAddress: String? = null
 }
 
-class CansCenter() : Cans {
+class CansCenter : Cans {
     override lateinit var core: Core
     override lateinit var callCans: Call
     override lateinit var mVibrator: Vibrator
@@ -632,6 +631,8 @@ class CansCenter() : Cans {
         core.addListener(coreListenerStub)
 
         core.start()
+        core.isVideoCaptureEnabled = true
+        core.isVideoDisplayEnabled = true
 
         createNotificationChannels(context, notificationManager)
 
@@ -773,7 +774,7 @@ class CansCenter() : Cans {
 
     private fun computeUserAgent() {
         val deviceName: String = corePreferences.deviceName
-        val appNameS: String = "${appName}: Android"
+        val appNameS = "${appName}: Android"
         val userAgent = "$appNameS/ ($deviceName) LinphoneSDK"
         val sdkVersion = context.getString(org.linphone.core.R.string.linphone_sdk_version)
         val sdkBranch = context.getString(org.linphone.core.R.string.linphone_sdk_branch)
@@ -885,6 +886,7 @@ class CansCenter() : Cans {
 
         // We can now configure it
         // Here we ask for no encryption but we could ask for ZRTP/SRTP/DTLS
+        params.isVideoEnabled = false
         params.mediaEncryption = MediaEncryption.None
         // If we wanted to start the call with video directly
         //params.enableVideo(true)
@@ -910,7 +912,7 @@ class CansCenter() : Cans {
         if (core.callsNb == 0) return
 
         // If the call state isn't paused, we can get it using core.currentCall
-        val call = if (core.currentCall != null) core.currentCall else core.calls[0]
+        val call = core.currentCall ?: core.calls[0]
         call ?: return
 
         // Terminating a call is quite simple
@@ -972,13 +974,15 @@ class CansCenter() : Cans {
     private fun answerCall(call: Call) {
         Log.i("[CansSDK]", "Answering call $call")
         val params = core.createCallParams(call)
+
+        params?.isVideoEnabled = false
+
         if (CansUtils.checkIfNetworkHasLowBandwidth(context)) {
             Log.w("[CansSDK]", "Enabling low bandwidth mode!")
             params?.isLowBandwidthEnabled = true
         }
         call.acceptWithParams(params)
     }
-
     override fun isPauseState(): Boolean {
         return core.currentCall?.state == Call.State.Paused || core.currentCall?.state == Call.State.Pausing || core.currentCall?.state == Call.State.PausedByRemote
     }
@@ -1011,7 +1015,7 @@ class CansCenter() : Cans {
         if (result != AccountCreator.UsernameStatus.Ok) {
             Log.e(
                 "[Assistant]",
-                " [Account Login] Error [${result.name}] setting the username: ${username}"
+                " [Account Login] Error [${result.name}] setting the username: $username"
             )
             registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
             return
@@ -1056,7 +1060,7 @@ class CansCenter() : Cans {
             .addFormDataPart("password", password)
             .build()
 
-        val url = "https://" + domain + "/Cpanel/provision/mobile/"
+        val url = "https://$domain/Cpanel/provision/mobile/"
 
         val callProvisioningData: retrofit2.Call<ProvisioningData?>? =
             provisioningService.getProvisioningData(url, requestBody)
@@ -1757,7 +1761,7 @@ class CansCenter() : Cans {
 
     override fun checkSessionOKTAExpire(activity: Activity, callback: (Boolean) -> Unit) {
         if (core.callsNb == 0) {
-            if (corePreferences.loginInfo?.logInType == LogInType.OKTA.value) {
+            if (corePreferences.loginInfo.logInType == LogInType.OKTA.value) {
                 if (OktaWebAuth.isWebAuthInitialized()) {
                     // webAuth is ready to use
                     OktaWebAuth.checkSession(activity) { isSessionValid ->
@@ -2334,4 +2338,65 @@ class CansCenter() : Cans {
             corePreferences.setDomainUUID(serverSipAddress, null)
         }
     }
+
+    // ----- START : add for Video Call
+    override fun makeVideoCall(number: String) {
+        val address = core.interpretUrl(number) ?: return
+        val params = core.createCallParams(null)
+        params?.isVideoEnabled = true
+        params?.isAudioMulticastEnabled = false
+        params?.videoDirection = org.linphone.core.MediaDirection.SendRecv
+
+        if (params != null) {
+            core.isVideoPreviewEnabled = true
+            core.inviteAddressWithParams(address, params)
+        }
+    }
+
+    override fun acceptVideoCall() {
+        try {
+            val call = core.currentCall ?: core.calls.firstOrNull()
+            if (call != null) {
+                val params = core.createCallParams(call)
+                params?.isVideoEnabled = true
+                params?.videoDirection = org.linphone.core.MediaDirection.SendRecv
+                call.acceptWithParams(params)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error accepting video call", e)
+        }
+    }
+
+    override fun switchCamera() {
+        try {
+            coreContext.switchCamera()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error switching camera", e)
+        }
+    }
+
+    override fun updateVideoWindows(remoteView: Any?, localPreview: Any?) {
+        core.nativeVideoWindowId = remoteView
+        core.nativePreviewWindowId = localPreview
+    }
+
+    override fun enableVideoSettings(enabled: Boolean) {
+        // Get a copy of the current policy
+        val policy = core.videoActivationPolicy
+
+        // Modify the properties on our copy
+        policy.automaticallyAccept = enabled
+        policy.automaticallyInitiate = enabled
+
+        // Set it back to the core so Linphone actually applies it
+        core.videoActivationPolicy = policy
+
+        core.isVideoCaptureEnabled = enabled
+        core.isVideoDisplayEnabled = enabled
+        core.isVideoPreviewEnabled = enabled
+
+        core.preferredVideoDefinition = Factory.instance().createVideoDefinition(1280, 720)
+        core.isAudioMulticastEnabled = true
+    }
+    // ----- END
 }
