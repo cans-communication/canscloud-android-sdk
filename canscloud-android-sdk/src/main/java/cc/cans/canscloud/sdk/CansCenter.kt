@@ -384,16 +384,12 @@ class CansCenter : Cans {
                 Call.State.StreamsRunning, Call.State.Updating, Call.State.UpdatedByRemote -> {
                     mVibrator.cancel()
 
-                    // --- NEW CODE: Detect Remote Camera State ---
                     val remoteParams = call.remoteParams
-                    // If the remote user sets their direction to RecvOnly or Inactive, they turned off their camera.
                     val isRemoteCameraOn = remoteParams?.isVideoEnabled == true &&
                             (remoteParams.videoDirection == org.linphone.core.MediaDirection.SendRecv ||
                                     remoteParams.videoDirection == org.linphone.core.MediaDirection.SendOnly)
 
-                    // Fire the callback to the React Native Module
                     onRemoteVideoStateChangedListener?.invoke(isRemoteCameraOn)
-                    // ---------------------------------------------
 
                     if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
                         Log.i(TAG, "[Auto-Route] StreamsRunning: Enforcing Bluetooth")
