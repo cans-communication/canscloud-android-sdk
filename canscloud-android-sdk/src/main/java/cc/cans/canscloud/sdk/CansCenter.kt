@@ -132,8 +132,6 @@ class CansCenter : Cans {
     private var registerListeners = mutableListOf<CansRegisterListenerStub>()
     private var registerAccountListeners = mutableListOf<CansRegisterAccountListenerStub>()
 
-    var onRemoteVideoStateChangedListener: ((Boolean) -> Unit)? = null
-
     override val missedCallLogs = ArrayList<GroupedCallLogData>()
 
     override lateinit var conferenceCore: Conference
@@ -389,7 +387,7 @@ class CansCenter : Cans {
                             (remoteParams.videoDirection == org.linphone.core.MediaDirection.SendRecv ||
                                     remoteParams.videoDirection == org.linphone.core.MediaDirection.SendOnly)
 
-                    onRemoteVideoStateChangedListener?.invoke(isRemoteCameraOn)
+                    listeners.forEach { it.onRemoteVideoStateChanged(isRemoteCameraOn) }
 
                     if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
                         Log.i(TAG, "[Auto-Route] StreamsRunning: Enforcing Bluetooth")
@@ -2189,14 +2187,14 @@ class CansCenter : Cans {
         else
             ChatRoom.Backend.Basic
 
-        // Robust backend check using capabilities since chatParams might be unreliable
-        val isFlexisip = room?.params?.isGroupEnabled == true || room?.params?.chatParams?.backend == ChatRoom.Backend.FlexisipChat
-        val currentBackend = if (isFlexisip) ChatRoom.Backend.FlexisipChat else ChatRoom.Backend.Basic
+        val currentBackend = room?.params?.chatParams?.backend ?: ChatRoom.Backend.Basic
 
         if (room != null && currentBackend != expectedBackend) {
-            Log.i(TAG, "Chat room backend mismatch (current: $currentBackend, expected: $expectedBackend). Recreating.")
-            core.deleteChatRoom(room)
-            room = null
+            Log.w(
+                TAG,
+                "Chat room backend mismatch (current: $currentBackend, expected: $expectedBackend). " +
+                        "Preserving existing room to avoid destructive delete/recreate."
+            )
         }
 
         if (room == null) {

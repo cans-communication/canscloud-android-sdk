@@ -10,4 +10,5 @@ interface CansListenerStub {
    fun onAudioDeviceChanged()
    fun onAudioDevicesListUpdated()
    fun onConferenceState(state : ConferenceState)
+   fun onRemoteVideoStateChanged(isRemoteCameraOn: Boolean) {}
 }
