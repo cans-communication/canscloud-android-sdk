@@ -379,8 +379,15 @@ class CansCenter : Cans {
                     }
                 }
 
-                Call.State.StreamsRunning -> {
+                Call.State.StreamsRunning, Call.State.Updating, Call.State.UpdatedByRemote -> {
                     mVibrator.cancel()
+
+                    val remoteParams = call.remoteParams
+                    val isRemoteCameraOn = remoteParams?.isVideoEnabled == true &&
+                            (remoteParams.videoDirection == org.linphone.core.MediaDirection.SendRecv ||
+                                    remoteParams.videoDirection == org.linphone.core.MediaDirection.SendOnly)
+
+                    listeners.forEach { it.onRemoteVideoStateChanged(isRemoteCameraOn) }
 
                     if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
                         Log.i(TAG, "[Auto-Route] StreamsRunning: Enforcing Bluetooth")
@@ -545,9 +552,9 @@ class CansCenter : Cans {
             Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> CallState.IncomingCall
             Call.State.OutgoingInit -> CallState.StartCall
             Call.State.OutgoingProgress, Call.State.OutgoingEarlyMedia -> CallState.CallOutgoing
-            Call.State.StreamsRunning -> CallState.StreamsRunning
+            Call.State.StreamsRunning, Call.State.Updating, Call.State.UpdatedByRemote -> CallState.StreamsRunning
             Call.State.Connected -> CallState.Connected
-            Call.State.Paused, Call.State.Pausing -> CallState.Pause
+            Call.State.Paused, Call.State.Pausing, Call.State.PausedByRemote -> CallState.Pause
             Call.State.Resuming -> CallState.Resuming
             Call.State.Error -> CallState.Error
             Call.State.End -> CallState.CallEnd
@@ -2053,6 +2060,7 @@ class CansCenter : Cans {
 
                     val transportParam = loginTransport.name.lowercase()
                     proxyConfig.serverAddr = "sip:$realm:$loginPort;transport=$transportParam"
+                    proxyConfig.conferenceFactoryUri = "sip:conference-factory@$realm"
 
                     if (!core.proxyConfigList.contains(proxyConfig)) {
                         core.addProxyConfig(proxyConfig)
@@ -2173,10 +2181,29 @@ class CansCenter : Cans {
 
         var room = core.getChatRoom(remoteAddress, localAddress)
 
+        val loginType = cansCenter().corePreferences.loginInfo.logInType
+        val expectedBackend = if (loginType == LogInType.ACCOUNT.value && defaultAccount?.params?.conferenceFactoryUri != null)
+            ChatRoom.Backend.FlexisipChat
+        else
+            ChatRoom.Backend.Basic
+
+        val currentBackend = room?.params?.chatParams?.backend ?: ChatRoom.Backend.Basic
+
+        if (room != null && currentBackend != expectedBackend) {
+            Log.w(
+                TAG,
+                "Chat room backend mismatch (current: $currentBackend, expected: $expectedBackend). " +
+                        "Preserving existing room to avoid destructive delete/recreate."
+            )
+        }
+
         if (room == null) {
             val params = core.createDefaultChatRoomParams()
-            params.backend = ChatRoom.Backend.FlexisipChat
+            params.backend = expectedBackend
             params.isGroupEnabled = false
+            if (expectedBackend == ChatRoom.Backend.FlexisipChat) {
+                params.subject = "Chat"
+            }
             room = core.createChatRoom(params, localAddress, arrayOf(remoteAddress))
         }
 
