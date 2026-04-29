@@ -127,6 +127,10 @@ class CoreContextSDK(
         }
 
         override fun onConferenceState(state: ConferenceState) {}
+
+        override fun onRemoteVideoStateChanged(isRemoteCameraOn: Boolean) {
+            Log.i("[CoreContextSDK]", "onRemoteVideoStateChanged: $isRemoteCameraOn")
+        }
     }
 
     private val loggingServiceListener = object : LoggingServiceListenerStub() {
