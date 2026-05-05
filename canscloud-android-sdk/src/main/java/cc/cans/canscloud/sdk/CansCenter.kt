@@ -2403,8 +2403,20 @@ class CansCenter : Cans {
     }
 
     override fun updateVideoWindows(remoteView: Any?, localPreview: Any?) {
-        core.nativeVideoWindowId = remoteView
-        core.nativePreviewWindowId = localPreview
+        try {
+            if (core.nativeVideoWindowId !== remoteView) {
+                core.nativeVideoWindowId = remoteView
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error setting remote video window: ${e.message}", e)
+        }
+        try {
+            if (core.nativePreviewWindowId !== localPreview) {
+                core.nativePreviewWindowId = localPreview
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error setting preview window: ${e.message}", e)
+        }
     }
 
     override fun enableVideoSettings(enabled: Boolean) {
