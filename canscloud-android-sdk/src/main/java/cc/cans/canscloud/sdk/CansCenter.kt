@@ -2402,20 +2402,25 @@ class CansCenter : Cans {
         }
     }
 
+    private inline fun safelyUpdateVideoWindow(windowType: String, updateBlock: () -> Unit) {
+        runCatching {
+            updateBlock()
+        }.onFailure { e ->
+            Log.e(TAG, "Error setting $windowType window: ${e.message}", e)
+        }
+    }
+
     override fun updateVideoWindows(remoteView: Any?, localPreview: Any?) {
-        try {
+        safelyUpdateVideoWindow("remote video") {
             if (core.nativeVideoWindowId !== remoteView) {
                 core.nativeVideoWindowId = remoteView
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error setting remote video window: ${e.message}", e)
         }
-        try {
+
+        safelyUpdateVideoWindow("preview") {
             if (core.nativePreviewWindowId !== localPreview) {
                 core.nativePreviewWindowId = localPreview
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error setting preview window: ${e.message}", e)
         }
     }
 
