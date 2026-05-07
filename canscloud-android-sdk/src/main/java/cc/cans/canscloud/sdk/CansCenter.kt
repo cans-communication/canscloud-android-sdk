@@ -441,6 +441,7 @@ class CansCenter : Cans {
                 }
 
                 Call.State.Error -> {
+                    lastRemoteCameraOnState = null
                     updateMissedCallLogs()
                     if (audioManager?.isBluetoothScoOn == true) {
                         audioManager?.stopBluetoothSco()
@@ -453,7 +454,7 @@ class CansCenter : Cans {
                 }
 
                 Call.State.End -> {
-                    lastRemoteCameraOnState = null // Reset so next call starts fresh
+                    lastRemoteCameraOnState = null
                     updateMissedCallLogs()
                     if (audioManager?.isBluetoothScoOn == true) {
                         audioManager?.stopBluetoothSco()
@@ -461,6 +462,10 @@ class CansCenter : Cans {
                         audioManager?.mode = AudioManager.MODE_NORMAL
                     }
                     mVibrator.cancel()
+                }
+
+                Call.State.Released -> {
+                    lastRemoteCameraOnState = null
                 }
 
                 else -> {
@@ -2363,13 +2368,13 @@ class CansCenter : Cans {
         }
     }
 
-    // ----- START : add for Video Call
     override fun makeVideoCall(number: String) {
         val address = core.interpretUrl(number) ?: return
         val params = core.createCallParams(null)
         params?.isVideoEnabled = true
         params?.isAudioMulticastEnabled = false
         params?.videoDirection = org.linphone.core.MediaDirection.SendRecv
+        core.isVideoPreviewEnabled = true
 
         if (params != null) {
             core.inviteAddressWithParams(address, params)
@@ -2438,5 +2443,4 @@ class CansCenter : Cans {
         core.preferredVideoDefinition = Factory.instance().createVideoDefinition(1280, 720)
         core.isAudioMulticastEnabled = true
     }
-    // ----- END
 }
