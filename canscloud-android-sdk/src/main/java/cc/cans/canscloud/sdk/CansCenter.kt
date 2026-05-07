@@ -2197,29 +2197,10 @@ class CansCenter : Cans {
 
         var room = core.getChatRoom(remoteAddress, localAddress)
 
-        val loginType = cansCenter().corePreferences.loginInfo.logInType
-//        val expectedBackend = if (loginType == LogInType.ACCOUNT.value && defaultAccount?.params?.conferenceFactoryUri != null)
-//            ChatRoom.Backend.FlexisipChat
-//        else
-//            ChatRoom.Backend.Basic
-//
-//        val currentBackend = room?.params?.chatParams?.backend ?: ChatRoom.Backend.Basic
-
-//        if (room != null && currentBackend != expectedBackend) {
-//            Log.w(
-//                TAG,
-//                "Chat room backend mismatch (current: $currentBackend, expected: $expectedBackend). " +
-//                        "Preserving existing room to avoid destructive delete/recreate."
-//            )
-//        }
-
         if (room == null) {
             val params = core.createDefaultChatRoomParams()
             params.backend = ChatRoom.Backend.Basic
             params.isGroupEnabled = false
-//            if (expectedBackend == ChatRoom.Backend.FlexisipChat) {
-//                params.subject = "Chat"
-//            }
             room = core.createChatRoom(params, localAddress, arrayOf(remoteAddress))
         }
 
@@ -2391,7 +2372,6 @@ class CansCenter : Cans {
         params?.videoDirection = org.linphone.core.MediaDirection.SendRecv
 
         if (params != null) {
-//            core.isVideoPreviewEnabled = true
             core.inviteAddressWithParams(address, params)
         }
     }
