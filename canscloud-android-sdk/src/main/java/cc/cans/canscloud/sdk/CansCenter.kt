@@ -375,9 +375,13 @@ class CansCenter : Cans {
             when (state) {
                 Call.State.IncomingEarlyMedia, Call.State.IncomingReceived -> {
                     Log.w(TAG, "Call.State.IncomingEarlyMedia, Call.State.IncomingReceived")
-                    val loginType = corePreferences.loginInfo.logInType
-                    if (!loginType.isNullOrEmpty()) {
-                        vibrator()
+                    // Only vibrate on IncomingReceived; IncomingEarlyMedia fires first for the
+                    // same call and would trigger a second vibration that MIUI throttles.
+                    if (state == Call.State.IncomingReceived) {
+                        val loginType = corePreferences.loginInfo.logInType
+                        if (!loginType.isNullOrEmpty()) {
+                            vibrator()
+                        }
                     }
                 }
 
