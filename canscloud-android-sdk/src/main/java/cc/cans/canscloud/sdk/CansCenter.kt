@@ -283,6 +283,8 @@ class CansCenter : Cans {
 
     private var currentAudioRoute: AudioRoute = AudioRoute.EARPIECE_OR_HEADSET
 
+    private var lastRemoteCameraOnState: Boolean? = null
+
     private val accountListener: AccountListenerStub = object : AccountListenerStub() {
         override fun onRegistrationStateChanged(
             account: Account,
@@ -382,12 +384,25 @@ class CansCenter : Cans {
                 Call.State.StreamsRunning, Call.State.Updating, Call.State.UpdatedByRemote -> {
                     mVibrator.cancel()
 
-                    val remoteParams = call.remoteParams
-                    val isRemoteCameraOn = remoteParams?.isVideoEnabled == true &&
-                            (remoteParams.videoDirection == org.linphone.core.MediaDirection.SendRecv ||
-                                    remoteParams.videoDirection == org.linphone.core.MediaDirection.SendOnly)
+                    // Skip during Updating: remoteParams reflects mid-negotiation SDP which may
+                    // temporarily read a stale direction, causing a spurious isRemoteCameraOn=false
+                    // event that would hide the remote view and trigger a setRemoteVideoWindow
+                    // re-bind, clearing Linphone's render buffer (black flash).
+                    if (state != Call.State.Updating) {
+                        val remoteParams = call.remoteParams
+                        val isRemoteCameraOn = remoteParams?.isVideoEnabled == true &&
+                                (remoteParams.videoDirection == org.linphone.core.MediaDirection.SendRecv ||
+                                        remoteParams.videoDirection == org.linphone.core.MediaDirection.SendOnly)
 
-                    listeners.forEach { it.onRemoteVideoStateChanged(isRemoteCameraOn) }
+                        // Only fire when value changed — prevents React from toggling display:none
+                        // on the remote TextureView (and losing nativeVideoWindowId) during our own
+                        // direction-only re-INVITEs where the remote camera state is unchanged.
+                        if (isRemoteCameraOn != lastRemoteCameraOnState) {
+                            Log.d(TAG, "onRemoteVideoStateChanged: $isRemoteCameraOn (was $lastRemoteCameraOnState, state=$state)")
+                            lastRemoteCameraOnState = isRemoteCameraOn
+                            listeners.forEach { it.onRemoteVideoStateChanged(isRemoteCameraOn) }
+                        }
+                    }
 
                     if (AudioRouteUtils.isBluetoothAudioRouteAvailable()) {
                         Log.i(TAG, "[Auto-Route] StreamsRunning: Enforcing Bluetooth")
@@ -438,6 +453,7 @@ class CansCenter : Cans {
                 }
 
                 Call.State.End -> {
+                    lastRemoteCameraOnState = null // Reset so next call starts fresh
                     updateMissedCallLogs()
                     if (audioManager?.isBluetoothScoOn == true) {
                         audioManager?.stopBluetoothSco()
