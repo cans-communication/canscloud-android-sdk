@@ -59,6 +59,7 @@ import com.okta.oidc.AuthenticationPayload
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MultipartBody
@@ -957,21 +958,27 @@ class CansCenter : Cans {
     }
 
     override fun pause(index: Int, addressToCall: String) {
-        val call = cansCenter().core.calls[index]
+        val calls = cansCenter().core.calls
+        if (index < 0 || index >= calls.size) return
+        val call = calls[index]
         if (call.remoteAddress.username == addressToCall) {
             call.pause()
         }
     }
 
     override fun resume(index: Int, addressToCall: String) {
-        val call = cansCenter().core.calls[index]
+        val calls = cansCenter().core.calls
+        if (index < 0 || index >= calls.size) return
+        val call = calls[index]
         if (call.remoteAddress.username == addressToCall) {
             call.resume()
         }
     }
 
     override fun terminate(index: Int, addressToCall: String) {
-        val call = cansCenter().core.calls[index]
+        val calls = cansCenter().core.calls
+        if (index < 0 || index >= calls.size) return
+        val call = calls[index]
         if (call.remoteAddress.username == addressToCall) {
             call.terminate()
         }
@@ -1577,7 +1584,7 @@ class CansCenter : Cans {
                     }
                 }
 
-                Thread.sleep(200)
+                delay(200)
 
                 conference.terminate()
                 isInConference = false
@@ -1845,7 +1852,9 @@ class CansCenter : Cans {
     override fun removeCansRegisterAccountListener(
         listener: CansRegisterAccountListenerStub
     ) {
-        accountDefault.removeListener(accountListener)
+        if (::accountDefault.isInitialized) {
+            accountDefault.removeListener(accountListener)
+        }
         registerAccountListeners.remove(listener)
     }
 
@@ -2186,11 +2195,14 @@ class CansCenter : Cans {
         val localAddress = defaultAccount?.params?.identityAddress ?: return null
 
         var remoteAddress = core.interpretUrl(peerUri)
+        Log.d(TAG,"getOrCreateChatRoom remoteAddress : $remoteAddress")
         if (remoteAddress == null) {
             try {
                 val domain = localAddress.domain
                 val finalUri = if (!peerUri.contains("@")) "sip:$peerUri@$domain" else peerUri
+                Log.d(TAG,"getOrCreateChatRoom finalUri : $finalUri")
                 remoteAddress = Factory.instance().createAddress(finalUri)
+                Log.d(TAG,"getOrCreateChatRoom remoteAddress 2 : $remoteAddress")
             } catch (e: Exception) {
                 Log.e(TAG, "Address creation failed: ${e.message}")
             }
@@ -2210,6 +2222,9 @@ class CansCenter : Cans {
             val params = core.createDefaultChatRoomParams()
             params.backend = ChatRoom.Backend.Basic
             params.isGroupEnabled = false
+            Log.d(TAG,"getOrCreateChatRoom backend : Basic")
+            Log.d(TAG,"getOrCreateChatRoom localAddress : $localAddress")
+            Log.d(TAG,"getOrCreateChatRoom remoteAddress : $remoteAddress")
             room = core.createChatRoom(params, localAddress, arrayOf(remoteAddress))
         }
 
@@ -2221,6 +2236,8 @@ class CansCenter : Cans {
     override fun sendTextMessage(peerUri: String, text: String) {
         val room = getOrCreateChatRoom(peerUri) ?: return
         val message = room.createMessage(text)
+
+        Log.d(TAG,"sendTextMessage message : $message")
 
         message.addListener(object : ChatMessageListenerStub() {
             override fun onMsgStateChanged(msg: ChatMessage, state: ChatMessage.State) {
