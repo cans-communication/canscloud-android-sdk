@@ -59,7 +59,6 @@ import com.okta.oidc.AuthenticationPayload
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MultipartBody
@@ -792,6 +791,9 @@ class CansCenter : Cans {
             return
         }
 
+        val realm = domain.substringBefore(':')
+        proxyConfig.conferenceFactoryUri = "sip:conference-factory@$realm"
+
         corePreferences.keepServiceAlive = true
         coreContext.notificationsManager.startForeground()
     }
@@ -958,27 +960,21 @@ class CansCenter : Cans {
     }
 
     override fun pause(index: Int, addressToCall: String) {
-        val calls = cansCenter().core.calls
-        if (index < 0 || index >= calls.size) return
-        val call = calls[index]
+        val call = cansCenter().core.calls[index]
         if (call.remoteAddress.username == addressToCall) {
             call.pause()
         }
     }
 
     override fun resume(index: Int, addressToCall: String) {
-        val calls = cansCenter().core.calls
-        if (index < 0 || index >= calls.size) return
-        val call = calls[index]
+        val call = cansCenter().core.calls[index]
         if (call.remoteAddress.username == addressToCall) {
             call.resume()
         }
     }
 
     override fun terminate(index: Int, addressToCall: String) {
-        val calls = cansCenter().core.calls
-        if (index < 0 || index >= calls.size) return
-        val call = calls[index]
+        val call = cansCenter().core.calls[index]
         if (call.remoteAddress.username == addressToCall) {
             call.terminate()
         }
@@ -1176,6 +1172,11 @@ class CansCenter : Cans {
         }
 
         proxyConfig.isPushNotificationAllowed = true
+
+        val realm = accountCreator.domain?.substringBefore(':')
+        if (!realm.isNullOrEmpty()) {
+            proxyConfig.conferenceFactoryUri = "sip:conference-factory@$realm"
+        }
 
         Log.i("[Assistant]", " [Account Login] Proxy config created")
         return true
@@ -1584,7 +1585,7 @@ class CansCenter : Cans {
                     }
                 }
 
-                delay(200)
+                Thread.sleep(200)
 
                 conference.terminate()
                 isInConference = false
@@ -1852,9 +1853,7 @@ class CansCenter : Cans {
     override fun removeCansRegisterAccountListener(
         listener: CansRegisterAccountListenerStub
     ) {
-        if (::accountDefault.isInitialized) {
-            accountDefault.removeListener(accountListener)
-        }
+        accountDefault.removeListener(accountListener)
         registerAccountListeners.remove(listener)
     }
 
@@ -1923,6 +1922,7 @@ class CansCenter : Cans {
         }
 
         proxyConfig.serverAddr = "sip:$realm:$port;transport=$transportParam"
+        proxyConfig.conferenceFactoryUri = "sip:conference-factory@$realm"
 
         proxyConfig.contactUriParameters = "app-login-type=sip"
         corePreferences.keepServiceAlive = true
@@ -2190,19 +2190,21 @@ class CansCenter : Cans {
         repeat(5) { core.iterate() }
     }
 
+    private fun hasValidConferenceFactory(): Boolean {
+        val factoryUri = core.defaultProxyConfig?.conferenceFactoryUri
+        return !factoryUri.isNullOrEmpty()
+    }
+
     override fun getOrCreateChatRoom(peerUri: String): ChatRoom? {
         val defaultAccount = core.defaultAccount
         val localAddress = defaultAccount?.params?.identityAddress ?: return null
 
         var remoteAddress = core.interpretUrl(peerUri)
-        Log.d(TAG,"getOrCreateChatRoom remoteAddress : $remoteAddress")
         if (remoteAddress == null) {
             try {
                 val domain = localAddress.domain
                 val finalUri = if (!peerUri.contains("@")) "sip:$peerUri@$domain" else peerUri
-                Log.d(TAG,"getOrCreateChatRoom finalUri : $finalUri")
                 remoteAddress = Factory.instance().createAddress(finalUri)
-                Log.d(TAG,"getOrCreateChatRoom remoteAddress 2 : $remoteAddress")
             } catch (e: Exception) {
                 Log.e(TAG, "Address creation failed: ${e.message}")
             }
@@ -2212,20 +2214,30 @@ class CansCenter : Cans {
 
         remoteAddress.clean()
         if (remoteAddress.username == localAddress.username) {
-            Log.e(TAG, "Error: Self-chat detected. Aborting.")
             return null
         }
 
         var room = core.getChatRoom(remoteAddress, localAddress)
 
         if (room == null) {
-            val params = core.createDefaultChatRoomParams()
-            params.backend = ChatRoom.Backend.Basic
-            params.isGroupEnabled = false
-            Log.d(TAG,"getOrCreateChatRoom backend : Basic")
-            Log.d(TAG,"getOrCreateChatRoom localAddress : $localAddress")
-            Log.d(TAG,"getOrCreateChatRoom remoteAddress : $remoteAddress")
-            room = core.createChatRoom(params, localAddress, arrayOf(remoteAddress))
+            room = if (hasValidConferenceFactory()) {
+                try {
+                    val params = core.createDefaultChatRoomParams()
+                    params.backend = ChatRoom.Backend.FlexisipChat
+                    params.isGroupEnabled = false
+                    core.createChatRoom(params, localAddress, arrayOf(remoteAddress))
+                } catch (e: Exception) {
+                    val fallbackParams = core.createDefaultChatRoomParams()
+                    fallbackParams.backend = ChatRoom.Backend.Basic
+                    fallbackParams.isGroupEnabled = false
+                    core.createChatRoom(fallbackParams, localAddress, arrayOf(remoteAddress))
+                }
+            } else {
+                val params = core.createDefaultChatRoomParams()
+                params.backend = ChatRoom.Backend.Basic
+                params.isGroupEnabled = false
+                core.createChatRoom(params, localAddress, arrayOf(remoteAddress))
+            }
         }
 
         room?.markAsRead()
@@ -2236,8 +2248,6 @@ class CansCenter : Cans {
     override fun sendTextMessage(peerUri: String, text: String) {
         val room = getOrCreateChatRoom(peerUri) ?: return
         val message = room.createMessage(text)
-
-        Log.d(TAG,"sendTextMessage message : $message")
 
         message.addListener(object : ChatMessageListenerStub() {
             override fun onMsgStateChanged(msg: ChatMessage, state: ChatMessage.State) {
