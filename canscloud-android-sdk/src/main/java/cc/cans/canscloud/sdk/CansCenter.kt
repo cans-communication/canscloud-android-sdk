@@ -2191,7 +2191,7 @@ class CansCenter : Cans {
     }
 
     private fun hasValidConferenceFactory(): Boolean {
-        val factoryUri = core.defaultProxyConfig?.conferenceFactoryUri
+        val factoryUri = core.defaultAccount?.params?.conferenceFactoryUri
         return !factoryUri.isNullOrEmpty()
     }
 
@@ -2227,6 +2227,7 @@ class CansCenter : Cans {
                     params.isGroupEnabled = false
                     core.createChatRoom(params, localAddress, arrayOf(remoteAddress))
                 } catch (e: Exception) {
+                    Log.e(TAG, "FlexisipChat room creation failed, falling back to Basic: ${e.message}", e)
                     val fallbackParams = core.createDefaultChatRoomParams()
                     fallbackParams.backend = ChatRoom.Backend.Basic
                     fallbackParams.isGroupEnabled = false
