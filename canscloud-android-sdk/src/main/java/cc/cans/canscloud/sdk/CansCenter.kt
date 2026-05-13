@@ -791,6 +791,9 @@ class CansCenter : Cans {
             return
         }
 
+        val realm = domain.substringBefore(':')
+        proxyConfig.conferenceFactoryUri = "sip:conference-factory@$realm"
+
         corePreferences.keepServiceAlive = true
         coreContext.notificationsManager.startForeground()
     }
@@ -1169,6 +1172,11 @@ class CansCenter : Cans {
         }
 
         proxyConfig.isPushNotificationAllowed = true
+
+        val realm = accountCreator.domain?.substringBefore(':')
+        if (!realm.isNullOrEmpty()) {
+            proxyConfig.conferenceFactoryUri = "sip:conference-factory@$realm"
+        }
 
         Log.i("[Assistant]", " [Account Login] Proxy config created")
         return true
@@ -1914,6 +1922,7 @@ class CansCenter : Cans {
         }
 
         proxyConfig.serverAddr = "sip:$realm:$port;transport=$transportParam"
+        proxyConfig.conferenceFactoryUri = "sip:conference-factory@$realm"
 
         proxyConfig.contactUriParameters = "app-login-type=sip"
         corePreferences.keepServiceAlive = true
@@ -2181,6 +2190,11 @@ class CansCenter : Cans {
         repeat(5) { core.iterate() }
     }
 
+    private fun hasValidConferenceFactory(): Boolean {
+        val factoryUri = core.defaultAccount?.params?.conferenceFactoryUri
+        return !factoryUri.isNullOrEmpty()
+    }
+
     override fun getOrCreateChatRoom(peerUri: String): ChatRoom? {
         val defaultAccount = core.defaultAccount
         val localAddress = defaultAccount?.params?.identityAddress ?: return null
@@ -2200,17 +2214,31 @@ class CansCenter : Cans {
 
         remoteAddress.clean()
         if (remoteAddress.username == localAddress.username) {
-            Log.e(TAG, "Error: Self-chat detected. Aborting.")
             return null
         }
 
         var room = core.getChatRoom(remoteAddress, localAddress)
 
         if (room == null) {
-            val params = core.createDefaultChatRoomParams()
-            params.backend = ChatRoom.Backend.Basic
-            params.isGroupEnabled = false
-            room = core.createChatRoom(params, localAddress, arrayOf(remoteAddress))
+            room = if (hasValidConferenceFactory()) {
+                try {
+                    val params = core.createDefaultChatRoomParams()
+                    params.backend = ChatRoom.Backend.FlexisipChat
+                    params.isGroupEnabled = false
+                    core.createChatRoom(params, localAddress, arrayOf(remoteAddress))
+                } catch (e: Exception) {
+                    Log.e(TAG, "FlexisipChat room creation failed, falling back to Basic: ${e.message}", e)
+                    val fallbackParams = core.createDefaultChatRoomParams()
+                    fallbackParams.backend = ChatRoom.Backend.Basic
+                    fallbackParams.isGroupEnabled = false
+                    core.createChatRoom(fallbackParams, localAddress, arrayOf(remoteAddress))
+                }
+            } else {
+                val params = core.createDefaultChatRoomParams()
+                params.backend = ChatRoom.Backend.Basic
+                params.isGroupEnabled = false
+                core.createChatRoom(params, localAddress, arrayOf(remoteAddress))
+            }
         }
 
         room?.markAsRead()
