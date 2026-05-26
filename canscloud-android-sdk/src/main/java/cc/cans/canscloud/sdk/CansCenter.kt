@@ -96,6 +96,10 @@ data class Notifiable(val notificationId: Int) {
 }
 
 class CansCenter : Cans {
+    companion object {
+        const val DEFAULT_FILE_TRANSFER_SERVER = "https://files.linphone.org/http-file-transfer-server/hft.php"
+    }
+
     override lateinit var core: Core
     override lateinit var callCans: Call
     override lateinit var mVibrator: Vibrator
@@ -2178,7 +2182,7 @@ class CansCenter : Cans {
             config.setBool("misc", "hide_empty_chat_rooms", false)
             config.setBool("misc", "group_chat_supported", false)
             config.setString("misc", "file_transfer_protocol", "https")
-            core.fileTransferServer = "https://files.linphone.org/http-file-transfer-server/hft.php"
+            core.fileTransferServer = DEFAULT_FILE_TRANSFER_SERVER
             core.maxSizeForAutoDownloadIncomingFiles = -1
             core.imdnToEverybodyThreshold = 1
 
