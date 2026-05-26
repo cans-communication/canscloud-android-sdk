@@ -255,5 +255,6 @@ interface Cans {
     fun enableVideoSettings(enabled: Boolean) {
         throw UnsupportedOperationException("Video calling is not supported by this Cans implementation.")
     }
-    // ----- END
+
+    fun resumeRegistration()
 }
