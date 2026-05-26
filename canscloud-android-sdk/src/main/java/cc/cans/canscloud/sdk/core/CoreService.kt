@@ -74,6 +74,15 @@ class CoreService : CoreService() {
     override fun onDestroy() {
         Log.i("[Service] Stopping")
         cansCenter().coreContext.notificationsManager.service = null
-        super.onDestroy()
+        try {
+            super.onDestroy()
+        } catch (e: IllegalArgumentException) {
+            if (e.message.orEmpty().contains("Receiver not registered", ignoreCase = true)) {
+                Log.w("[Service] onDestroy: receiver not registered, ignoring", e)
+            } else {
+                Log.e("[Service] onDestroy: unexpected IllegalArgumentException", e)
+                throw e
+            }
+        }
     }
 }

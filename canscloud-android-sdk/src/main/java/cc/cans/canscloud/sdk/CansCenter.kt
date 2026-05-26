@@ -60,6 +60,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
@@ -96,6 +98,10 @@ data class Notifiable(val notificationId: Int) {
 }
 
 class CansCenter : Cans {
+    companion object {
+        const val DEFAULT_FILE_TRANSFER_SERVER = "https://files.linphone.org/http-file-transfer-server/hft.php"
+    }
+
     override lateinit var core: Core
     override lateinit var callCans: Call
     override lateinit var mVibrator: Vibrator
@@ -114,6 +120,7 @@ class CansCenter : Cans {
         SupervisorJob() + Dispatchers.Main.immediate
     )
     private val sdkBackgroundScope = CoroutineScope(Dispatchers.IO)
+    private val configureChatMutex = Mutex()
     private var EVENT_SIP_NOT_LINKED = "SIP_NOT_LINKED"
     private var EVENT_PASSWORD_RESET = "PASSWORD_RESET_REQUIRED"
 
@@ -657,6 +664,12 @@ class CansCenter : Cans {
             setBool("misc", "cpim_messages_enabled", true)
 
             setInt("lime", "enabled", 0)
+
+            // Do not send a SIP unregister when core.stop() is called.
+            // Keeping sip.unregister_on_stop = 0 preserves the existing registration,
+            // including its pn-prid/FCM push parameters, so FreeSWITCH can continue
+            // using push notifications after the app process stops.
+            setInt("sip", "unregister_on_stop", 0)
         }
 
         core.removeListener(coreListenerStub)
@@ -794,7 +807,7 @@ class CansCenter : Cans {
         val realm = domain.substringBefore(':')
         proxyConfig.conferenceFactoryUri = "sip:conference-factory@$realm"
 
-        corePreferences.keepServiceAlive = true
+        corePreferences.keepServiceAlive = false
         coreContext.notificationsManager.startForeground()
     }
 
@@ -1036,6 +1049,16 @@ class CansCenter : Cans {
     }
 
     override fun refreshRegister() {
+        core.refreshRegisters()
+    }
+
+    override fun resumeRegistration() {
+        val proxyConfig = core.defaultProxyConfig
+        if (proxyConfig != null && !proxyConfig.isRegisterEnabled) {
+            proxyConfig.edit()
+            proxyConfig.isRegisterEnabled = true
+            proxyConfig.done()
+        }
         core.refreshRegisters()
     }
 
@@ -1921,11 +1944,15 @@ class CansCenter : Cans {
             return
         }
 
+        proxyConfig.edit()
         proxyConfig.serverAddr = "sip:$realm:$port;transport=$transportParam"
         proxyConfig.conferenceFactoryUri = "sip:conference-factory@$realm"
-
         proxyConfig.contactUriParameters = "app-login-type=sip"
-        corePreferences.keepServiceAlive = true
+        proxyConfig.done()
+
+        corePreferences.loginInfo = corePreferences.loginInfo.copy(logInType = LogInType.SIP.value)
+
+        corePreferences.keepServiceAlive = false
         coreContext.notificationsManager.startForeground()
     }
 
@@ -2093,15 +2120,19 @@ class CansCenter : Cans {
                     }
 
                     val transportParam = loginTransport.name.lowercase()
+                    proxyConfig.edit()
                     proxyConfig.serverAddr = "sip:$realm:$loginPort;transport=$transportParam"
                     proxyConfig.conferenceFactoryUri = "sip:conference-factory@$realm"
+                    proxyConfig.contactUriParameters = "app-login-type=cans"
+                    proxyConfig.done()
 
                     if (!core.proxyConfigList.contains(proxyConfig)) {
                         core.addProxyConfig(proxyConfig)
                     }
 
-                    proxyConfig.contactUriParameters = "app-login-type=cans"
-                    corePreferences.keepServiceAlive = true
+                    corePreferences.loginInfo = corePreferences.loginInfo.copy(logInType = LogInType.ACCOUNT.value)
+
+                    corePreferences.keepServiceAlive = false
                     coreContext.notificationsManager.startForeground()
 
                 } catch (e: Exception) {
@@ -2123,71 +2154,76 @@ class CansCenter : Cans {
         val dbName = "${currentUser}-chats.db"
         val dbFile = File(context.filesDir, dbName)
         val dbPath = dbFile.absolutePath
-        val config = core.config
 
-        if (core.globalState == org.linphone.core.GlobalState.On &&
-            core.config.getString("storage", "uri", "") == dbPath) {
-            return
-        }
+        sdkScope.launch {
+            configureChatMutex.withLock {
+            if (core.globalState == org.linphone.core.GlobalState.On &&
+                core.config.getString("storage", "uri", "") == dbPath) {
+                return@withLock
+            }
 
-        val previousProxyList = core.proxyConfigList.toList()
-        val previousAuthList = core.authInfoList.toList()
+            val previousProxyList = core.proxyConfigList.toList()
+            val previousAuthList = core.authInfoList.toList()
 
-        core.removeListener(coreListenerStub)
-        if (core.globalState != org.linphone.core.GlobalState.Off) {
+            core.removeListener(coreListenerStub)
+            if (core.globalState != org.linphone.core.GlobalState.Off) {
+                try {
+                    core.stop()
+                    kotlinx.coroutines.delay(300)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error stopping core: ${e.message}")
+                }
+            }
+
+            val config = core.config
+            config.setString("storage", "backend", "sqlite")
+            config.setString("storage", "uri", dbPath)
+            config.setString("misc", "chat_database_path", dbPath)
+            config.setString("call_logs", "database_path", dbPath)
+            config.setBool("misc", "load_chat_rooms_from_db", true)
+            config.setBool("misc", "store_chat_logs", true)
+            config.setBool("misc", "chat_rooms_enabled", true)
+            config.setBool("misc", "hide_chat_rooms_from_removed_proxies", false)
+            config.setBool("misc", "hide_empty_chat_rooms", false)
+            config.setBool("misc", "group_chat_supported", false)
+            config.setString("misc", "file_transfer_protocol", "https")
+            core.fileTransferServer = DEFAULT_FILE_TRANSFER_SERVER
+            core.maxSizeForAutoDownloadIncomingFiles = -1
+            core.imdnToEverybodyThreshold = 1
+
             try {
-                core.stop()
+                core.start()
+                repeat(10) { core.iterate() }
             } catch (e: Exception) {
-                Log.e(TAG, "Error stopping core: ${e.message}")
+                Log.e(TAG, "Failed to restart core: ${e.message}")
             }
-        }
 
-        config.setString("storage", "backend", "sqlite")
-        config.setString("storage", "uri", dbPath)
-        config.setString("misc", "chat_database_path", dbPath)
-        config.setString("call_logs", "database_path", dbPath)
-        config.setBool("misc", "load_chat_rooms_from_db", true)
-        config.setBool("misc", "store_chat_logs", true)
-        config.setBool("misc", "chat_rooms_enabled", true)
-        config.setBool("misc", "hide_chat_rooms_from_removed_proxies", false)
-        config.setBool("misc", "hide_empty_chat_rooms", false)
-        config.setBool("misc", "group_chat_supported", false)
-        config.setString("misc", "file_transfer_protocol", "https")
-        core.fileTransferServer = "https://files.linphone.org/http-file-transfer-server/hft.php"
-        core.maxSizeForAutoDownloadIncomingFiles = -1
-        core.imdnToEverybodyThreshold = 1
-
-        try {
-            core.start()
-            repeat(10) { core.iterate() }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to restart core: ${e.message}")
-        }
-
-        if (core.accountList.isEmpty() && previousProxyList.isNotEmpty()) {
-            previousAuthList.forEach {
-                try { core.addAuthInfo(it) } catch (e: Exception) {}
+            if (core.accountList.isEmpty() && previousProxyList.isNotEmpty()) {
+                previousAuthList.forEach {
+                    try { core.addAuthInfo(it) } catch (e: Exception) {}
+                }
+                previousProxyList.forEach {
+                    try { core.addProxyConfig(it) } catch (e: Exception) {}
+                }
             }
-            previousProxyList.forEach {
-                try { core.addProxyConfig(it) } catch (e: Exception) {}
+
+            val targetAccount = core.accountList.find {
+                it.params.identityAddress?.username?.equals(currentUser, ignoreCase = true) == true
             }
+
+            if (targetAccount != null) {
+                core.defaultAccount = targetAccount
+            }
+
+            core.addListener(coreListenerStub)
+            core.isNetworkReachable = true
+            core.refreshRegisters()
+
+            core.config.sync()
+
+            repeat(5) { core.iterate() }
+            } // end configureChatMutex.withLock
         }
-
-        val targetAccount = core.accountList.find {
-            it.params.identityAddress?.username?.equals(currentUser, ignoreCase = true) == true
-        }
-
-        if (targetAccount != null) {
-            core.defaultAccount = targetAccount
-        }
-
-        core.addListener(coreListenerStub)
-        core.isNetworkReachable = true
-        core.refreshRegisters()
-
-        core.config.sync()
-
-        repeat(5) { core.iterate() }
     }
 
     private fun hasValidConferenceFactory(): Boolean {
