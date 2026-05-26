@@ -77,7 +77,12 @@ class CoreService : CoreService() {
         try {
             super.onDestroy()
         } catch (e: IllegalArgumentException) {
-            Log.w("[Service] onDestroy: receiver not registered, ignoring — ${e.message}")
+            if (e.message.orEmpty().contains("Receiver not registered", ignoreCase = true)) {
+                Log.w("[Service] onDestroy: receiver not registered, ignoring", e)
+            } else {
+                Log.e("[Service] onDestroy: unexpected IllegalArgumentException", e)
+                throw e
+            }
         }
     }
 }

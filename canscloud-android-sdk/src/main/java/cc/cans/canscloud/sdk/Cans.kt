@@ -256,5 +256,7 @@ interface Cans {
         throw UnsupportedOperationException("Video calling is not supported by this Cans implementation.")
     }
 
-    fun resumeRegistration()
+    fun resumeRegistration() {
+        throw UnsupportedOperationException("Registration resumption is not supported by this Cans implementation.")
+    }
 }

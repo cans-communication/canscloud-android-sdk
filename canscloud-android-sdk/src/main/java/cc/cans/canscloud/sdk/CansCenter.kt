@@ -60,6 +60,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
@@ -118,6 +120,7 @@ class CansCenter : Cans {
         SupervisorJob() + Dispatchers.Main.immediate
     )
     private val sdkBackgroundScope = CoroutineScope(Dispatchers.IO)
+    private val configureChatMutex = Mutex()
     private var EVENT_SIP_NOT_LINKED = "SIP_NOT_LINKED"
     private var EVENT_PASSWORD_RESET = "PASSWORD_RESET_REQUIRED"
 
@@ -662,9 +665,10 @@ class CansCenter : Cans {
 
             setInt("lime", "enabled", 0)
 
-            // Keep the SIP registration alive in FreeSWITCH when the process is killed.
-            // pn-prid FCM params and prevent FreeSWITCH from using push. Setting this to 0
-            // makes core.stop() close the socket cleanly without deregistering.
+            // Do not send a SIP unregister when core.stop() is called.
+            // Keeping sip.unregister_on_stop = 0 preserves the existing registration,
+            // including its pn-prid/FCM push parameters, so FreeSWITCH can continue
+            // using push notifications after the app process stops.
             setInt("sip", "unregister_on_stop", 0)
         }
 
@@ -2115,16 +2119,16 @@ class CansCenter : Cans {
                         return@launch
                     }
 
-                    if (!core.proxyConfigList.contains(proxyConfig)) {
-                        core.addProxyConfig(proxyConfig)
-                    }
-
                     val transportParam = loginTransport.name.lowercase()
                     proxyConfig.edit()
                     proxyConfig.serverAddr = "sip:$realm:$loginPort;transport=$transportParam"
                     proxyConfig.conferenceFactoryUri = "sip:conference-factory@$realm"
                     proxyConfig.contactUriParameters = "app-login-type=cans"
                     proxyConfig.done()
+
+                    if (!core.proxyConfigList.contains(proxyConfig)) {
+                        core.addProxyConfig(proxyConfig)
+                    }
 
                     corePreferences.loginInfo = corePreferences.loginInfo.copy(logInType = LogInType.ACCOUNT.value)
 
@@ -2152,9 +2156,10 @@ class CansCenter : Cans {
         val dbPath = dbFile.absolutePath
 
         sdkScope.launch {
+            configureChatMutex.withLock {
             if (core.globalState == org.linphone.core.GlobalState.On &&
                 core.config.getString("storage", "uri", "") == dbPath) {
-                return@launch
+                return@withLock
             }
 
             val previousProxyList = core.proxyConfigList.toList()
@@ -2217,6 +2222,7 @@ class CansCenter : Cans {
             core.config.sync()
 
             repeat(5) { core.iterate() }
+            } // end configureChatMutex.withLock
         }
     }
 
