@@ -1942,8 +1942,6 @@ class CansCenter : Cans {
         proxyConfig.contactUriParameters = "app-login-type=sip"
         proxyConfig.done()
 
-        // Eagerly persist so getLogInType() returns "sip" immediately — before
-        // onAccountRegistrationStateChanged has a chance to call updateCurrentLoginTypeFromAccount().
         corePreferences.loginInfo = corePreferences.loginInfo.copy(logInType = LogInType.SIP.value)
 
         corePreferences.keepServiceAlive = false
