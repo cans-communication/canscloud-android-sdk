@@ -67,6 +67,7 @@ class NotificationsManager(private val context: Context) {
             )
             val intent = Intent()
             intent.setClass(cansCenter().context, CoreService::class.java)
+            intent.putExtra("StartForeground", true)
             try {
                 cansCenter().context.startForegroundService(intent)
             } catch (ise: IllegalStateException) {
