@@ -1867,6 +1867,9 @@ class CansCenter : Cans {
         indexAccount: Int,
         listener: CansRegisterAccountListenerStub
     ) {
+        if (::accountDefault.isInitialized) {
+            accountDefault.removeListener(accountListener)
+        }
         val account = core.accountList[indexAccount]
         accountDefault = account
         accountDefault.addListener(accountListener)
@@ -1876,7 +1879,9 @@ class CansCenter : Cans {
     override fun removeCansRegisterAccountListener(
         listener: CansRegisterAccountListenerStub
     ) {
-        accountDefault.removeListener(accountListener)
+        if (::accountDefault.isInitialized) {
+            accountDefault.removeListener(accountListener)
+        }
         registerAccountListeners.remove(listener)
     }
 
