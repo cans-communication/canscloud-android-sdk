@@ -42,21 +42,32 @@ class CoreService : CoreService() {
     }
 
     private fun startEarlyForeground() {
-        val channelId = "sdk_core_startup"
+        val channelId = getString(R.string.notification_channel_service_id)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val nm = getSystemService(NotificationManager::class.java)
+            val channelName = getString(R.string.notification_channel_service_name)
             nm?.createNotificationChannel(
-                NotificationChannel(channelId, "Call Service", NotificationManager.IMPORTANCE_LOW)
+                NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW).apply {
+                    enableVibration(false)
+                    enableLights(false)
+                    setShowBadge(false)
+                },
             )
         }
         val notification = NotificationCompat.Builder(this, channelId)
+            .setContentTitle(getString(R.string.notification_channel_service_name))
+            .setContentText(getString(R.string.service_description))
             .setSmallIcon(R.drawable.topbar_call_notification)
             .setOngoing(true)
             .build()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL)
-        } else {
-            startForeground(1, notification)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL)
+            } else {
+                startForeground(1, notification)
+            }
+        } catch (e: Exception) {
+            Log.e("[Service] Failed to start early foreground: $e")
         }
     }
 

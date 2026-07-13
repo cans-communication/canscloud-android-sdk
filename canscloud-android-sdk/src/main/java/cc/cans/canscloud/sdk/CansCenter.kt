@@ -1867,10 +1867,14 @@ class CansCenter : Cans {
         indexAccount: Int,
         listener: CansRegisterAccountListenerStub
     ) {
+        val accounts = core.accountList
+        if (indexAccount < 0 || indexAccount >= accounts.size) {
+            return
+        }
+        val account = accounts[indexAccount]
         if (::accountDefault.isInitialized) {
             accountDefault.removeListener(accountListener)
         }
-        val account = core.accountList[indexAccount]
         accountDefault = account
         accountDefault.addListener(accountListener)
         registerAccountListeners.add(listener)
