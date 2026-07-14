@@ -19,19 +19,66 @@
  */
 package cc.cans.canscloud.sdk.core
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.os.Build
+import androidx.core.app.NotificationCompat
+import cc.cans.canscloud.sdk.R
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
 import org.linphone.core.tools.Log
 import org.linphone.core.tools.service.CoreService
 
 class CoreService : CoreService() {
     override fun onCreate() {
+        // startForeground() must be called before super.onCreate() to satisfy the Android 8+
+        // 5-second rule. super.onCreate() blocks on linphone JNI initialization which can
+        // easily exceed that window, causing ForegroundServiceDidNotStartInTimeException.
+        startEarlyForeground()
         super.onCreate()
         cansCenter().coreContext.notificationsManager.service = this
         Log.i("[Service] Created")
     }
 
+    private fun startEarlyForeground() {
+        val channelId = getString(R.string.notification_channel_service_id)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val nm = getSystemService(NotificationManager::class.java)
+            val channelName = getString(R.string.notification_channel_service_name)
+            nm?.createNotificationChannel(
+                NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW).apply {
+                    enableVibration(false)
+                    enableLights(false)
+                    setShowBadge(false)
+                },
+            )
+        }
+        val notification = NotificationCompat.Builder(this, channelId)
+            .setContentTitle(getString(R.string.notification_channel_service_name))
+            .setContentText(getString(R.string.service_description))
+            .setSmallIcon(R.drawable.topbar_call_notification)
+            .setOngoing(true)
+            .build()
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL)
+            } else {
+                startForeground(1, notification)
+            }
+        } catch (e: Exception) {
+            Log.e("[Service] Failed to start early foreground: $e")
+        }
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Defensively satisfy Android's 5-second startForeground() rule immediately.
+        // This prevents ForegroundServiceDidNotStartInTimeException if the service is already
+        // running (skipping onCreate) and subsequent startForeground() calls silently fail
+        // (e.g. missing DATA_SYNC type on Android 15+).
+        // startEarlyForeground() safely uses PHONE_CALL type which is guaranteed to be declared.
+        startEarlyForeground()
+
         if (cansCenter().corePreferences.keepServiceAlive) {
             Log.i("[Service] Starting as foreground to keep app alive in background")
             cansCenter().coreContext.notificationsManager.startForegroundToKeepAppAlive(this, false)
