@@ -195,9 +195,9 @@ class CansCenter : Cans {
             if (defaultAccount != null) {
                 state = defaultAccount.state
 
-                // Map every state explicitly: Progress/Refreshing used to fall into
-                // the `else` and read as FAIL, so this property reported a failure
-                // on every healthy re-REGISTER.
+                // Map the known states explicitly; `else` stays the failure catch-all.
+                // Progress/Refreshing used to fall into that `else` and read as FAIL,
+                // so this property reported a failure on every healthy re-REGISTER.
                 return when (state) {
                     RegistrationState.Ok -> RegisterState.OK
                     RegistrationState.None -> RegisterState.NONE
