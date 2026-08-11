@@ -195,9 +195,15 @@ class CansCenter : Cans {
             if (defaultAccount != null) {
                 state = defaultAccount.state
 
+                // Map every state explicitly: Progress/Refreshing used to fall into
+                // the `else` and read as FAIL, so this property reported a failure
+                // on every healthy re-REGISTER.
                 return when (state) {
                     RegistrationState.Ok -> RegisterState.OK
                     RegistrationState.None -> RegisterState.NONE
+                    RegistrationState.Cleared -> RegisterState.CLEARED
+                    RegistrationState.Progress,
+                    RegistrationState.Refreshing -> RegisterState.PROGRESS
                     else -> RegisterState.FAIL
                 }
             }
@@ -334,12 +340,31 @@ class CansCenter : Cans {
                 updateCurrentLoginTypeFromAccount()
             }
 
+            // The ongoing (post-login) registration feed. Report the real state:
+            // it used to publish RegisterState.OK for *every* transition, so a
+            // Failed re-REGISTER — say, after a Domain or SIP Proxy edit — read as
+            // "registered".
+            //
+            // Gating on defaultAccount mirrors the iOS guard: a FAIL from a
+            // non-default account being deregistered must not overwrite the badge
+            // while the default account is still OK.
             if (account == core.defaultAccount) {
-                registerListeners.forEach {
-                    it.onUpdateAccountRegistration(
-                        RegisterState.OK,
-                        message
-                    )
+                // Progress/Refreshing map to PROGRESS instead of being dropped: an
+                // unreachable proxy takes ~32s to fail over UDP (SIP Timer F), and
+                // swallowing the transition left the badge on a stale "Registered"
+                // that whole time. Consumers that care only about terminal states
+                // already guard on OK/FAIL explicitly.
+                val mapped = when (state) {
+                    RegistrationState.Ok -> RegisterState.OK
+                    RegistrationState.Failed -> RegisterState.FAIL
+                    RegistrationState.Cleared -> RegisterState.CLEARED
+                    RegistrationState.None -> RegisterState.NONE
+                    RegistrationState.Progress,
+                    RegistrationState.Refreshing -> RegisterState.PROGRESS
+                    else -> null
+                }
+                if (mapped != null) {
+                    registerListeners.forEach { it.onUpdateAccountRegistration(mapped, message) }
                 }
             } else if (core.accountList.isEmpty()) {
                 registerListeners.forEach {
@@ -357,8 +382,21 @@ class CansCenter : Cans {
             state: RegistrationState,
             message: String,
         ) {
-            Log.i("$TAG: onRegistration", "${cansCenter().defaultStateRegister}")
-            if (cfg == proxyConfigToCheck) {
+            // Log the state this callback was handed. It used to log
+            // defaultStateRegister — a different value, read back off the account —
+            // which made healthy Progress transitions read as "FAIL" in logcat.
+            Log.i("$TAG: onRegistration", "Registration state is $state: $message")
+            // proxyConfigToCheck is assigned only inside an explicit login flow and
+            // never restored on process start, so a cold launch with a saved
+            // account leaves it null — this callback then dropped every state
+            // change for the life of the process. Fall back to the default proxy
+            // config so post-login transitions still reach listeners.
+            val isTrackedConfig = if (proxyConfigToCheck != null) {
+                cfg == proxyConfigToCheck
+            } else {
+                cfg == core.defaultProxyConfig
+            }
+            if (isTrackedConfig) {
                 Log.i(TAG, "[Account Login] Registration state is $state: $message")
                 if (state == RegistrationState.Ok) {
                     registerListeners.forEach { it.onRegistration(RegisterState.OK, message) }
