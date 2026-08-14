@@ -40,6 +40,8 @@ class SharedMainViewModel : ViewModel() {
                     statusRegister.value = R.string.un_register
                     isRegister.value = false
                 }
+
+                RegisterState.PROGRESS -> {}
             }
         }
 
@@ -116,6 +118,8 @@ class SharedMainViewModel : ViewModel() {
                     statusRegister.value = R.string.un_register
                     isRegister.value = false
                 }
+
+                RegisterState.PROGRESS -> {}
             }
         }
 
