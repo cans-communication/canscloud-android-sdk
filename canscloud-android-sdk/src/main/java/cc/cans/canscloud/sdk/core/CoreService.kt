@@ -32,9 +32,9 @@ import org.linphone.core.tools.service.CoreService
 
 class CoreService : CoreService() {
     override fun onCreate() {
-        // startForeground() must be called before super.onCreate() to satisfy the Android 8+
-        // 5-second rule. super.onCreate() blocks on linphone JNI initialization which can
-        // easily exceed that window, causing ForegroundServiceDidNotStartInTimeException.
+        // Must run before super.onCreate(): Android 8+ requires startForeground() within 5s,
+        // and super.onCreate() blocks on Linphone JNI init long enough to blow that window
+        // (ForegroundServiceDidNotStartInTimeException).
         startEarlyForeground()
         super.onCreate()
         cansCenter().coreContext.notificationsManager.service = this
@@ -72,11 +72,10 @@ class CoreService : CoreService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Defensively satisfy Android's 5-second startForeground() rule immediately.
-        // This prevents ForegroundServiceDidNotStartInTimeException if the service is already
-        // running (skipping onCreate) and subsequent startForeground() calls silently fail
-        // (e.g. missing DATA_SYNC type on Android 15+).
-        // startEarlyForeground() safely uses PHONE_CALL type which is guaranteed to be declared.
+        // Defensive re-arm of the 5-second startForeground() rule: covers the service already
+        // running (onCreate skipped) and cases where a later startForeground() call silently
+        // fails (e.g. missing DATA_SYNC type on Android 15+). Uses PHONE_CALL type, which is
+        // always declared.
         startEarlyForeground()
 
         if (cansCenter().corePreferences.keepServiceAlive) {
@@ -105,12 +104,11 @@ class CoreService : CoreService() {
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        // Always hang up any live call first, regardless of keepServiceAlive: that flag only
-        // controls whether registration/incoming-call listening survives the task being
-        // swiped away, not whether an in-progress call should. Doing this here (rather than
-        // relying solely on the app-side CallActionService.onTaskRemoved) closes a race where
-        // this service's own core.stop() below could tear down the Core's SIP transport before
-        // a BYE queued elsewhere had a chance to flush, silently orphaning the call.
+        // Hang up any live call before the keepServiceAlive check below: that flag only governs
+        // whether registration/incoming-call listening survives the swipe-away, not active
+        // calls. Doing it here — not just in the app-side CallActionService.onTaskRemoved —
+        // avoids a race where core.stop() below tears down the SIP transport before a
+        // queued BYE can flush, silently orphaning the call.
         if (cansCenter().core.callsNb > 0) {
             Log.i("[Service] Task removed with active call(s), terminating")
             cansCenter().terminateAllCalls()
