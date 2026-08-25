@@ -105,6 +105,17 @@ class CoreService : CoreService() {
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
+        // Always hang up any live call first, regardless of keepServiceAlive: that flag only
+        // controls whether registration/incoming-call listening survives the task being
+        // swiped away, not whether an in-progress call should. Doing this here (rather than
+        // relying solely on the app-side CallActionService.onTaskRemoved) closes a race where
+        // this service's own core.stop() below could tear down the Core's SIP transport before
+        // a BYE queued elsewhere had a chance to flush, silently orphaning the call.
+        if (cansCenter().core.callsNb > 0) {
+            Log.i("[Service] Task removed with active call(s), terminating")
+            cansCenter().terminateAllCalls()
+        }
+
         if (!cansCenter().corePreferences.keepServiceAlive) {
             if (cansCenter().core.isInBackground) {
                 Log.i("[Service] Task removed, stopping Core")
