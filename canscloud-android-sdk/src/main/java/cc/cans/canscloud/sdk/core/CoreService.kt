@@ -24,17 +24,29 @@ import android.app.NotificationManager
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
+import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import cc.cans.canscloud.sdk.R
 import cc.cans.canscloud.sdk.core.CoreContextSDK.Companion.cansCenter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.linphone.core.tools.Log
 import org.linphone.core.tools.service.CoreService
 
 class CoreService : CoreService() {
+    // Pinned to Dispatchers.Main.immediate: Linphone's AndroidPlatformHelper binds its Core
+    // thread to the Looper active when the Core was started (the app's main thread, since
+    // config() runs from Application.onCreate()) and drives its own core.iterate() scheduling
+    // on that same Looper. Anything touching the Core must stay on this thread.
+    private val serviceScope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
     override fun onCreate() {
-        // startForeground() must be called before super.onCreate() to satisfy the Android 8+
-        // 5-second rule. super.onCreate() blocks on linphone JNI initialization which can
-        // easily exceed that window, causing ForegroundServiceDidNotStartInTimeException.
+        // Must run before super.onCreate(): Android 8+ requires startForeground() within 5s,
+        // and super.onCreate() blocks on Linphone JNI init long enough to blow that window
+        // (ForegroundServiceDidNotStartInTimeException).
         startEarlyForeground()
         super.onCreate()
         cansCenter().coreContext.notificationsManager.service = this
@@ -72,11 +84,10 @@ class CoreService : CoreService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Defensively satisfy Android's 5-second startForeground() rule immediately.
-        // This prevents ForegroundServiceDidNotStartInTimeException if the service is already
-        // running (skipping onCreate) and subsequent startForeground() calls silently fail
-        // (e.g. missing DATA_SYNC type on Android 15+).
-        // startEarlyForeground() safely uses PHONE_CALL type which is guaranteed to be declared.
+        // Defensive re-arm of the 5-second startForeground() rule: covers the service already
+        // running (onCreate skipped) and cases where a later startForeground() call silently
+        // fails (e.g. missing DATA_SYNC type on Android 15+). Uses PHONE_CALL type, which is
+        // always declared.
         startEarlyForeground()
 
         if (cansCenter().corePreferences.keepServiceAlive) {
@@ -105,10 +116,28 @@ class CoreService : CoreService() {
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
+        // Hang up any live call before the keepServiceAlive check below: that flag only governs
+        // whether registration/incoming-call listening survives the swipe-away, not active
+        // calls. Doing it here — not just in the app-side CallActionService.onTaskRemoved —
+        // avoids a race where core.stop() below tears down the SIP transport before a
+        // queued BYE can flush, silently orphaning the call.
+        val hadActiveCalls = cansCenter().core.callsNb > 0
+        if (hadActiveCalls) {
+            Log.i("[Service] Task removed with active call(s), terminating")
+            cansCenter().terminateAllCalls()
+        }
+
         if (!cansCenter().corePreferences.keepServiceAlive) {
             if (cansCenter().core.isInBackground) {
-                Log.i("[Service] Task removed, stopping Core")
-                cansCenter().coreContext.stop()
+                if (hadActiveCalls) {
+                    // core.terminateAllCalls() only queues the BYE; give it a short bounded,
+                    // non-blocking window to actually reach the network before stopping the
+                    // Core, without stalling the main/Core thread with Thread.sleep().
+                    stopCoreAfterCallsEnd()
+                } else {
+                    Log.i("[Service] Task removed, stopping Core")
+                    cansCenter().coreContext.stop()
+                }
             } else {
                 Log.w("[Service] Task removed but Core in not in background, skipping")
             }
@@ -118,8 +147,25 @@ class CoreService : CoreService() {
         super.onTaskRemoved(rootIntent)
     }
 
+    private fun stopCoreAfterCallsEnd() {
+        serviceScope.launch {
+            val core = cansCenter().core
+            val deadline = SystemClock.elapsedRealtime() + CALL_TERMINATION_GRACE_PERIOD_MS
+            while (core.callsNb > 0 && SystemClock.elapsedRealtime() < deadline) {
+                core.iterate()
+                delay(CALL_TERMINATION_POLL_INTERVAL_MS)
+            }
+            if (core.callsNb > 0) {
+                Log.w("[Service] Task removed, call(s) still active after grace period, stopping anyway")
+            }
+            Log.i("[Service] Task removed, stopping Core")
+            cansCenter().coreContext.stop()
+        }
+    }
+
     override fun onDestroy() {
         Log.i("[Service] Stopping")
+        serviceScope.cancel()
         cansCenter().coreContext.notificationsManager.service = null
         try {
             super.onDestroy()
@@ -131,5 +177,10 @@ class CoreService : CoreService() {
                 throw e
             }
         }
+    }
+
+    companion object {
+        private const val CALL_TERMINATION_GRACE_PERIOD_MS = 1000L
+        private const val CALL_TERMINATION_POLL_INTERVAL_MS = 50L
     }
 }
