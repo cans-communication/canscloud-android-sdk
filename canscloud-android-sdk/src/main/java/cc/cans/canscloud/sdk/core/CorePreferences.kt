@@ -715,6 +715,21 @@ class CorePreferences constructor(private val context: Context) {
         config.setString("app", "domain_uuid_$sipAddress", uuid)
     }
 
+    private val accountPermissionStore: AccountPermissionStore
+        get() = AccountPermissionStore(
+            read = { key -> config.getString("app", key, "") },
+            write = { key, value -> config.setString("app", key, value) },
+        )
+
+    /** `null` when no permissions are stored for [sipAddress]; an empty list is a real answer. */
+    fun getAccountPermissions(sipAddress: String): List<String>? =
+        accountPermissionStore.get(sipAddress)
+
+    /** `null` removes the stored list, leaving the account's permissions unknown. */
+    fun setAccountPermissions(sipAddress: String, permissions: List<String?>?) {
+        accountPermissionStore.set(sipAddress, permissions)
+    }
+
     fun copyAssetsFromPackage() {
         copy("linphonerc_default", configPath)
         copy("linphonerc_factory", factoryConfigPath, true)

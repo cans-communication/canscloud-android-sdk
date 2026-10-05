@@ -33,5 +33,7 @@ data class LoginV3User(
     @SerializedName("updated_by_display_name") val updatedByDisplayName: String?,
     @SerializedName("updated_by_profile_image_url") val updatedByProfileImageUrl: String?,
     @SerializedName("password_reset_required") val passwordResetRequired: Boolean,
-    @SerializedName("is_active") val isActive: Boolean
+    @SerializedName("is_active") val isActive: Boolean,
+    /** Raw permission codes; `null` when the response has no `permissions` field. */
+    @SerializedName("permissions") val permissions: List<String?>? = null
 )

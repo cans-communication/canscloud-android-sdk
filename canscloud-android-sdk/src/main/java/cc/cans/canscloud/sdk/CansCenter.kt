@@ -2122,6 +2122,8 @@ class CansCenter : Cans {
 
                     corePreferences.setAccessToken(currentSipAddress, accessToken)
                     corePreferences.setDomainUUID(currentSipAddress, domainUuid)
+                    // Always overwritten: a response without `permissions` clears the old list.
+                    corePreferences.setAccountPermissions(currentSipAddress, v3Data.user.permissions)
 
                     val loginPort = 8446
                     val loginTransport = TransportType.Tcp
@@ -2475,13 +2477,18 @@ class CansCenter : Cans {
         val sipAddress = "$username@$domain"
         corePreferences.setAccessToken(sipAddress, null)
         corePreferences.setDomainUUID(sipAddress, null)
+        corePreferences.setAccountPermissions(sipAddress, null)
 
         if (serverDomain.isNotEmpty() && serverDomain != domain) {
             val serverSipAddress = "$username@$serverDomain"
             corePreferences.setAccessToken(serverSipAddress, null)
             corePreferences.setDomainUUID(serverSipAddress, null)
+            corePreferences.setAccountPermissions(serverSipAddress, null)
         }
     }
+
+    override fun getAccountPermissions(sipAddress: String): List<String>? =
+        corePreferences.getAccountPermissions(sipAddress)
 
     override fun makeVideoCall(number: String) {
         val address = core.interpretUrl(number) ?: return
