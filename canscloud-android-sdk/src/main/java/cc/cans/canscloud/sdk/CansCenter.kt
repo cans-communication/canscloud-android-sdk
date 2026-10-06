@@ -25,6 +25,7 @@ import cc.cans.canscloud.data.ProvisioningResult
 import cc.cans.canscloud.data.ProvisioningService
 
 import cc.cans.canscloud.sdk.bcrypt.LoginBcryptManager
+import cc.cans.canscloud.sdk.bcrypt.models.sipAccountIdentity
 import cc.cans.canscloud.sdk.callback.CansListenerStub
 import cc.cans.canscloud.sdk.callback.CansRegisterAccountListenerStub
 import cc.cans.canscloud.sdk.callback.CansRegisterListenerStub
@@ -2122,18 +2123,21 @@ class CansCenter : Cans {
 
                     corePreferences.setAccessToken(currentSipAddress, accessToken)
                     corePreferences.setDomainUUID(currentSipAddress, domainUuid)
+
+                    val identity = credentials.sipAccountIdentity(username, domain)
+                    val realm = identity.domain
+                    // Keyed by the identity the account is created with below, not by
+                    // `currentSipAddress`: the two differ when `sip-credentials` returns another
+                    // domain or no extension, and lookup and sign-out only know the identity.
                     // Always overwritten: a response without `permissions` clears the old list.
-                    corePreferences.setAccountPermissions(currentSipAddress, v3Data.user.permissions)
+                    corePreferences.setAccountPermissions(identity.address, v3Data.user.permissions)
 
                     val loginPort = 8446
                     val loginTransport = TransportType.Tcp
 
-                    val domainFromApi = credentials.domainName ?: domain
-                    val realm = domainFromApi.substringBefore(':')
-
                     val factory = Factory.instance()
                     val auth = factory.createAuthInfo(
-                        /* username */ credentials.extension ?: username,
+                        /* username */ identity.username,
                         /* userid   */ null,
                         /* passwd   */ null,
                         /* ha1      */ credentials.sipCreds,
@@ -2145,7 +2149,7 @@ class CansCenter : Cans {
 
                     accountCreator = getAccountCreator()
 
-                    val resultUsername = accountCreator.setUsername(credentials.extension ?: username)
+                    val resultUsername = accountCreator.setUsername(identity.username)
                     if (resultUsername != AccountCreator.UsernameStatus.Ok) {
                         registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                         return@launch
