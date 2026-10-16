@@ -1,9 +1,13 @@
 package cc.cans.canscloud.sdk.bcrypt
 
 import cc.cans.canscloud.sdk.bcrypt.models.LoginV3Response
+import cc.cans.canscloud.sdk.bcrypt.models.rawSignInUser
 import com.google.gson.Gson
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LoginV3ResponseTest {
@@ -56,5 +60,24 @@ class LoginV3ResponseTest {
     @Test
     fun emptyArray_isAnEmptyList() {
         assertEquals(emptyList<String>(), parse(""", "permissions": []""").data?.user?.permissions)
+    }
+
+    @Test
+    fun rawUser_keepsFieldsTheModelDoesNotHave() {
+        val body = JsonParser.parseString(
+            response(""", "profile_image_url": "https://example.test/a.png", "future_field": 1"""),
+        ).asJsonObject
+        val user = JsonParser.parseString(rawSignInUser(body)).asJsonObject
+        assertEquals("https://example.test/a.png", user["profile_image_url"].asString)
+        assertEquals(1, user["future_field"].asInt)
+        assertTrue(user.has("user_id"))
+    }
+
+    @Test
+    fun rawUser_isNullWithoutAUserObject() {
+        assertNull(rawSignInUser(null))
+        assertNull(rawSignInUser(JsonParser.parseString("""{"data":null}""").asJsonObject))
+        assertNull(rawSignInUser(JsonParser.parseString("""{"data":{"user":[]}}""").asJsonObject))
+        assertNull(rawSignInUser(JsonObject()))
     }
 }

@@ -261,4 +261,6 @@ interface Cans {
     }
 
     fun getAccountPermissions(sipAddress: String): List<String>? = null
+
+    fun getSignInUser(sipAddress: String): String? = null
 }

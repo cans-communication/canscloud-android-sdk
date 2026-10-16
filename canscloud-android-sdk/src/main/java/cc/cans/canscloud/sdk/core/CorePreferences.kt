@@ -730,6 +730,20 @@ class CorePreferences constructor(private val context: Context) {
         accountPermissionStore.set(sipAddress, permissions)
     }
 
+    private val signInUserStore: SignInUserStore
+        get() = SignInUserStore(
+            read = { key -> config.getString("app", key, "") },
+            write = { key, value -> config.setString("app", key, value) },
+        )
+
+    /** `data.user` from the last sign-in/cc of [sipAddress] as JSON text, or `null` when none is stored. */
+    fun getSignInUser(sipAddress: String): String? = signInUserStore.get(sipAddress)
+
+    /** `null` removes the stored user. */
+    fun setSignInUser(sipAddress: String, userJson: String?) {
+        signInUserStore.set(sipAddress, userJson)
+    }
+
     fun copyAssetsFromPackage() {
         copy("linphonerc_default", configPath)
         copy("linphonerc_factory", factoryConfigPath, true)
