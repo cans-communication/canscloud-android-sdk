@@ -12,7 +12,7 @@ import org.junit.Test
 
 class LoginV3ResponseTest {
     /** Shape of `POST api/v3/sign-in/cc`; every value, including the token, is made up. */
-    private fun response(permissionsField: String) = """
+    private fun response(extraFields: String) = """
         {
           "data": {
             "token": "fake-token-for-tests",
@@ -25,41 +25,33 @@ class LoginV3ResponseTest {
               "extension_id": "extension-1",
               "is_active": true,
               "password_reset_required": false
-              $permissionsField
+              $extraFields
             }
           },
           "message": "Login successful"
         }
     """.trimIndent()
 
-    private fun parse(permissionsField: String) =
-        Gson().fromJson(response(permissionsField), LoginV3Response::class.java)
+    private fun parse(extraFields: String) =
+        Gson().fromJson(response(extraFields), LoginV3Response::class.java)
 
     @Test
-    fun parsesEveryPermissionAsSent() {
-        val parsed = parse(
-            """, "permissions": ["contacts:create", "chats:delete@full_access", "contacts:delete"]""",
-        )
+    fun parsesTheFieldsTheSdkUses() {
+        val parsed = parse("")
+        assertEquals("domain-1", parsed.data?.user?.domainId)
+        assertEquals("9000", parsed.data?.user?.extensionNumber)
+    }
+
+    @Test
+    fun rawUser_keepsPermissionsAsSent() {
+        val body = JsonParser.parseString(
+            response(""", "permissions": ["contacts:create", "chats:delete@full_access", "contacts:delete"]"""),
+        ).asJsonObject
+        val user = JsonParser.parseString(rawSignInUser(body)).asJsonObject
         assertEquals(
             listOf("contacts:create", "chats:delete@full_access", "contacts:delete"),
-            parsed.data?.user?.permissions,
+            user["permissions"].asJsonArray.map { it.asString },
         )
-        assertEquals("domain-1", parsed.data?.user?.domainId)
-    }
-
-    @Test
-    fun missingField_isNull() {
-        assertNull(parse("").data?.user?.permissions)
-    }
-
-    @Test
-    fun explicitNull_isNull() {
-        assertNull(parse(""", "permissions": null""").data?.user?.permissions)
-    }
-
-    @Test
-    fun emptyArray_isAnEmptyList() {
-        assertEquals(emptyList<String>(), parse(""", "permissions": []""").data?.user?.permissions)
     }
 
     @Test

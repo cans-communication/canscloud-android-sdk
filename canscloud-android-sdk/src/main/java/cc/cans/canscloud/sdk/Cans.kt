@@ -260,7 +260,5 @@ interface Cans {
         throw UnsupportedOperationException("Registration resumption is not supported by this Cans implementation.")
     }
 
-    fun getAccountPermissions(sipAddress: String): List<String>? = null
-
     fun getSignInUser(sipAddress: String): String? = null
 }
