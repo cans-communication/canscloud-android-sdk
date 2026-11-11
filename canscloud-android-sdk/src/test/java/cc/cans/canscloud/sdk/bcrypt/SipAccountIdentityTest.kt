@@ -2,28 +2,28 @@ package cc.cans.canscloud.sdk.bcrypt
 
 import cc.cans.canscloud.sdk.bcrypt.models.LoginSipCredentialsData
 import cc.cans.canscloud.sdk.bcrypt.models.sipAccountIdentity
-import cc.cans.canscloud.sdk.core.AccountPermissionStore
+import cc.cans.canscloud.sdk.core.SignInUserStore
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
 /**
- * The login stores the permission list under the identity the account is created with, and
+ * The login stores the sign-in user under the identity the account is created with, and
  * lookup and sign-out read that same identity back from the account. Every value is made up.
  */
 class SipAccountIdentityTest {
     private val loginUsername = "user@example.test"
     private val loginDomain = "login.example.test"
-    private val permissions = listOf("contacts:create", "chats:delete@full_access")
+    private val user = """{"user_id":"user-1","permissions":["contacts:create"]}"""
 
     private val storage = HashMap<String, String>()
-    private lateinit var store: AccountPermissionStore
+    private lateinit var store: SignInUserStore
 
     @Before
     fun setUp() {
         storage.clear()
-        store = AccountPermissionStore(
+        store = SignInUserStore(
             read = { key -> storage[key] ?: "" },
             write = { key, value -> if (value == null) storage.remove(key) else storage[key] = value },
         )
@@ -55,10 +55,10 @@ class SipAccountIdentityTest {
     @Test
     fun responseWithAnotherSipDomain_isFoundAndClearedByTheAccountIdentity() {
         val identity = credentials("9000", "sip.example.test").sipAccountIdentity(loginUsername, loginDomain)
-        store.set(identity.address, permissions)
+        store.set(identity.address, user)
 
         // What the registered account reports: `<identity username>@<identity domain>`.
-        assertEquals(permissions, store.get("9000@sip.example.test"))
+        assertEquals(user, store.get("9000@sip.example.test"))
         // The old key, `<extension>@<login domain>`, holds nothing.
         assertNull(store.get("9000@$loginDomain"))
 
@@ -72,9 +72,9 @@ class SipAccountIdentityTest {
         val identity = credentials(null, null).sipAccountIdentity(loginUsername, loginDomain)
         assertEquals(loginUsername, identity.username)
         assertEquals(loginDomain, identity.domain)
-        store.set(identity.address, permissions)
+        store.set(identity.address, user)
 
-        assertEquals(permissions, store.get("$loginUsername@$loginDomain"))
+        assertEquals(user, store.get("$loginUsername@$loginDomain"))
         // The old key had an empty username.
         assertNull(store.get("@$loginDomain"))
 
@@ -83,14 +83,15 @@ class SipAccountIdentityTest {
     }
 
     @Test
-    fun sameExtensionOnTwoSipDomains_keepSeparateLists() {
+    fun sameExtensionOnTwoSipDomains_keepSeparateUsers() {
         val first = credentials("9000", "a.example.test").sipAccountIdentity(loginUsername, loginDomain)
         val second = credentials("9000", "b.example.test").sipAccountIdentity(loginUsername, loginDomain)
-        store.set(first.address, permissions)
-        store.set(second.address, emptyList())
+        val secondUser = """{"user_id":"user-2"}"""
+        store.set(first.address, user)
+        store.set(second.address, secondUser)
 
         store.clear(first.address)
         assertNull(store.get(first.address))
-        assertEquals(emptyList<String>(), store.get(second.address))
+        assertEquals(secondUser, store.get(second.address))
     }
 }

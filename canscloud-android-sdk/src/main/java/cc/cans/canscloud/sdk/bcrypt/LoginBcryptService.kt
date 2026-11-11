@@ -4,7 +4,6 @@ import cc.cans.canscloud.sdk.bcrypt.models.LoginCpanelRequest
 import cc.cans.canscloud.sdk.bcrypt.models.LoginCpanelResponse
 import cc.cans.canscloud.sdk.bcrypt.models.LoginSipCredentialsResponse
 import cc.cans.canscloud.sdk.bcrypt.models.LoginV3Request
-import cc.cans.canscloud.sdk.bcrypt.models.LoginV3Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
@@ -29,7 +28,7 @@ interface LoginBcryptService {
     suspend fun loginCANSCloudV3(
         @Url url: String,
         @Body request: LoginV3Request
-    ): retrofit2.Response<LoginV3Response>
+    ): retrofit2.Response<com.google.gson.JsonObject>
 
     @PATCH
     suspend fun forceSetPassword(

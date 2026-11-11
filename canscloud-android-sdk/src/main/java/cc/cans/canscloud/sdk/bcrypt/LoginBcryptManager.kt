@@ -4,6 +4,9 @@ import cc.cans.canscloud.sdk.bcrypt.models.LoginCpanelRequest
 import cc.cans.canscloud.sdk.bcrypt.models.LoginSipCredentialsResponse
 import cc.cans.canscloud.sdk.bcrypt.models.LoginV3Request
 import cc.cans.canscloud.sdk.bcrypt.models.LoginV3Response
+import cc.cans.canscloud.sdk.bcrypt.models.LoginV3Result
+import cc.cans.canscloud.sdk.bcrypt.models.rawSignInUser
+import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Interceptor
@@ -81,7 +84,7 @@ class LoginBcryptManager(url: String) {
         resp
     }
 
-    suspend fun getLoginAccountV3(username: String, password: String): LoginV3Response {
+    suspend fun getLoginAccountV3(username: String, password: String): LoginV3Result {
         val url = "${BASE_URL}api/v3/sign-in/cc"
 
         val request = LoginV3Request(username = username, password = password)
@@ -93,7 +96,10 @@ class LoginBcryptManager(url: String) {
             throw IllegalStateException("getLoginAccountV3 login failed: ${resp.code()} | ServerMsg: $errorBody")
         }
 
-        return resp.body() ?: throw IllegalStateException("empty body")
+        val body = resp.body() ?: throw IllegalStateException("empty body")
+        val parsed = Gson().fromJson(body, LoginV3Response::class.java)
+            ?: throw IllegalStateException("empty body")
+        return LoginV3Result(parsed, rawSignInUser(body))
     }
 
     suspend fun forceSetPassword(

@@ -1,5 +1,6 @@
 package cc.cans.canscloud.sdk.bcrypt.models
 
+import com.google.gson.JsonObject
 import com.google.gson.annotations.SerializedName
 
 data class LoginV3Response(
@@ -33,7 +34,17 @@ data class LoginV3User(
     @SerializedName("updated_by_display_name") val updatedByDisplayName: String?,
     @SerializedName("updated_by_profile_image_url") val updatedByProfileImageUrl: String?,
     @SerializedName("password_reset_required") val passwordResetRequired: Boolean,
-    @SerializedName("is_active") val isActive: Boolean,
-    /** Raw permission codes; `null` when the response has no `permissions` field. */
-    @SerializedName("permissions") val permissions: List<String?>? = null
+    @SerializedName("is_active") val isActive: Boolean
 )
+
+/** A parsed `sign-in/cc` body, plus its `data.user` as the server sent it. */
+data class LoginV3Result(
+    val response: LoginV3Response,
+    val rawUser: String?
+)
+
+/** `data.user` of a raw `sign-in/cc` body as JSON text */
+fun rawSignInUser(body: JsonObject?): String? {
+    val data = body?.get("data")?.takeIf { it.isJsonObject }?.asJsonObject ?: return null
+    return data.get("user")?.takeIf { it.isJsonObject }?.toString()
+}

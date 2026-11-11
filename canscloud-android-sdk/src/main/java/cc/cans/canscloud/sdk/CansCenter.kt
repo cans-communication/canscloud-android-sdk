@@ -678,6 +678,7 @@ class CansCenter : Cans {
         val config = Factory.instance()
             .createConfigWithFactory(corePreferences.configPath, corePreferences.factoryConfigPath)
         corePreferences.config = config
+        corePreferences.removeLegacyAccountPermissions()
 
         Factory.instance().setLoggerDomain(appName)
         Factory.instance().enableLogcatLogs(true)
@@ -2063,12 +2064,12 @@ class CansCenter : Cans {
                 val pwdMD5 = SecureUtils.md5(password)
                 val loginManager = LoginBcryptManager(apiURL)
 
-                val v3Response = withContext(Dispatchers.IO) {
+                val v3Result = withContext(Dispatchers.IO) {
                     val usernameV3 = "$username@$domain"
                     loginManager.getLoginAccountV3(usernameV3, pwdMD5)
                 }
 
-                val v3Data = v3Response.data
+                val v3Data = v3Result.response.data
                 if (v3Data == null) {
                     registerListeners.forEach { it.onRegistration(RegisterState.FAIL) }
                     return@launch
@@ -2129,8 +2130,8 @@ class CansCenter : Cans {
                     // Keyed by the identity the account is created with below, not by
                     // `currentSipAddress`: the two differ when `sip-credentials` returns another
                     // domain or no extension, and lookup and sign-out only know the identity.
-                    // Always overwritten: a response without `permissions` clears the old list.
-                    corePreferences.setAccountPermissions(identity.address, v3Data.user.permissions)
+                    // Always overwritten: a response without `user` clears the old one.
+                    corePreferences.setSignInUser(identity.address, v3Result.rawUser)
 
                     val loginPort = 8446
                     val loginTransport = TransportType.Tcp
@@ -2481,18 +2482,18 @@ class CansCenter : Cans {
         val sipAddress = "$username@$domain"
         corePreferences.setAccessToken(sipAddress, null)
         corePreferences.setDomainUUID(sipAddress, null)
-        corePreferences.setAccountPermissions(sipAddress, null)
+        corePreferences.setSignInUser(sipAddress, null)
 
         if (serverDomain.isNotEmpty() && serverDomain != domain) {
             val serverSipAddress = "$username@$serverDomain"
             corePreferences.setAccessToken(serverSipAddress, null)
             corePreferences.setDomainUUID(serverSipAddress, null)
-            corePreferences.setAccountPermissions(serverSipAddress, null)
+            corePreferences.setSignInUser(serverSipAddress, null)
         }
     }
 
-    override fun getAccountPermissions(sipAddress: String): List<String>? =
-        corePreferences.getAccountPermissions(sipAddress)
+    override fun getSignInUser(sipAddress: String): String? =
+        corePreferences.getSignInUser(sipAddress)
 
     override fun makeVideoCall(number: String) {
         val address = core.interpretUrl(number) ?: return

@@ -715,19 +715,31 @@ class CorePreferences constructor(private val context: Context) {
         config.setString("app", "domain_uuid_$sipAddress", uuid)
     }
 
-    private val accountPermissionStore: AccountPermissionStore
-        get() = AccountPermissionStore(
+    /**
+     * Removes legacy SDK 3.1.2 `account_permissions_<sipAddress>` lists from `linphonerc` upon sign-out,
+     * as permissions are now derived entirely from the stored sign-in user.
+     */
+    fun removeLegacyAccountPermissions() {
+        val legacyKeys = config.getKeysNamesList("app")
+            .filter { it.startsWith("account_permissions_") }
+        if (legacyKeys.isEmpty()) return
+        legacyKeys.forEach { config.cleanEntry("app", it) }
+        config.sync()
+        Log.i("[CorePreferences] Removed ${legacyKeys.size} legacy account permission lists")
+    }
+
+    private val signInUserStore: SignInUserStore
+        get() = SignInUserStore(
             read = { key -> config.getString("app", key, "") },
             write = { key, value -> config.setString("app", key, value) },
         )
 
-    /** `null` when no permissions are stored for [sipAddress]; an empty list is a real answer. */
-    fun getAccountPermissions(sipAddress: String): List<String>? =
-        accountPermissionStore.get(sipAddress)
+    /** `data.user` from the last sign-in/cc of [sipAddress] as JSON text, or `null` when none is stored. */
+    fun getSignInUser(sipAddress: String): String? = signInUserStore.get(sipAddress)
 
-    /** `null` removes the stored list, leaving the account's permissions unknown. */
-    fun setAccountPermissions(sipAddress: String, permissions: List<String?>?) {
-        accountPermissionStore.set(sipAddress, permissions)
+    /** `null` removes the stored user. */
+    fun setSignInUser(sipAddress: String, userJson: String?) {
+        signInUserStore.set(sipAddress, userJson)
     }
 
     fun copyAssetsFromPackage() {
